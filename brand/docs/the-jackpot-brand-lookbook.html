@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Jackpot Chicago — Brand Lookbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens/brand.css">
+<style>
+/* ============================================
+   BASE
+   ============================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--jp-text-primary);
+  background: var(--jp-bg-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img { display: block; max-width: 100%; height: auto; }
+
+::selection { background: var(--jp-gold-25); color: var(--jp-text-primary); }
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+.book {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+section {
+  padding: 100px 0;
+  border-bottom: 1px solid var(--jp-divider);
+}
+section:last-of-type { border-bottom: none; }
+
+.section-num {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--jp-peach);
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: clamp(28px, 3.5vw, 38px);
+  line-height: 1.1;
+  color: var(--jp-gold);
+  margin-bottom: 16px;
+  letter-spacing: 0.5px;
+}
+
+.section-desc {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--jp-text-secondary);
+  max-width: 600px;
+  margin-bottom: 48px;
+}
+
+.body-text {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--jp-text-primary);
+  max-width: 640px;
+}
+.body-text + .body-text { margin-top: 20px; }
+
+.label {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+}
+
+/* ============================================
+   1 · COVER
+   ============================================ */
+.cover {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  border-bottom: 1px solid var(--jp-divider);
+  background: linear-gradient(170deg, var(--jp-linen) 0%, var(--jp-linen-mid) 50%, var(--jp-linen-deep) 100%);
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.cover-starburst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(900px, 90vw);
+  opacity: 0.035;
+  pointer-events: none;
+}
+
+.cover-content { position: relative; z-index: 1; }
+
+.cover .the {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 16px;
+  letter-spacing: 10px;
+  text-transform: uppercase;
+  color: var(--jp-peach-soft);
+  margin-bottom: 8px;
+}
+
+.cover .jackpot {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: clamp(64px, 10vw, 120px);
+  line-height: 1;
+  letter-spacing: 4px;
+  background: var(--jp-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin: 4px 0 16px;
+  padding-bottom: 0.2em;
+}
+
+.cover .chicago-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.cover .chicago {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 12px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: var(--jp-peach-soft);
+}
+
+.cover .lookbook-label {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--jp-text-secondary);
+  margin-top: 40px;
+}
+
+.cover .credit {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin-top: 60px;
+}
+
+/* ============================================
+   3 · THE FEELING — cards grid
+   ============================================ */
+.feeling-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.feeling-card {
+  background: var(--jp-linen-mid);
+  border-radius: var(--jp-radius-lg);
+  padding: 28px 28px 30px;
+  border: 1px solid var(--jp-border-default);
+}
+
+.feeling-card .card-title {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.1;
+  margin-bottom: 10px;
+  letter-spacing: 0.3px;
+}
+
+.feeling-card .card-body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--jp-text-primary);
+}
+
+.pull-quote {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--jp-gold);
+  text-align: center;
+  max-width: 640px;
+  margin: 40px auto 0;
+  padding: 0 24px;
+}
+
+/* ============================================
+   4 · PALETTE
+   ============================================ */
+.palette-strip {
+  display: flex;
+  gap: 4px;
+  height: 120px;
+  border-radius: var(--jp-radius-lg);
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+
+.palette-strip > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 14px 16px;
+}
+
+.palette-strip .swatch-name {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.palette-strip .swatch-meta {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.color-origins {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 24px;
+}
+
+.color-origin {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.color-origin .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.color-origin .text {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--jp-text-primary);
+}
+.color-origin .text strong {
+  font-weight: 500;
+  color: var(--jp-text-primary);
+}
+
+/* ============================================
+   5 · GRADIENT
+   ============================================ */
+.gradient-bar {
+  height: 60px;
+  border-radius: var(--jp-radius-md);
+  background: var(--jp-gradient);
+  margin-bottom: 16px;
+}
+.gradient-meta {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-size: 11px;
+  color: var(--jp-text-tertiary);
+}
+
+/* ============================================
+   6 · TYPOGRAPHY
+   ============================================ */
+.type-card {
+  background: var(--jp-linen-mid);
+  border-radius: var(--jp-radius-lg);
+  padding: 48px;
+  border: 1px solid var(--jp-border-default);
+}
+
+.type-step {
+  margin-bottom: 32px;
+}
+.type-step:last-child { margin-bottom: 0; }
+
+.type-step .specimen { color: var(--jp-text-primary); }
+.type-step .meta {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin-top: 8px;
+}
+
+.specimen-display-xl {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: clamp(48px, 7vw, 88px);
+  line-height: 0.85;
+  letter-spacing: 3px;
+  color: var(--jp-gold);
+}
+.specimen-display-l {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.1;
+  letter-spacing: 1px;
+}
+.specimen-display-m {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(22px, 2.5vw, 30px);
+  line-height: 1.2;
+}
+.specimen-h2 {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: clamp(20px, 2.2vw, 26px);
+}
+.specimen-body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.7;
+}
+.specimen-label {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+}
+.specimen-detail {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+}
+
+/* ============================================
+   7 · LOGO SYSTEM
+   ============================================ */
+.logo-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.logo-cell {
+  border-radius: var(--jp-radius-md);
+  padding: 36px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  border: 1px solid var(--jp-border-default);
+}
+.logo-cell.on-linen { background: var(--jp-linen-mid); }
+.logo-cell.on-gradient { background: var(--jp-gradient); border-color: transparent; }
+.logo-cell img { max-width: 90%; height: auto; }
+.logo-cell.small { min-height: 120px; }
+
+.logo-label {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin: 8px 0 24px;
+}
+
+.family-portrait {
+  background: var(--jp-linen-mid);
+  border-radius: var(--jp-radius-lg);
+  padding: 56px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 24px;
+  flex-wrap: wrap;
+  border: 1px solid var(--jp-border-default);
+  margin-top: 32px;
+}
+.family-portrait img { max-height: 80px; width: auto; }
+
+/* ============================================
+   8 · STARBURST MOTIF
+   ============================================ */
+.starburst-hero {
+  background: var(--jp-linen-mid);
+  border-radius: var(--jp-radius-lg);
+  padding: 64px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+  border: 1px solid var(--jp-border-default);
+}
+.starburst-hero img { width: 200px; }
+
+.motif-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.motif-card {
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+  padding: 22px 24px;
+}
+.motif-card .icon {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--jp-peach);
+  margin-bottom: 8px;
+}
+.motif-card .title {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 19px;
+  color: var(--jp-text-primary);
+  margin-bottom: 6px;
+}
+.motif-card .body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--jp-text-secondary);
+}
+
+/* ============================================
+   9 · BRAND IN ACTION
+   ============================================ */
+.mockup {
+  margin-bottom: 56px;
+}
+.mockup-label {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--jp-peach);
+  margin-bottom: 12px;
+}
+
+/* 9a — Big Entrance */
+.mock-entrance {
+  background: var(--jp-linen);
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-lg);
+  padding: 80px 40px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.mock-entrance .watermark {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  opacity: 0.05;
+  pointer-events: none;
+}
+.mock-entrance .word {
+  position: relative;
+  z-index: 1;
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: clamp(48px, 9vw, 110px);
+  line-height: 1;
+  letter-spacing: 4px;
+  background: var(--jp-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-bottom: 0.2em;
+}
+.mock-entrance .sub {
+  position: relative;
+  z-index: 1;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--jp-text-secondary);
+  margin-top: 12px;
+}
+
+/* 9b — Editorial Split */
+.mock-split {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  border-radius: var(--jp-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--jp-border-default);
+  min-height: 320px;
+}
+.mock-split .left {
+  background: var(--jp-gradient);
+  padding: 56px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #fff;
+}
+.mock-split .left .eyebrow {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 11px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  opacity: 0.9;
+  margin-bottom: 12px;
+}
+.mock-split .left .head {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 56px;
+  line-height: 0.95;
+  letter-spacing: 1px;
+}
+.mock-split .left .head em {
+  font-style: italic;
+  font-weight: 400;
+  display: block;
+}
+.mock-split .right {
+  background: var(--jp-bg-primary);
+  padding: 56px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 26px;
+}
+.mock-split .stat {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.mock-split .stat-num {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: 44px;
+  color: var(--jp-gold);
+  line-height: 0.85;
+}
+.mock-split .stat-label {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+}
+
+/* 9c — Pattern texture section */
+.mock-pattern {
+  background-color: var(--jp-linen);
+  background-image: url('../patterns/pattern-starburst-gold.svg');
+  background-repeat: repeat;
+  border-radius: var(--jp-radius-lg);
+  padding: 64px 48px;
+  text-align: center;
+  border: 1px solid var(--jp-border-default);
+}
+.mock-pattern h3 {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.1;
+  color: var(--jp-gold);
+  margin-bottom: 12px;
+}
+.mock-pattern .sub {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--jp-text-secondary);
+  margin-bottom: 28px;
+}
+.pills {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.pill {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border-radius: var(--jp-radius-full);
+}
+.pill.gold { background: var(--jp-gold-10); color: var(--jp-gold); }
+.pill.peach { background: var(--jp-peach-10); color: var(--jp-peach); }
+.pill.sage { background: var(--jp-sage-10); color: var(--jp-sage); }
+.pill.terra { background: var(--jp-terra-10); color: var(--jp-terra); }
+
+/* 9d — Stories Set 1 */
+.stories-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.story {
+  width: 130px;
+  height: 230px;
+  border-radius: var(--jp-radius-lg);
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--jp-border-default);
+}
+.story.linen { background: var(--jp-linen-mid); }
+.story.gradient { background: var(--jp-gradient); border-color: transparent; }
+.story.peach { background: var(--jp-peach); border-color: transparent; }
+.story.sage { background: var(--jp-sage); border-color: transparent; }
+.story.terra { background: var(--jp-terra); border-color: transparent; }
+.story.white-text { color: #fff; }
+
+.story .top-label {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.story .body {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.1;
+}
+.story .body em { font-style: italic; font-weight: 400; }
+.story .bottom-label {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.story.linen .body { color: var(--jp-gold); }
+.story.linen .top-label,
+.story.linen .bottom-label { color: var(--jp-text-secondary); opacity: 1; }
+
+.story .stat-big {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 0.85;
+}
+
+/* 9e — Stories Set 2 */
+.stories-row.small .story {
+  width: 108px;
+  height: 192px;
+  padding: 14px 12px;
+}
+.stories-row.small .story .body { font-size: 15px; }
+.stories-row.small .story .stat-big { font-size: 44px; }
+
+.story.split-word { padding: 0; align-items: stretch; justify-content: stretch; }
+.story.split-word .word-half {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: 32px;
+  letter-spacing: 1px;
+}
+.story.split-word .top { background: var(--jp-gold); color: #fff; }
+.story.split-word .bot { background: var(--jp-peach); color: #fff; }
+
+.amenity-list {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.amenity-list li { list-style: none; }
+.amenity-list li::before {
+  content: '✦ ';
+  color: var(--jp-peach);
+}
+
+/* 9f — Ad cards */
+.ads-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.ad-card {
+  border-radius: var(--jp-radius-lg);
+  padding: 44px 36px;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--jp-border-default);
+}
+.ad-card.linen { background: var(--jp-linen-mid); }
+.ad-card.gradient { background: var(--jp-gradient); color: #fff; border-color: transparent; }
+.ad-card .ad-eyebrow {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.ad-card.linen .ad-eyebrow { color: var(--jp-peach); }
+.ad-card.gradient .ad-eyebrow { color: #fff; opacity: 0.85; }
+
+.ad-card .ad-stat {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: 88px;
+  line-height: 0.85;
+  color: var(--jp-gold);
+  margin: 16px 0 8px;
+}
+.ad-card .ad-stat-label {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--jp-text-secondary);
+}
+.ad-card .ad-headline {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 36px;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  margin: 16px 0 8px;
+}
+.ad-card .ad-headline em { font-style: italic; font-weight: 400; }
+.ad-card.gradient .ad-headline { color: #fff; }
+.ad-card .ad-body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.ad-card.gradient .ad-body { color: #fff; opacity: 0.92; }
+.ad-card.linen .ad-body { color: var(--jp-text-secondary); }
+
+/* 9g — Type as architecture */
+.mock-architecture {
+  background: var(--jp-linen);
+  border-radius: var(--jp-radius-lg);
+  padding: 80px 48px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--jp-border-default);
+}
+.mock-architecture .ghost {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: clamp(120px, 22vw, 280px);
+  line-height: 0.85;
+  letter-spacing: 6px;
+  color: var(--jp-gold);
+  opacity: 0.06;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.mock-architecture .content { position: relative; z-index: 1; }
+.mock-architecture .head {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-style: italic;
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 1.1;
+  color: var(--jp-text-primary);
+  text-align: center;
+  margin-bottom: 36px;
+}
+.amenity-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.amenity-tile {
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+  padding: 18px 12px;
+  text-align: center;
+}
+.amenity-tile .glyph {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--jp-gold);
+  display: block;
+  margin-bottom: 4px;
+}
+.amenity-tile .name {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+}
+
+/* 9h — Type at play */
+.mock-play {
+  background: var(--jp-linen-mid);
+  border-radius: var(--jp-radius-lg);
+  padding: 72px 48px;
+  text-align: center;
+  border: 1px solid var(--jp-border-default);
+}
+.mock-play .group {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(56px, 9vw, 110px);
+  line-height: 0.9;
+  color: var(--jp-text-secondary);
+}
+.mock-play .home {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: clamp(64px, 10vw, 130px);
+  line-height: 1;
+  letter-spacing: 2px;
+  background: var(--jp-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: block;
+  padding-bottom: 0.2em;
+}
+.mock-play .ctas {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 36px;
+}
+.btn {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  padding: 14px 30px;
+  border-radius: var(--jp-radius-full);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn.primary {
+  background: var(--jp-gradient-button);
+  color: #fff;
+}
+.btn.secondary {
+  background: transparent;
+  color: var(--jp-gold);
+  border: 1.5px solid var(--jp-gold);
+}
+
+/* 9i — Pattern strips */
+.pattern-strips { display: flex; flex-direction: column; gap: 8px; }
+.strip {
+  height: 60px;
+  border-radius: var(--jp-radius-md);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background-image: url('../patterns/pattern-starburst-white.svg');
+  background-repeat: repeat;
+}
+.strip.linen {
+  background-color: var(--jp-linen);
+  background-image: url('../patterns/pattern-starburst-gold.svg');
+}
+.strip.gold { background-color: var(--jp-gold); }
+.strip.peach { background-color: var(--jp-peach); }
+.strip.sage { background-color: var(--jp-sage); }
+
+.strip-label {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.strip.linen .strip-label { color: var(--jp-text-secondary); }
+.strip.gold .strip-label,
+.strip.peach .strip-label,
+.strip.sage .strip-label { color: #fff; }
+
+/* ============================================
+   10 · VOICE & COPY
+   ============================================ */
+.voice-hero {
+  background: var(--jp-gradient);
+  border-radius: var(--jp-radius-lg);
+  padding: 80px 48px;
+  text-align: center;
+  margin-bottom: 32px;
+  color: #fff;
+}
+.voice-hero .head {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: clamp(40px, 6vw, 64px);
+  line-height: 0.95;
+  letter-spacing: 1px;
+}
+.voice-hero .sub {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 18px;
+  margin-top: 16px;
+  opacity: 0.95;
+}
+
+.voice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.voice-card {
+  background: var(--jp-linen-mid);
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+  padding: 24px 26px;
+}
+.voice-card .vc-label {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--jp-peach);
+  margin-bottom: 10px;
+}
+.voice-card .vc-line {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--jp-text-primary);
+  margin-bottom: 10px;
+}
+.voice-card .vc-line em { font-style: italic; font-weight: 400; }
+.voice-card .vc-body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--jp-text-secondary);
+}
+
+/* ============================================
+   11 · PHYSICAL TOUCHPOINTS
+   ============================================ */
+.touch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.touch-card {
+  background: var(--jp-linen-mid);
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-lg);
+  padding: 36px 32px;
+}
+.touch-card .glyph {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 1;
+  background: var(--jp-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 12px;
+  padding-bottom: 0.2em;
+}
+.touch-card .title {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--jp-text-primary);
+  margin-bottom: 8px;
+}
+.touch-card .body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--jp-text-secondary);
+}
+
+/* ============================================
+   12 · RULES
+   ============================================ */
+.rules-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.rules-card {
+  border-radius: var(--jp-radius-lg);
+  padding: 36px 32px;
+  border: 1px solid var(--jp-border-default);
+}
+.rules-card.always { background: var(--jp-sage-10); border-color: var(--jp-sage-25); }
+.rules-card.never { background: var(--jp-terra-10); border-color: var(--jp-terra-25); }
+.rules-card .rules-label {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.rules-card.always .rules-label { color: var(--jp-sage-deep); }
+.rules-card.never .rules-label { color: var(--jp-terra-deep); }
+.rules-card ul {
+  list-style: none;
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--jp-text-primary);
+}
+.rules-card li {
+  padding-left: 16px;
+  position: relative;
+}
+.rules-card.always li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--jp-sage);
+  font-weight: 500;
+}
+.rules-card.never li::before {
+  content: '✕';
+  position: absolute;
+  left: 0;
+  color: var(--jp-terra);
+}
+
+/* ============================================
+   13 · CLOSER
+   ============================================ */
+.closer-card {
+  background: var(--jp-gradient);
+  border-radius: var(--jp-radius-xl);
+  padding: 100px 48px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  margin-bottom: 48px;
+}
+.closer-card .closer-starburst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  opacity: 0.12;
+  pointer-events: none;
+}
+.closer-card .closer-text {
+  position: relative;
+  z-index: 1;
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: clamp(28px, 4.5vw, 48px);
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+.closer-card .closer-text em { font-style: italic; font-weight: 400; }
+
+.brand-handles {
+  text-align: center;
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin-bottom: 32px;
+}
+.brand-handles span { color: var(--jp-text-secondary); margin: 0 12px; }
+
+.system-strip {
+  display: flex;
+  height: 56px;
+  border-radius: var(--jp-radius-md);
+  overflow: hidden;
+}
+.system-strip > div {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.system-strip .label {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.95);
+}
+.system-strip .gold { background: var(--jp-gold); }
+.system-strip .peach { background: var(--jp-peach); }
+.system-strip .sage { background: var(--jp-sage); }
+.system-strip .terra { background: var(--jp-terra); }
+.system-strip .olive { background: var(--jp-olive); }
+
+.book-end {
+  text-align: center;
+  padding: 60px 40px 80px;
+  border-top: 1px solid var(--jp-divider);
+  margin-top: 64px;
+}
+.book-end .mark {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--jp-text-secondary);
+}
+.book-end .meta {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 9px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin-top: 10px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .book { padding: 0 28px; }
+  section { padding: 80px 0; }
+
+  .feeling-grid { grid-template-columns: 1fr; }
+  .color-origins { grid-template-columns: 1fr; }
+  .logo-row { grid-template-columns: 1fr; }
+  .motif-grid { grid-template-columns: 1fr; }
+  .voice-grid { grid-template-columns: 1fr; }
+  .touch-grid { grid-template-columns: 1fr; }
+  .rules-grid { grid-template-columns: 1fr; }
+  .ads-row { grid-template-columns: 1fr; }
+
+  .mock-split { grid-template-columns: 1fr; }
+  .mock-split .left, .mock-split .right { padding: 40px 32px; }
+
+  .amenity-grid { grid-template-columns: repeat(2, 1fr); }
+  .type-card { padding: 32px 24px; }
+}
+
+@media (max-width: 480px) {
+  .book { padding: 0 20px; }
+  section { padding: 60px 0; }
+
+  .closer-card { padding: 64px 28px; }
+  .voice-hero { padding: 60px 28px; }
+  .mock-pattern { padding: 48px 28px; }
+  .mock-architecture { padding: 60px 28px; }
+  .mock-play { padding: 56px 28px; }
+  .mock-entrance { padding: 60px 28px; }
+
+  .stories-row { gap: 12px; }
+
+  .closer-card { border-radius: var(--jp-radius-lg); }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================ -->
+<!-- 1 · COVER                                    -->
+<!-- ============================================ -->
+<section class="cover">
+  <svg class="cover-starburst" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(60,60)">
+      <line x1="0" y1="-55" x2="0" y2="55" stroke="#d4a930" stroke-width="1.8"/>
+      <line x1="-55" y1="0" x2="55" y2="0" stroke="#d4a930" stroke-width="1.8"/>
+      <line x1="-39" y1="-39" x2="39" y2="39" stroke="#d4a930" stroke-width="1.2"/>
+      <line x1="39" y1="-39" x2="-39" y2="39" stroke="#d4a930" stroke-width="1.2"/>
+      <line x1="-14" y1="-53" x2="14" y2="53" stroke="#e8a040" stroke-width="0.8"/>
+      <line x1="14" y1="-53" x2="-14" y2="53" stroke="#e8a040" stroke-width="0.8"/>
+      <line x1="-53" y1="-14" x2="53" y2="14" stroke="#e8a040" stroke-width="0.8"/>
+      <line x1="-53" y1="14" x2="53" y2="-14" stroke="#e8a040" stroke-width="0.8"/>
+      <circle cx="0" cy="0" r="3.5" fill="#ff9050"/>
+    </g>
+  </svg>
+  <div class="cover-content">
+    <div class="the">THE</div>
+    <div class="jackpot">JACKPOT</div>
+    <div class="chicago-row">
+      <span class="chicago">CHICAGO</span>
+    </div>
+    <div class="lookbook-label">Brand Lookbook</div>
+    <div class="credit">Stravon Group LLC · 2025</div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 2 · THE STORY                                -->
+<!-- ============================================ -->
+<section>
+  <div class="book">
+    <div class="section-num">02 — The Story</div>
+    <h2 class="section-title">How we got here</h2>
+    <p class="body-text">The Jackpot started with a house. A big, beautiful, carefully designed house on Chicago's North Side — 5 bedrooms, 3 bathrooms, space for 14. A hot tub under a louvered pergola. A 120-inch cinema with a popcorn machine. A game room with a bar, a poker table, and a record player. A fire pit surrounded by Adirondack chairs.</p>
+    <p class="body-text">The interior was designed by Carla Schuessler under the vision "Chicago Modern Deco Revival" — warm cognac tones, sage greens, brass fixtures, a sputnik chandelier that catches light like a starburst. The kind of space where every room feels intentional and every photo turns out beautiful.</p>
+    <p class="body-text">The brand needed to match. Not a generic rental logo. Not a sterile hospitality template. Something that captures the feeling of walking through the door and realizing you found something better than you expected. Something that makes people screenshot and send to the group chat. Something that glows.</p>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 3 · THE FEELING                              -->
+<!-- ============================================ -->
+<section>
+  <div class="book">
+    <div class="section-num">03 — The Feeling</div>
+    <h2 class="section-title">Fruit bowl and brunch</h2>
+    <p class="section-desc">The brand lives in a specific emotional territory — warm, bright, celebratory, and alive. Never dark. Never cold. Never stiff.</p>
+
+    <div class="feeling-grid">
+      <div class="feeling-card">
+        <div class="card-title" style="color: var(--jp-gold);">Fruit bowl</div>
+        <div class="card-body">Peach, mango, honey, citrus, mint. Fresh and abundant. Colors you want to eat. The warmth of things that grew in sunlight.</div>
+      </div>
+      <div class="feeling-card">
+        <div class="card-title" style="color: var(--jp-peach-soft);">Brunch</div>
+        <div class="card-body">Champagne in sunlight. Linen tablecloth. Friends laughing over eggs and coffee. The golden glow of a late morning when nobody's in a rush.</div>
+      </div>
+      <div class="feeling-card">
+        <div class="card-title" style="color: var(--jp-peach);">Golden hour</div>
+        <div class="card-body">That 30 minutes before sunset when everything looks perfect, every photo turns out good, and the whole world looks warm.</div>
+      </div>
+      <div class="feeling-card">
+        <div class="card-title" style="color: var(--jp-sage);">Sunday morning</div>
+        <div class="card-body">Windows open. Coffee made. Nowhere to be. Everyone still gathered in the living room, replaying last night. The afterglow of a great time.</div>
+      </div>
+    </div>
+
+    <div class="pull-quote">"You found something better than you expected, and everyone's going to ask you how you found it."</div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 4 · THE PROPERTY CONNECTION                  -->
+<!-- ============================================ -->
+<section>
+  <div class="book">
+    <div class="section-num">04 — The Property Connection</div>
+    <h2 class="section-title">Pulled from the property</h2>
+    <p class="section-desc">Every color in the brand exists somewhere in the physical space. The brand and the house speak the same language.</p>
+
+    <div class="palette-strip">
+      <div style="flex: 3; background: var(--jp-gold);">
+        <div class="swatch-name" style="color: var(--jp-text-on-color);">Honey Gold</div>
+        <div class="swatch-meta" style="color: var(--jp-text-on-color); opacity: 0.85;">#d4a930 · primary</div>
+      </div>
+      <div style="flex: 2.5; background: var(--jp-peach);">
+        <div class="swatch-name" style="color: var(--jp-text-on-color);">Electric Peach</div>
+        <div class="swatch-meta" style="color: var(--jp-text-on-color); opacity: 0.85;">#ff9050 · accent</div>
+      </div>
+      <div style="flex: 2; background: var(--jp-linen); border: 1px solid var(--jp-border-default);">
+        <div class="swatch-name" style="color: var(--jp-text-secondary);">Linen Cream</div>
+        <div class="swatch-meta" style="color: var(--jp-text-secondary);">#faf6ef · canvas</div>
+      </div>
+      <div style="flex: 1.5; background: var(--jp-sage);">
+        <div class="swatch-name" style="color: var(--jp-text-on-color);">Fresh Sage</div>
+        <div class="swatch-meta" style="color: var(--jp-text-on-color); opacity: 0.85;">#8aa077 · nature</div>
+      </div>
+      <div style="flex: 1.2; background: var(--jp-terra);">
+        <div class="swatch-name" style="color: var(--jp-text-on-color);">Terracotta</div>
+        <div class="swatch-meta" style="color: var(--jp-text-on-color); opacity: 0.85;">#c08050 · warmth</div>
+      </div>
+    </div>
+
+    <div class="color-origins">
+      <div class="color-origin">
+        <div class="dot" style="background: var(--jp-gold);"></div>
+        <div class="text"><strong>Honey Gold</strong> — the brass fixtures, the sputnik chandelier arms, the warm wood floors in the dining room, the late-afternoon light through the louvered pergola.</div>
+      </div>
+      <div class="color-origin">
+        <div class="dot" style="background: var(--jp-peach);"></div>
+        <div class="text"><strong>Electric Peach</strong> — the neon glow you remember from someone's house in the 70s, the sunset hitting the pergola posts, the spark accent that makes the brand feel alive.</div>
+      </div>
+      <div class="color-origin">
+        <div class="dot" style="background: var(--jp-linen); border: 1px solid var(--jp-border-default);"></div>
+        <div class="text"><strong>Linen Cream</strong> — the walls, the bedding, the bath towels, the candles. The quiet canvas everything else lives on.</div>
+      </div>
+      <div class="color-origin">
+        <div class="dot" style="background: var(--jp-sage);"></div>
+        <div class="text"><strong>Fresh Sage</strong> — the velvet dining chairs, the houseplants, the trim on the kitchen cabinets, the soft green that grounds the warmer tones.</div>
+      </div>
+      <div class="color-origin">
+        <div class="dot" style="background: var(--jp-terra);"></div>
+        <div class="text"><strong>Terracotta</strong> — the accent wall in the dining room, the throw pillows on the patio chairs, the deepest warm in the palette.</div>
+      </div>
+      <div class="color-origin">
+        <div class="dot" style="background: var(--jp-olive);"></div>
+        <div class="text"><strong>Warm Olive</strong> — the text color that ties everything together. Never black, never gray. The shadow of warm things.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 5 · THE GRADIENT                             -->
+<!-- ============================================ -->
+<section>
+  <div class="book">
+    <div class="section-num">05 — The Gradient</div>
+    <h2 class="section-title">The signature wash</h2>
+    <p class="section-desc">A five-stop gold-to-peach gradient at exactly 135 degrees. The angle is as much a brand element as the colors.</p>
+    <div class="gradient-bar"></div>
+    <div class="gradient-meta">linear-gradient(135deg, #e0a520 0%, #e8b020 20%, #f0a830 45%, #f09040 70%, #ee8045 100%)</div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 6 · TYPOGRAPHY                               -->
+<!-- ============================================ -->
+<section>
+  <div class="book">
+    <div class="section-num">06 — Typography</div>
+    <h2 class="section-title">Cormorant Garamond + Outfit</h2>
+    <p class="section-desc">A serif with warmth and personality paired with a geometric sans that's clean at every weight. The serif is the chandelier. The sans is the white kitchen.</p>
+
+    <div class="type-card">
+      <div class="type-step">
+        <div class="specimen specimen-display-xl">JACKPOT</div>
+        <div class="meta">Display XL · Cormorant 700 · 48–100px · letter-spacing 3px</div>
+      </div>
+      <div class="type-step">
+        <div class="specimen specimen-display-l">Section headlines</div>
+        <div class="meta">Display Large · Cormorant 600 · 28–48px · letter-spacing 2px</div>
+      </div>
+      <div class="type-step">
+        <div class="specimen specimen-display-m">you found something special</div>
+        <div class="meta">Display Medium · Cormorant 400 italic · 22–32px</div>
+      </div>
+      <div class="type-step">
+        <div class="specimen specimen-h2">Heading 2 — section titles</div>
+        <div class="meta">Heading 2 · Cormorant 600 · 20–28px</div>
+      </div>
+      <div class="type-step">
+        <div class="specimen specimen-body">Body Regular — the workhorse text used for descriptions, listing copy, and general content. Outfit 300 sets a calm, modern, slightly editorial tone that matches the serif's warmth without competing with it.</div>
+        <div class="meta">Body Regular · Outfit 300 · 15px · line-height 1.7</div>
+      </div>
+      <div class="type-step">
+        <div class="specimen specimen-label">Label / UI · BOOK NOW</div>
+        <div class="meta">Label · Outfit 500 · 13px · letter-spacing 0.5px</div>
+      </div>
+      <div class="type-step">
+        <div class="specimen specimen-detail">CHICAGO · @THEJACKPOTCHI · FINE PRINT</div>
+        <div class="meta">Detail · Outfit 400 · 11px · letter-spacing 4px · uppercase</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 7 · LOGO SYSTEM                              -->
+<!-- ============================================ -->
+<section>
+  <div class="book">
+    <div class="section-num">07 — Logo System</div>
+    <h2 class="section-title">Five marks, one system</h2>
+    <p class="section-desc">Each mark has a clear role and never competes with the others. Five production SVGs with all text outlined as paths — they render identically everywhere, no fonts required.</p>
+
+    <div class="logo-label">Wordmark Primary</div>
+    <div class="logo-row">
+      <div class="logo-cell on-linen"><img src="../logos/wordmark-primary-gold.svg" alt="Wordmark Primary Gold"></div>
+      <div class="logo-cell on-gradient"><img src="../logos/wordmark-primary-white.svg" alt="Wordmark Primary White"></div>
+    </div>
+
+    <div class="logo-label">Wordmark Compact</div>
+    <div class="logo-row">
+      <div class="logo-cell on-linen small"><img src="../logos/wordmark-compact-gold.svg" alt="Wordmark Compact Gold"></div>
+      <div class="logo-cell on-gradient small"><img src="../logos/wordmark-compact-white.svg" alt="Wordmark Compact White"></div>
+    </div>
+
+    <div class="logo-label">Monogram — J Twinkle</div>
+    <div class="logo-row">
+      <div class="logo-cell on-linen"><img src="../logos/monogram-jtwinkle-gold.svg" alt="Monogram Gold" style="max-height: 140px;"></div>
+      <div class="logo-cell on-gradient"><img src="../logos/monogram-jtwinkle-white.svg" alt="Monogram White" style="max-height: 140px;"></div>
+    </div>
+
+    <div class="logo-label">Starburst — Full &amp; Simple</div>
+    <div class="logo-row">
+      <div class="logo-cell on-linen small"><img src="../logos/starburst-full-gold.svg" alt="Starburst Full" style="max-width: 100px;"></div>
+      <div class="logo-cell on-linen small"><img src="../logos/starburst-simple-gold.svg" alt="Starburst Simple" style="max-width: 60px;"></div>
+    </div>
+
+    <div class="logo-label">Family portrait — relative scale</div>
+    <div class="family-portrait">
+      <img src="../logos/wordmark-primary-gold.svg" alt="" style="max-height: 60px;">
+      <img src="../logos/wordmark-compact-gold.svg" alt="" style="max-height: 24px;">
+      <img src="../logos/monogram-jtwinkle-gold.svg" alt="" style="max-height: 80px;">
+      <img src="../logos/starburst-full-gold.svg" alt="" style="max-height: 50px;">
+      <img src="../logos/starburst-simple-gold.svg" alt="" style="max-height: 28px;">
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 8 · THE STARBURST                            -->
+<!-- ============================================ -->
+<section>
+  <div class="book">
+    <div class="section-num">08 — The Starburst</div>
+    <h2 class="section-title">The motif</h2>
+    <p class="section-desc">Geometric sunburst with gold lines and peach-tipped edges. Half sputnik chandelier, half neon bleed. The mark you'll see embedded in everything from the wordmark to the patterns to the watermarks behind the text.</p>
+
+    <div class="starburst-hero">
+      <img src="../logos/starburst-full-gold.svg" alt="Starburst motif">
+    </div>
+
+    <div class="motif-grid">
+      <div class="motif-card">
+        <div class="icon">Origin</div>
+        <div class="title">Sputnik chandelier</div>
+        <div class="body">The starburst is a direct callout to the brass sputnik chandelier hanging in the dining room. Every gathering happens under it. Every photo includes it.</div>
+      </div>
+      <div class="motif-card">
+        <div class="icon">Heritage</div>
+        <div class="title">Chicago deco revival</div>
+        <div class="body">The geometric burst nods to the city's Art Deco buildings — the radial sunbursts on the Carbide and Carbon, the angled ornament on the Chicago Board of Trade.</div>
+      </div>
+      <div class="motif-card">
+        <div class="icon">Color</div>
+        <div class="title">Neon bleed</div>
+        <div class="body">Gold lines with peach tips. The color shift mimics the bloom of a neon sign in a window — the moment the tube transitions from gas to glow.</div>
+      </div>
+      <div class="motif-card">
+        <div class="icon">Scale</div>
+        <div class="title">Three intensities</div>
+        <div class="body">100% as a primary mark. 30% as a divider or accent. 5% as a watermark or background texture. Same shape, different volumes.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 9 · BRAND IN ACTION                          -->
+<!-- ============================================ -->
+<section>
+  <div class="book">
+    <div class="section-num">09 — Brand in Action</div>
+    <h2 class="section-title">The brand, unleashed</h2>
+    <p class="section-desc">How the system comes alive across digital touchpoints. Every mockup below uses the production tokens, weights, and letter-spacing — nothing improvised.</p>
+
+    <!-- 9a -->
+    <div class="mockup">
+      <div class="mockup-label">9a · The Big Entrance</div>
+      <div class="mock-entrance">
+        <img class="watermark" src="../logos/starburst-full-gold.svg" alt="">
+        <div class="word">JACKPOT</div>
+        <div class="sub">you found something special</div>
+      </div>
+    </div>
+
+    <!-- 9b -->
+    <div class="mockup">
+      <div class="mockup-label">9b · Editorial Split</div>
+      <div class="mock-split">
+        <div class="left">
+          <div class="eyebrow">CHICAGO · NORTH SIDE</div>
+          <div class="head"><em>Group</em> Home<br>For 14</div>
+        </div>
+        <div class="right">
+          <div class="stat">
+            <span class="stat-num">14</span>
+            <span class="stat-label">Sleeps</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num">5</span>
+            <span class="stat-label">Bedrooms</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num">3</span>
+            <span class="stat-label">Bathrooms</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num">5.0</span>
+            <span class="stat-label">Rating</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9c -->
+    <div class="mockup">
+      <div class="mockup-label">9c · Starburst Pattern</div>
+      <div class="mock-pattern">
+        <h3>You just hit the Jackpot</h3>
+        <div class="sub">A house that does the showing off for you</div>
+        <div class="pills">
+          <span class="pill gold">Hot tub</span>
+          <span class="pill peach">Cinema</span>
+          <span class="pill sage">Game room</span>
+          <span class="pill terra">Fire pit</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9d -->
+    <div class="mockup">
+      <div class="mockup-label">9d · Instagram Stories Set 1</div>
+      <div class="stories-row">
+        <div class="story linen">
+          <div class="top-label">@thejackpotchi</div>
+          <div class="body">"You just hit the <em>Jackpot</em>"</div>
+          <div class="bottom-label">CHICAGO</div>
+        </div>
+        <div class="story gradient white-text">
+          <div class="top-label">SLEEPS</div>
+          <div class="stat-big">14</div>
+          <div class="bottom-label">5 BR · 3 BA</div>
+        </div>
+        <div class="story peach white-text">
+          <div class="top-label">BOOK NOW</div>
+          <div class="body">Spring rates<br>through May</div>
+          <div class="bottom-label">LINK IN BIO</div>
+        </div>
+        <div class="story sage white-text">
+          <div class="top-label">THE</div>
+          <div class="body">JACK<br>POT</div>
+          <div class="bottom-label">CHICAGO</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9e -->
+    <div class="mockup">
+      <div class="mockup-label">9e · Instagram Stories Set 2</div>
+      <div class="stories-row small">
+        <div class="story linen">
+          <div class="top-label">FROM</div>
+          <div class="stat-big" style="color: var(--jp-gold);">$57</div>
+          <div class="bottom-label">PER GUEST</div>
+        </div>
+        <div class="story gradient white-text">
+          <div class="top-label">HEY</div>
+          <div class="body">Stop scrolling. <em>You found it.</em></div>
+          <div class="bottom-label">SWIPE UP</div>
+        </div>
+        <div class="story linen">
+          <div class="top-label">AMENITIES</div>
+          <ul class="amenity-list" style="color: var(--jp-text-primary);">
+            <li>Hot tub</li>
+            <li>Cinema</li>
+            <li>Game room</li>
+            <li>Fire pit</li>
+          </ul>
+          <div class="bottom-label">+9 MORE</div>
+        </div>
+        <div class="story terra white-text">
+          <div class="top-label">THE GROUP</div>
+          <div class="body">Where is everyone <em>staying?</em></div>
+          <div class="bottom-label">PIN THIS</div>
+        </div>
+        <div class="story split-word">
+          <div class="word-half top">JACK</div>
+          <div class="word-half bot">POT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9f -->
+    <div class="mockup">
+      <div class="mockup-label">9f · Scroll-Stopping Ads</div>
+      <div class="ads-row">
+        <div class="ad-card linen">
+          <div>
+            <div class="ad-eyebrow">FROM</div>
+            <div class="ad-stat">$57</div>
+            <div class="ad-stat-label">per guest, per night · sleeps 14</div>
+          </div>
+          <div class="ad-body">A 5-bedroom group home on Chicago's North Side. Cinema, hot tub, fire pit, game room. Book by Sunday for spring rates.</div>
+        </div>
+        <div class="ad-card gradient">
+          <div>
+            <div class="ad-eyebrow">STOP SCROLLING</div>
+            <div class="ad-headline">You found <em>it</em></div>
+          </div>
+          <div class="ad-body">The group home everyone's been looking for. 5 bedrooms, 14 beds, the kind of place that makes the trip itself the story.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9g -->
+    <div class="mockup">
+      <div class="mockup-label">9g · Type as Architecture</div>
+      <div class="mock-architecture">
+        <div class="ghost">JACKPOT</div>
+        <div class="content">
+          <div class="head">how did you find this?</div>
+          <div class="amenity-grid">
+            <div class="amenity-tile"><span class="glyph">♨</span><div class="name">Hot tub</div></div>
+            <div class="amenity-tile"><span class="glyph">▶</span><div class="name">Cinema</div></div>
+            <div class="amenity-tile"><span class="glyph">♣</span><div class="name">Poker</div></div>
+            <div class="amenity-tile"><span class="glyph">✦</span><div class="name">Fire pit</div></div>
+            <div class="amenity-tile"><span class="glyph">♬</span><div class="name">Records</div></div>
+            <div class="amenity-tile"><span class="glyph">☕</span><div class="name">Espresso</div></div>
+            <div class="amenity-tile"><span class="glyph">♛</span><div class="name">King beds</div></div>
+            <div class="amenity-tile"><span class="glyph">★</span><div class="name">5.0 rated</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9h -->
+    <div class="mockup">
+      <div class="mockup-label">9h · Typography at Play</div>
+      <div class="mock-play">
+        <div class="group">Group</div>
+        <div class="home">Home</div>
+        <div class="ctas">
+          <a class="btn primary" href="#">Book Now</a>
+          <a class="btn secondary" href="#">Explore</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9i -->
+    <div class="mockup">
+      <div class="mockup-label">9i · Brand Pattern Strip</div>
+      <div class="pattern-strips">
+        <div class="strip linen"><span class="strip-label">Linen · gold pattern</span></div>
+        <div class="strip gold"><span class="strip-label">Honey gold · white pattern</span></div>
+        <div class="strip peach"><span class="strip-label">Electric peach · white pattern</span></div>
+        <div class="strip sage"><span class="strip-label">Fresh sage · white pattern</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 10 · VOICE & COPY                            -->
+<!-- ============================================ -->
+<section>
+  <div class="book">
+    <div class="section-num">10 — Voice &amp; Copy</div>
+    <h2 class="section-title">What the brand says</h2>
+    <p class="section-desc">Confident without bragging. Warm without being cheesy. The friend who always finds the best spot.</p>
+
+    <div class="voice-hero">
+      <div class="head">You just hit the Jackpot</div>
+      <div class="sub">— the line everything else lives under</div>
+    </div>
+
+    <div class="voice-grid">
+      <div class="voice-card">
+        <div class="vc-label">Welcome card</div>
+        <div class="vc-line">"You found something <em>special</em>"</div>
+        <div class="vc-body">Used on the welcome card guests find on the dining table when they arrive. Italic, warm, never explanatory.</div>
+      </div>
+      <div class="voice-card">
+        <div class="vc-label">Stories</div>
+        <div class="vc-line">"The group is going to <em>thank you</em>"</div>
+        <div class="vc-body">Speaks to the planner — the one who books the trip and is responsible for the vibe. Validation without sycophancy.</div>
+      </div>
+      <div class="voice-card">
+        <div class="vc-label">Ads & closer</div>
+        <div class="vc-line">"Stop scrolling. <em>You found it.</em>"</div>
+        <div class="vc-body">For the moment when the algorithm is doing its job. Direct, declarative, the brand interrupting the scroll.</div>
+      </div>
+      <div class="voice-card">
+        <div class="vc-label">Facebook</div>
+        <div class="vc-line">"Where is everyone <em>staying?</em>"</div>
+        <div class="vc-body">A pinned comment in the group chat. The line that gets shared, screenshotted, and pasted into the planning thread.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 11 · PHYSICAL TOUCHPOINTS                    -->
+<!-- ============================================ -->
+<section>
+  <div class="book">
+    <div class="section-num">11 — Physical Touchpoints</div>
+    <h2 class="section-title">In the space</h2>
+    <p class="section-desc">The brand isn't just digital. These are the small physical moments where the system shows up in the house itself.</p>
+
+    <div class="touch-grid">
+      <div class="touch-card">
+        <div class="glyph">✦</div>
+        <div class="title">The neon sign</div>
+        <div class="body">A small custom neon sign by the bar — the only place the brand wordmark appears in actual neon. Peach tubes, gold backing, the visual source of the "neon bleed" gradient.</div>
+      </div>
+      <div class="touch-card">
+        <div class="glyph">⛁</div>
+        <div class="title">Greenery wall</div>
+        <div class="body">A vertical sage planter wall behind the dining table. Doubles as the photo backdrop everyone uses for the group shot. The actual sage color the brand pulls from.</div>
+      </div>
+      <div class="touch-card">
+        <div class="glyph">✉</div>
+        <div class="title">Welcome cards</div>
+        <div class="body">Letterpress cards on linen stock waiting on the dining table. JACKPOT in deboss, "you found something special" in gold foil italics, the wifi password printed on the back.</div>
+      </div>
+      <div class="touch-card">
+        <div class="glyph">❋</div>
+        <div class="title">Coasters &amp; guest book</div>
+        <div class="body">Linen coasters with the starburst foil-stamped in gold. A leather-bound guest book on the bar with a pen tied to it. Everyone signs. Everyone reads.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 12 · THE RULES                               -->
+<!-- ============================================ -->
+<section>
+  <div class="book">
+    <div class="section-num">12 — The Rules</div>
+    <h2 class="section-title">Always and never</h2>
+    <p class="section-desc">The non-negotiables. Everything in this lookbook lives inside these guardrails.</p>
+
+    <div class="rules-grid">
+      <div class="rules-card always">
+        <div class="rules-label">Always</div>
+        <ul>
+          <li>Cormorant Garamond for display</li>
+          <li>Outfit for body and function</li>
+          <li>Warm olive #7a6030 for body text</li>
+          <li>Brand gradient at exactly 135°</li>
+          <li>Twinkle accents above and right of marks</li>
+          <li>Linen and warm tones as backgrounds</li>
+          <li>Smart curly quotes and em dashes</li>
+          <li>Star bullets (✦) in gold</li>
+          <li>Photos lit warm, never cool</li>
+        </ul>
+      </div>
+      <div class="rules-card never">
+        <div class="rules-label">Never</div>
+        <ul>
+          <li>Black, dark gray, or espresso anywhere</li>
+          <li>JACKPOT in a dark color</li>
+          <li>JACKPOT on a dark background</li>
+          <li>Cool tones — no blue, gray, silver</li>
+          <li>Generic sans like Inter, Roboto, Arial</li>
+          <li>Gambling imagery — no dice, no chips</li>
+          <li>Pink (it's peach, not pink)</li>
+          <li>Dark scrim overlays on photos</li>
+          <li>The word "rental" in marketing copy</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 13 · THE CLOSER                              -->
+<!-- ============================================ -->
+<section>
+  <div class="book">
+    <div class="closer-card">
+      <svg class="closer-starburst" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(60,60)">
+          <line x1="0" y1="-55" x2="0" y2="55" stroke="#fff" stroke-width="2"/>
+          <line x1="-55" y1="0" x2="55" y2="0" stroke="#fff" stroke-width="2"/>
+          <line x1="-39" y1="-39" x2="39" y2="39" stroke="#fff" stroke-width="1.4"/>
+          <line x1="39" y1="-39" x2="-39" y2="39" stroke="#fff" stroke-width="1.4"/>
+          <line x1="-14" y1="-53" x2="14" y2="53" stroke="#fff" stroke-width="0.9"/>
+          <line x1="14" y1="-53" x2="-14" y2="53" stroke="#fff" stroke-width="0.9"/>
+          <line x1="-53" y1="-14" x2="53" y2="14" stroke="#fff" stroke-width="0.9"/>
+          <line x1="-53" y1="14" x2="53" y2="-14" stroke="#fff" stroke-width="0.9"/>
+          <circle cx="0" cy="0" r="4" fill="#fff"/>
+        </g>
+      </svg>
+      <div class="closer-text">The house that makes everyone ask <em>"how did you find this?"</em></div>
+    </div>
+
+    <div class="brand-handles">
+      thejackpotchi.com<span>·</span>@thejackpotchi<span>·</span>chicago
+    </div>
+
+    <div class="system-strip">
+      <div class="gold"><span class="label">Gold</span></div>
+      <div class="peach"><span class="label">Peach</span></div>
+      <div class="sage"><span class="label">Sage</span></div>
+      <div class="terra"><span class="label">Terra</span></div>
+      <div class="olive"><span class="label">Olive</span></div>
+    </div>
+
+    <div class="book-end">
+      <div class="mark">you found something special</div>
+      <div class="meta">The Jackpot Chicago · Brand Lookbook · Stravon Group LLC · 2025</div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
