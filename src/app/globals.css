@@ -1,26 +1,98 @@
 @import "tailwindcss";
 
+/* Brand design tokens — single source of truth */
+@import "../../brand/tokens/brand.css";
+
+/* Override font families with next/font optimized versions */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --jp-font-display: var(--font-cormorant, 'Cormorant Garamond'), Georgia, 'Times New Roman', serif;
+  --jp-font-body: var(--font-outfit, 'Outfit'), 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+/* Tailwind v4 theme — maps brand tokens to utility classes
+   Usage: text-jp-gold, bg-jp-linen, border-jp-border, font-display, etc. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Primary palette */
+  --color-jp-gold: var(--jp-gold);
+  --color-jp-gold-bright: var(--jp-gold-bright);
+  --color-jp-gold-deep: var(--jp-gold-deep);
+  --color-jp-peach: var(--jp-peach);
+  --color-jp-peach-soft: var(--jp-peach-soft);
+  --color-jp-linen: var(--jp-linen);
+  --color-jp-linen-mid: var(--jp-linen-mid);
+  --color-jp-linen-deep: var(--jp-linen-deep);
+  --color-jp-sage: var(--jp-sage);
+  --color-jp-sage-deep: var(--jp-sage-deep);
+  --color-jp-terra: var(--jp-terra);
+  --color-jp-terra-deep: var(--jp-terra-deep);
+  --color-jp-olive: var(--jp-olive);
+  --color-jp-error: var(--jp-error);
+
+  /* Tints — 10% */
+  --color-jp-gold-10: var(--jp-gold-10);
+  --color-jp-peach-10: var(--jp-peach-10);
+  --color-jp-sage-10: var(--jp-sage-10);
+  --color-jp-terra-10: var(--jp-terra-10);
+
+  /* Tints — 25% */
+  --color-jp-gold-25: var(--jp-gold-25);
+  --color-jp-peach-25: var(--jp-peach-25);
+  --color-jp-sage-25: var(--jp-sage-25);
+  --color-jp-terra-25: var(--jp-terra-25);
+
+  /* Text */
+  --color-jp-text: var(--jp-text-primary);
+  --color-jp-text-secondary: var(--jp-text-secondary);
+  --color-jp-text-tertiary: var(--jp-text-tertiary);
+  --color-jp-text-link: var(--jp-text-link);
+  --color-jp-text-on-color: var(--jp-text-on-color);
+
+  /* Backgrounds */
+  --color-jp-bg: var(--jp-bg-primary);
+  --color-jp-bg-secondary: var(--jp-bg-secondary);
+  --color-jp-bg-tertiary: var(--jp-bg-tertiary);
+
+  /* Borders */
+  --color-jp-border: var(--jp-border-default);
+  --color-jp-border-hover: var(--jp-border-hover);
+  --color-jp-border-focus: var(--jp-border-focus);
+
+  /* Fonts — powered by next/font, fallback to brand.css */
+  --font-display: var(--font-cormorant);
+  --font-body: var(--font-outfit);
+
+  /* Border radius */
+  --radius-sm: var(--jp-radius-sm);
+  --radius-md: var(--jp-radius-md);
+  --radius-lg: var(--jp-radius-lg);
+  --radius-xl: var(--jp-radius-xl);
+  --radius-full: var(--jp-radius-full);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Base element styles */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: var(--jp-size-body);
+  line-height: 1.7;
+  color: var(--jp-text-primary);
+  background: var(--jp-bg-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Links */
+a {
+  color: var(--jp-text-link);
+  text-decoration: none;
+  transition: color var(--jp-transition);
+}
+a:hover {
+  color: var(--jp-text-link-hover);
+}
+
+/* Focus ring — gold, consistent */
+:focus-visible {
+  outline: 2px solid var(--jp-border-focus);
+  outline-offset: 2px;
 }

@@ -1,0 +1,9 @@
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(24,24)">
+    <line x1="0" y1="-20" x2="0" y2="20" stroke="#d4a930" stroke-width="1.2" opacity="0.8"/>
+    <line x1="-20" y1="0" x2="20" y2="0" stroke="#d4a930" stroke-width="1.2" opacity="0.8"/>
+    <line x1="-14" y1="-14" x2="14" y2="14" stroke="#d4a930" stroke-width="0.7" opacity="0.5"/>
+    <line x1="14" y1="-14" x2="-14" y2="14" stroke="#d4a930" stroke-width="0.7" opacity="0.5"/>
+    <circle cx="0" cy="0" r="2" fill="#ff9050"/>
+  </g>
+</svg>

@@ -1,0 +1,137 @@
+/*
+ * THE JACKPOT CHICAGO — CSS Design Tokens
+ *
+ * Import this file at the root of the application.
+ * Every component references these variables.
+ * Change a value here -> it updates everywhere.
+ *
+ * Usage in components:
+ *   color: var(--jp-text-primary);
+ *   background: var(--jp-gradient);
+ *   font-family: var(--jp-font-display);
+ *
+ * Note: Fonts are loaded via next/font in layout.tsx (self-hosted,
+ * no external requests). The --jp-font-* families below are fallbacks
+ * that get overridden by the optimized next/font variables at runtime.
+ */
+
+:root {
+  /* ==========================================
+     COLORS: Primary Palette
+     ========================================== */
+  --jp-gold: #d4a930;
+  --jp-gold-bright: #e8b923;
+  --jp-gold-deep: #c49025;
+  --jp-peach: #ff9050;
+  --jp-peach-soft: #e8a040;
+  --jp-linen: #faf6ef;
+  --jp-linen-mid: #f5eddd;
+  --jp-linen-deep: #f0e4cc;
+  --jp-sage: #8aa077;
+  --jp-sage-deep: #6a8a55;
+  --jp-terra: #c08050;
+  --jp-terra-deep: #b07242;
+  --jp-olive: #7a6030;
+  --jp-olive-light: #a08840;
+  --jp-olive-soft: #b09860;
+  --jp-error: #d45a30;
+
+  /* ==========================================
+     COLORS: Tints (for subtle backgrounds)
+     ========================================== */
+  --jp-gold-10: #fbf6ea;
+  --jp-gold-25: #f4eacb;
+  --jp-peach-10: #fff4ee;
+  --jp-peach-25: #ffe3d3;
+  --jp-sage-10: #f3f6f1;
+  --jp-sage-25: #e2e7dd;
+  --jp-terra-10: #f9f2ee;
+  --jp-terra-25: #efdfd3;
+
+  /* ==========================================
+     COLORS: Gradient
+     ========================================== */
+  --jp-gradient: linear-gradient(135deg, #e0a520 0%, #e8b020 20%, #f0a830 45%, #f09040 70%, #ee8045 100%);
+  --jp-gradient-fallback: #e8a040;
+  --jp-gradient-button: linear-gradient(135deg, #e8b923, #ff9050);
+
+  /* ==========================================
+     COLORS: Semantic — Backgrounds
+     ========================================== */
+  --jp-bg-primary: #ffffff;
+  --jp-bg-secondary: #faf6ef;
+  --jp-bg-tertiary: #f5eddd;
+  --jp-bg-wash: rgba(212, 169, 48, 0.06);
+
+  /* ==========================================
+     COLORS: Semantic — Text
+     ========================================== */
+  --jp-text-primary: #7a6030;
+  --jp-text-secondary: #a08840;
+  --jp-text-tertiary: #b09860;
+  --jp-text-link: #c49025;
+  --jp-text-link-hover: #e8a040;
+  --jp-text-on-color: #ffffff;
+
+  /* ==========================================
+     COLORS: Semantic — Borders & Shadows
+     ========================================== */
+  --jp-border-default: rgba(139, 112, 64, 0.12);
+  --jp-border-hover: rgba(139, 112, 64, 0.25);
+  --jp-border-focus: #e8b923;
+  --jp-border-accent: #d4a930;
+  --jp-divider: rgba(139, 112, 64, 0.10);
+  --jp-shadow: rgba(139, 112, 64, 0.08);
+  --jp-shadow-lg: 0 4px 24px rgba(139, 112, 64, 0.12);
+
+  /* ==========================================
+     TYPOGRAPHY: Font Families
+     ========================================== */
+  --jp-font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --jp-font-body: 'Outfit', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* ==========================================
+     TYPOGRAPHY: Font Sizes
+     ========================================== */
+  --jp-size-display-xl: clamp(48px, 8vw, 100px);
+  --jp-size-display-l: clamp(28px, 4vw, 48px);
+  --jp-size-display-m: clamp(22px, 2.5vw, 32px);
+  --jp-size-display-s: clamp(20px, 2vw, 26px);
+  --jp-size-h1: clamp(26px, 3vw, 36px);
+  --jp-size-h2: clamp(20px, 2.2vw, 28px);
+  --jp-size-h3: clamp(17px, 1.6vw, 20px);
+  --jp-size-h4: clamp(15px, 1.2vw, 17px);
+  --jp-size-body-lg: clamp(16px, 1.3vw, 18px);
+  --jp-size-body: 15px;
+  --jp-size-body-sm: 13px;
+  --jp-size-label: 13px;
+  --jp-size-detail: 11px;
+  --jp-size-stat: clamp(48px, 6vw, 80px);
+
+  /* ==========================================
+     SPACING: 8px Base Grid
+     ========================================== */
+  --jp-space-1: 8px;
+  --jp-space-2: 16px;
+  --jp-space-3: 24px;
+  --jp-space-4: 32px;
+  --jp-space-5: 40px;
+  --jp-space-6: 48px;
+  --jp-space-8: 64px;
+  --jp-space-10: 80px;
+
+  /* ==========================================
+     BORDER RADIUS
+     ========================================== */
+  --jp-radius-sm: 8px;
+  --jp-radius-md: 12px;
+  --jp-radius-lg: 16px;
+  --jp-radius-xl: 24px;
+  --jp-radius-full: 9999px;
+
+  /* ==========================================
+     TRANSITIONS
+     ========================================== */
+  --jp-transition: 200ms ease;
+  --jp-transition-slow: 400ms ease;
+}

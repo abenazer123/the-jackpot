@@ -1,0 +1,28 @@
+<!--
+  THE JACKPOT — Photo Overlay
+
+  A warm gold vertical gradient for placing white text on property photos.
+  Transparent at the top, warming to gold (#c88c1e) at the bottom — like
+  golden hour light pooling under the image. Never dark, never a shadow.
+
+  Usage:
+    1. Layer this SVG on top of a property photo (full bleed).
+    2. Place white headline text in the bottom 40% of the image.
+    3. The overlay stays clear at the top (40% of height) so the photo
+       reads naturally; from 40% downward it warms to gold so white text
+       at the bottom has enough contrast to remain readable.
+
+  Designed for 1200×800 source photos. Scales cleanly to any dimensions
+  thanks to preserveAspectRatio="none".
+-->
+<svg width="1200" height="800" viewBox="0 0 1200 800" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="jp-photo-overlay" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#c88c1e" stop-opacity="0"/>
+      <stop offset="40%"  stop-color="#c88c1e" stop-opacity="0"/>
+      <stop offset="75%"  stop-color="#c88c1e" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#c88c1e" stop-opacity="0.40"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#jp-photo-overlay)"/>
+</svg>

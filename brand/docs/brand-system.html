@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Jackpot Chicago — Living Brand System</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   THE JACKPOT CHICAGO — DESIGN TOKENS
+   This is the single source of truth.
+   ============================================ */
+
+:root {
+  /* --- Colors: Primary Palette --- */
+  --jp-gold: #d4a930;
+  --jp-gold-bright: #e8b923;
+  --jp-peach: #ff9050;
+  --jp-linen: #faf6ef;
+  --jp-sage: #8aa077;
+  --jp-terra: #c08050;
+  --jp-olive: #7a6030;          /* darkened from #8b7040 for accessibility */
+  --jp-olive-light: #a08840;
+  --jp-olive-soft: #b09860;
+  --jp-error: #d45a30;
+
+  /* --- Colors: Gradient --- */
+  --jp-gradient: linear-gradient(135deg, #e0a520 0%, #e8b020 20%, #f0a830 45%, #f09040 70%, #ee8045 100%);
+  --jp-gradient-fallback: #e8a040;
+
+  /* --- Colors: Tints (10%) --- */
+  --jp-gold-10: #fbf6ea;
+  --jp-peach-10: #fff4ee;
+  --jp-sage-10: #f3f6f1;
+  --jp-terra-10: #f9f2ee;
+
+  /* --- Colors: Tints (25%) --- */
+  --jp-gold-25: #f4eacb;
+  --jp-peach-25: #ffe3d3;
+  --jp-sage-25: #e2e7dd;
+  --jp-terra-25: #efdfd3;
+
+  /* --- Colors: Backgrounds --- */
+  --jp-bg-primary: #ffffff;
+  --jp-bg-secondary: #faf6ef;
+  --jp-bg-tertiary: #f5eddd;
+  --jp-bg-wash: rgba(212, 169, 48, 0.06);
+
+  /* --- Colors: Text --- */
+  --jp-text-primary: #7a6030;
+  --jp-text-secondary: #a08840;
+  --jp-text-tertiary: #b09860;
+  --jp-text-link: #c49025;
+  --jp-text-link-hover: #e8a040;
+  --jp-text-on-color: #ffffff;
+
+  /* --- Colors: Borders --- */
+  --jp-border-default: rgba(139, 112, 64, 0.12);
+  --jp-border-hover: rgba(139, 112, 64, 0.25);
+  --jp-border-focus: #e8b923;
+  --jp-border-accent: #d4a930;
+  --jp-divider: rgba(139, 112, 64, 0.10);
+  --jp-shadow: rgba(139, 112, 64, 0.08);
+
+  /* --- Typography: Families --- */
+  --jp-font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --jp-font-body: 'Outfit', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* --- Typography: Size tokens (use individually, not as font shorthand) --- */
+  --jp-size-display-xl: clamp(48px, 8vw, 100px);
+  --jp-size-display-l: clamp(28px, 4vw, 48px);
+  --jp-size-display-m: clamp(22px, 2.5vw, 32px);
+  --jp-size-display-s: clamp(20px, 2vw, 26px);
+  --jp-size-h1: clamp(26px, 3vw, 36px);
+  --jp-size-h2: clamp(20px, 2.2vw, 28px);
+  --jp-size-h3: clamp(17px, 1.6vw, 20px);
+  --jp-size-h4: clamp(15px, 1.2vw, 17px);
+  --jp-size-body-lg: clamp(16px, 1.3vw, 18px);
+  --jp-size-body: 15px;
+  --jp-size-body-sm: 13px;
+  --jp-size-label: 13px;
+  --jp-size-detail: 11px;
+  --jp-size-stat: clamp(48px, 6vw, 80px);
+
+  /* --- Typography: Composed font shorthand (for simpler steps) --- */
+  --jp-text-body-lg: 300 var(--jp-size-body-lg)/1.7 var(--jp-font-body);
+  --jp-text-body: 300 var(--jp-size-body)/1.7 var(--jp-font-body);
+  --jp-text-body-sm: 400 var(--jp-size-body-sm)/1.6 var(--jp-font-body);
+  --jp-text-label: 500 var(--jp-size-label)/1.4 var(--jp-font-body);
+  --jp-text-detail: 400 var(--jp-size-detail)/1.4 var(--jp-font-body);
+
+  /* --- Spacing (8px base) --- */
+  --jp-space-1: 8px;
+  --jp-space-2: 16px;
+  --jp-space-3: 24px;
+  --jp-space-4: 32px;
+  --jp-space-5: 40px;
+  --jp-space-6: 48px;
+  --jp-space-8: 64px;
+  --jp-space-10: 80px;
+
+  /* --- Radii --- */
+  --jp-radius-sm: 8px;
+  --jp-radius-md: 12px;
+  --jp-radius-lg: 16px;
+  --jp-radius-xl: 24px;
+  --jp-radius-full: 9999px;
+
+  /* --- Transitions --- */
+  --jp-transition: 200ms ease;
+}
+
+
+/* ============================================
+   STYLE GUIDE LAYOUT (not part of brand tokens)
+   ============================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font: var(--jp-text-body); color: var(--jp-text-primary); background: var(--jp-bg-primary); -webkit-font-smoothing: antialiased; }
+.guide { max-width: 960px; margin: 0 auto; padding: 40px 32px; }
+.guide-section { margin-bottom: 80px; }
+.guide-label { font: var(--jp-text-detail); letter-spacing: 4px; text-transform: uppercase; color: var(--jp-peach); margin-bottom: 12px; }
+.guide-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(28px, 3.5vw, 38px); font-weight: 600; color: var(--jp-gold); line-height: 1.1; margin-bottom: 20px; }
+.guide-desc { font: var(--jp-text-body); color: var(--jp-text-secondary); margin-bottom: 32px; max-width: 600px; }
+.guide-sub { font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 18px; line-height: 1.3; color: var(--jp-text-primary); margin: 36px 0 16px; }
+.code { font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 12px; background: var(--jp-bg-tertiary); padding: 2px 6px; border-radius: 4px; color: var(--jp-text-primary); }
+</style>
+</head>
+<body>
+
+<div class="guide">
+
+<!-- COVER -->
+<div style="text-align:center;padding:60px 0 80px;">
+  <div style="font:var(--jp-text-detail);letter-spacing:6px;text-transform:uppercase;color:var(--jp-peach);">Living Brand System</div>
+  <div style="font-family:var(--jp-font-display);font-size:clamp(42px,5vw,64px);font-weight:700;color:var(--jp-gold);line-height:0.85;margin:8px 0;">THE JACKPOT</div>
+  <div style="font:var(--jp-text-detail);letter-spacing:4px;text-transform:uppercase;color:var(--jp-text-tertiary);margin-top:12px;">Chicago &middot; Design Tokens &amp; Reference</div>
+</div>
+
+<!-- SECTION 1: COLOR PALETTE -->
+<div class="guide-section">
+  <div class="guide-label">01 — Color</div>
+  <div class="guide-title">Primary Palette</div>
+  <div class="guide-desc">Every color exists in the physical property. The brand and the space speak the same language.</div>
+
+  <div style="display:flex;gap:4px;border-radius:var(--jp-radius-lg);overflow:hidden;height:120px;margin-bottom:24px;">
+    <div style="flex:3;background:var(--jp-gradient);display:flex;flex-direction:column;justify-content:flex-end;padding:14px;">
+      <div style="font:var(--jp-text-label);color:#5c4a12;">Honey Gold</div>
+      <div style="font:var(--jp-text-detail);color:#5c4a12;opacity:0.7;">--jp-gold &middot; #d4a930</div>
+    </div>
+    <div style="flex:2;background:var(--jp-peach);display:flex;flex-direction:column;justify-content:flex-end;padding:14px;">
+      <div style="font:var(--jp-text-label);color:#5c2a10;">Electric Peach</div>
+      <div style="font:var(--jp-text-detail);color:#5c2a10;opacity:0.7;">--jp-peach &middot; #ff9050</div>
+    </div>
+    <div style="flex:2;background:var(--jp-linen);display:flex;flex-direction:column;justify-content:flex-end;padding:14px;">
+      <div style="font:var(--jp-text-label);color:var(--jp-text-secondary);">Linen Cream</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-secondary);opacity:0.7;">--jp-linen &middot; #faf6ef</div>
+    </div>
+    <div style="flex:1.5;background:var(--jp-sage);display:flex;flex-direction:column;justify-content:flex-end;padding:14px;">
+      <div style="font:var(--jp-text-label);color:#fff;">Fresh Sage</div>
+      <div style="font:var(--jp-text-detail);color:#dde8d4;opacity:0.8;">--jp-sage &middot; #8aa077</div>
+    </div>
+    <div style="flex:1;background:var(--jp-terra);display:flex;flex-direction:column;justify-content:flex-end;padding:14px;">
+      <div style="font:var(--jp-text-label);color:#fff;">Terracotta</div>
+      <div style="font:var(--jp-text-detail);color:#f0dcc8;opacity:0.8;">--jp-terra &middot; #c08050</div>
+    </div>
+  </div>
+
+  <div class="guide-sub">The gradient</div>
+  <div style="height:60px;border-radius:var(--jp-radius-md);background:var(--jp-gradient);margin-bottom:8px;"></div>
+  <div style="font:var(--jp-text-body-sm);color:var(--jp-text-tertiary);">135&deg; &middot; #e0a520 &rarr; #e8b020 &rarr; #f0a830 &rarr; #f09040 &rarr; #ee8045</div>
+  <div style="font:var(--jp-text-body-sm);color:var(--jp-text-tertiary);margin-top:4px;">CSS: <span class="code">var(--jp-gradient)</span> &middot; Fallback: <span class="code">#e8a040</span></div>
+
+  <div class="guide-sub">Tints</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px;">
+    <div>
+      <div style="display:flex;flex-direction:column;gap:2px;border-radius:var(--jp-radius-sm);overflow:hidden;">
+        <div style="height:32px;background:var(--jp-gold-10);"></div>
+        <div style="height:32px;background:var(--jp-gold-25);"></div>
+        <div style="height:32px;background:var(--jp-gold);"></div>
+      </div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);margin-top:4px;text-align:center;">Gold tints</div>
+    </div>
+    <div>
+      <div style="display:flex;flex-direction:column;gap:2px;border-radius:var(--jp-radius-sm);overflow:hidden;">
+        <div style="height:32px;background:var(--jp-peach-10);"></div>
+        <div style="height:32px;background:var(--jp-peach-25);"></div>
+        <div style="height:32px;background:var(--jp-peach);"></div>
+      </div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);margin-top:4px;text-align:center;">Peach tints</div>
+    </div>
+    <div>
+      <div style="display:flex;flex-direction:column;gap:2px;border-radius:var(--jp-radius-sm);overflow:hidden;">
+        <div style="height:32px;background:var(--jp-sage-10);"></div>
+        <div style="height:32px;background:var(--jp-sage-25);"></div>
+        <div style="height:32px;background:var(--jp-sage);"></div>
+      </div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);margin-top:4px;text-align:center;">Sage tints</div>
+    </div>
+    <div>
+      <div style="display:flex;flex-direction:column;gap:2px;border-radius:var(--jp-radius-sm);overflow:hidden;">
+        <div style="height:32px;background:var(--jp-terra-10);"></div>
+        <div style="height:32px;background:var(--jp-terra-25);"></div>
+        <div style="height:32px;background:var(--jp-terra);"></div>
+      </div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);margin-top:4px;text-align:center;">Terra tints</div>
+    </div>
+  </div>
+
+  <div class="guide-sub">Background hierarchy</div>
+  <div style="display:flex;gap:4px;border-radius:var(--jp-radius-md);overflow:hidden;height:60px;margin-bottom:8px;">
+    <div style="flex:1;background:var(--jp-bg-primary);display:flex;align-items:center;justify-content:center;border:1px solid var(--jp-border-default);border-radius:var(--jp-radius-sm);"><span style="font:var(--jp-text-detail);color:var(--jp-text-secondary);">Primary</span></div>
+    <div style="flex:1;background:var(--jp-bg-secondary);display:flex;align-items:center;justify-content:center;border-radius:var(--jp-radius-sm);"><span style="font:var(--jp-text-detail);color:var(--jp-text-secondary);">Secondary</span></div>
+    <div style="flex:1;background:var(--jp-bg-tertiary);display:flex;align-items:center;justify-content:center;border-radius:var(--jp-radius-sm);"><span style="font:var(--jp-text-detail);color:var(--jp-text-secondary);">Tertiary</span></div>
+    <div style="flex:1;background:var(--jp-gradient);display:flex;align-items:center;justify-content:center;border-radius:var(--jp-radius-sm);"><span style="font:var(--jp-text-detail);color:#fff;">Feature</span></div>
+  </div>
+
+  <div class="guide-sub">Text hierarchy</div>
+  <div style="background:var(--jp-bg-secondary);border-radius:var(--jp-radius-md);padding:24px;margin-bottom:8px;">
+    <div style="color:var(--jp-text-primary);margin-bottom:8px;">Primary text — <span class="code">--jp-text-primary &middot; #7a6030</span></div>
+    <div style="color:var(--jp-text-secondary);margin-bottom:8px;">Secondary text — <span class="code">--jp-text-secondary &middot; #a08840</span></div>
+    <div style="color:var(--jp-text-tertiary);margin-bottom:8px;">Tertiary text — <span class="code">--jp-text-tertiary &middot; #b09860</span></div>
+    <div style="margin-bottom:8px;"><a href="#" style="color:var(--jp-text-link);text-decoration:none;">Link text — <span class="code">--jp-text-link &middot; #c49025</span></a></div>
+  </div>
+
+  <div class="guide-sub">Semantic colors</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <div style="background:var(--jp-gradient);color:#fff;padding:10px 20px;border-radius:var(--jp-radius-full);font:var(--jp-text-label);">Primary action</div>
+    <div style="background:none;color:var(--jp-gold);padding:10px 20px;border-radius:var(--jp-radius-full);font:var(--jp-text-label);border:1.5px solid var(--jp-gold);">Secondary action</div>
+    <div style="background:var(--jp-sage);color:#fff;padding:10px 20px;border-radius:var(--jp-radius-full);font:var(--jp-text-label);">Success</div>
+    <div style="background:var(--jp-peach);color:#fff;padding:10px 20px;border-radius:var(--jp-radius-full);font:var(--jp-text-label);">Warning</div>
+    <div style="background:var(--jp-error);color:#fff;padding:10px 20px;border-radius:var(--jp-radius-full);font:var(--jp-text-label);">Error</div>
+    <div style="background:var(--jp-bg-tertiary);color:var(--jp-text-tertiary);padding:10px 20px;border-radius:var(--jp-radius-full);font:var(--jp-text-label);">Disabled</div>
+  </div>
+</div>
+
+<!-- SECTION 2: TYPOGRAPHY -->
+<div class="guide-section">
+  <div class="guide-label">02 — Typography</div>
+  <div class="guide-title">Type Scale</div>
+  <div class="guide-desc">Cormorant Garamond for display and emotion. Outfit for body and function. Every step defined.</div>
+
+  <div style="background:var(--jp-bg-secondary);border-radius:var(--jp-radius-lg);padding:40px;margin-bottom:24px;">
+    <div style="margin-bottom:48px;overflow:hidden;">
+      <div style="font-family:var(--jp-font-display);font-weight:700;font-size:var(--jp-size-display-xl);line-height:0.85;letter-spacing:3px;color:var(--jp-gold);">Display XL</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">CORMORANT 700 &middot; 48-100PX &middot; LH 0.85 &middot; LS 2-4PX</div>
+    </div>
+    <div style="margin-bottom:40px;">
+      <div style="font-family:var(--jp-font-display);font-weight:600;font-size:var(--jp-size-display-l);line-height:1.1;letter-spacing:2px;color:var(--jp-text-primary);">Display Large — section headlines</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">CORMORANT 600 &middot; 28-48PX &middot; LH 1.1 &middot; LS 2-3PX</div>
+    </div>
+    <div style="margin-bottom:36px;">
+      <div style="font-family:var(--jp-font-display);font-weight:400;font-style:italic;font-size:var(--jp-size-display-m);line-height:1.2;color:var(--jp-text-primary);">Display Medium — taglines and pull quotes</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">CORMORANT 400 ITALIC &middot; 22-32PX &middot; LH 1.2</div>
+    </div>
+    <div style="margin-bottom:32px;">
+      <div style="font-family:var(--jp-font-display);font-weight:500;font-size:var(--jp-size-display-s);line-height:1.25;color:var(--jp-text-primary);">Display Small — card headings, features</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">CORMORANT 500 &middot; 20-26PX &middot; LH 1.25</div>
+    </div>
+
+    <div style="width:100%;height:1px;background:var(--jp-divider);margin:32px 0;"></div>
+
+    <div style="margin-bottom:28px;">
+      <div style="font-family:var(--jp-font-display);font-weight:600;font-size:var(--jp-size-h1);line-height:1.15;color:var(--jp-text-primary);">Heading 1 — page titles</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">CORMORANT 600 &middot; 26-36PX &middot; LH 1.15</div>
+    </div>
+    <div style="margin-bottom:28px;">
+      <div style="font-family:var(--jp-font-display);font-weight:600;font-size:var(--jp-size-h2);line-height:1.2;color:var(--jp-text-primary);">Heading 2 — section titles</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">CORMORANT 600 &middot; 20-28PX &middot; LH 1.2</div>
+    </div>
+    <div style="margin-bottom:28px;">
+      <div style="font-family:var(--jp-font-body);font-weight:500;font-size:var(--jp-size-h3);line-height:1.3;color:var(--jp-text-primary);">Heading 3 — subsection titles</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">OUTFIT 500 &middot; 17-20PX &middot; LH 1.3</div>
+    </div>
+    <div style="margin-bottom:28px;">
+      <div style="font-family:var(--jp-font-body);font-weight:500;font-size:var(--jp-size-h4);line-height:1.35;color:var(--jp-text-primary);">Heading 4 — small headers, labels</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">OUTFIT 500 &middot; 15-17PX &middot; LH 1.35</div>
+    </div>
+
+    <div style="width:100%;height:1px;background:var(--jp-divider);margin:32px 0;"></div>
+
+    <div style="margin-bottom:24px;">
+      <div style="font:var(--jp-text-body-lg);color:var(--jp-text-primary);">Body Large — intro paragraphs and hero descriptions that need a bit more presence on the page.</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">OUTFIT 300 &middot; 16-18PX &middot; LH 1.7</div>
+    </div>
+    <div style="margin-bottom:24px;">
+      <div style="font:var(--jp-text-body);color:var(--jp-text-primary);">Body Regular — the standard body copy used for descriptions, listing text, and general content across the website.</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">OUTFIT 300 &middot; 15PX &middot; LH 1.7</div>
+    </div>
+    <div style="margin-bottom:24px;">
+      <div style="font:var(--jp-text-body-sm);color:var(--jp-text-secondary);">Body Small — captions, metadata, timestamps, secondary info</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">OUTFIT 400 &middot; 13PX &middot; LH 1.6</div>
+    </div>
+    <div style="margin-bottom:24px;">
+      <div style="font:var(--jp-text-label);color:var(--jp-text-primary);">Label / UI — buttons, navigation, form labels</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">OUTFIT 500 &middot; 13PX &middot; LH 1.4</div>
+    </div>
+    <div style="margin-bottom:24px;">
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-secondary);letter-spacing:4px;text-transform:uppercase;">Detail — CHICAGO &middot; @THEJACKPOTCHI &middot; Fine print</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">OUTFIT 400 &middot; 11PX &middot; LH 1.4 &middot; LS 3-6PX &middot; UPPERCASE</div>
+    </div>
+    <div>
+      <div style="font-family:var(--jp-font-display);font-weight:700;font-size:var(--jp-size-stat);line-height:0.85;color:var(--jp-gold);">$57</div>
+      <div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);letter-spacing:2px;margin-top:8px;">STAT NUMBER &middot; CORMORANT 700 &middot; 48-80PX &middot; LH 0.85</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: COMPONENTS -->
+<div class="guide-section">
+  <div class="guide-label">03 — Components</div>
+  <div class="guide-title">UI Elements</div>
+  <div class="guide-desc">Reusable components built from the design tokens. Copy these directly into any project.</div>
+
+  <div class="guide-sub">Buttons</div>
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:24px;">
+    <button style="font:var(--jp-text-label);background:var(--jp-gradient);color:#fff;border:none;padding:12px 28px;border-radius:var(--jp-radius-full);cursor:pointer;transition:var(--jp-transition);">Primary action</button>
+    <button style="font:var(--jp-text-label);background:none;color:var(--jp-gold);border:1.5px solid var(--jp-gold);padding:11px 28px;border-radius:var(--jp-radius-full);cursor:pointer;transition:var(--jp-transition);">Secondary action</button>
+    <button style="font:var(--jp-text-label);background:none;color:var(--jp-text-link);border:none;padding:12px 16px;border-radius:var(--jp-radius-full);cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Text link</button>
+    <button style="font:var(--jp-text-label);background:var(--jp-bg-tertiary);color:var(--jp-text-tertiary);border:none;padding:12px 28px;border-radius:var(--jp-radius-full);cursor:not-allowed;">Disabled</button>
+  </div>
+
+  <div class="guide-sub">Cards</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+    <div style="background:var(--jp-bg-secondary);border-radius:var(--jp-radius-lg);padding:24px;">
+      <div style="font-family:var(--jp-font-display);font-weight:500;font-size:var(--jp-size-display-s);color:var(--jp-text-primary);margin-bottom:8px;">Card on linen</div>
+      <div style="font:var(--jp-text-body);color:var(--jp-text-secondary);">Standard card with linen background, used for content sections and feature highlights.</div>
+    </div>
+    <div style="background:var(--jp-gradient);border-radius:var(--jp-radius-lg);padding:24px;">
+      <div style="font-family:var(--jp-font-display);font-weight:500;font-size:var(--jp-size-display-s);color:#fff;margin-bottom:8px;">Card on gradient</div>
+      <div style="font:var(--jp-text-body);color:rgba(255,255,255,0.8);">Feature card for CTAs, highlights, and branded moments. Always white text.</div>
+    </div>
+  </div>
+
+  <div class="guide-sub">Form input</div>
+  <div style="max-width:400px;margin-bottom:24px;">
+    <label style="font:var(--jp-text-label);color:var(--jp-text-primary);display:block;margin-bottom:var(--jp-space-1);">Email address</label>
+    <input type="email" placeholder="you@email.com" style="font:var(--jp-text-body);color:var(--jp-text-primary);background:var(--jp-bg-primary);border:1.5px solid var(--jp-border-default);border-radius:var(--jp-radius-md);padding:12px 16px;width:100%;outline:none;transition:var(--jp-transition);">
+  </div>
+
+  <div class="guide-sub">Tags</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <span style="font:var(--jp-text-detail);letter-spacing:2px;text-transform:uppercase;background:var(--jp-gold-10);color:var(--jp-gold);padding:6px 14px;border-radius:var(--jp-radius-full);">Hot tub</span>
+    <span style="font:var(--jp-text-detail);letter-spacing:2px;text-transform:uppercase;background:var(--jp-peach-10);color:var(--jp-peach);padding:6px 14px;border-radius:var(--jp-radius-full);">Cinema</span>
+    <span style="font:var(--jp-text-detail);letter-spacing:2px;text-transform:uppercase;background:var(--jp-sage-10);color:var(--jp-sage);padding:6px 14px;border-radius:var(--jp-radius-full);">Game room</span>
+    <span style="font:var(--jp-text-detail);letter-spacing:2px;text-transform:uppercase;background:var(--jp-terra-10);color:var(--jp-terra);padding:6px 14px;border-radius:var(--jp-radius-full);">Fire pit</span>
+  </div>
+</div>
+
+<!-- SECTION 4: SPACING -->
+<div class="guide-section">
+  <div class="guide-label">04 — Spacing</div>
+  <div class="guide-title">8px Grid</div>
+  <div class="guide-desc">All spacing is built on an 8px base unit. Every margin, padding, and gap is a multiple.</div>
+
+  <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:16px;">
+    <div style="text-align:center;"><div style="width:32px;height:8px;background:var(--jp-gold-25);border-radius:2px;"></div><div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);margin-top:4px;">8</div></div>
+    <div style="text-align:center;"><div style="width:32px;height:16px;background:var(--jp-gold-25);border-radius:2px;"></div><div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);margin-top:4px;">16</div></div>
+    <div style="text-align:center;"><div style="width:32px;height:24px;background:var(--jp-gold-25);border-radius:2px;"></div><div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);margin-top:4px;">24</div></div>
+    <div style="text-align:center;"><div style="width:32px;height:32px;background:var(--jp-gold-25);border-radius:2px;"></div><div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);margin-top:4px;">32</div></div>
+    <div style="text-align:center;"><div style="width:32px;height:40px;background:var(--jp-gold-25);border-radius:2px;"></div><div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);margin-top:4px;">40</div></div>
+    <div style="text-align:center;"><div style="width:32px;height:48px;background:var(--jp-gold-25);border-radius:2px;"></div><div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);margin-top:4px;">48</div></div>
+    <div style="text-align:center;"><div style="width:32px;height:64px;background:var(--jp-gold-25);border-radius:2px;"></div><div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);margin-top:4px;">64</div></div>
+    <div style="text-align:center;"><div style="width:32px;height:80px;background:var(--jp-gold-25);border-radius:2px;"></div><div style="font:var(--jp-text-detail);color:var(--jp-text-tertiary);margin-top:4px;">80</div></div>
+  </div>
+</div>
+
+<!-- SECTION 5: BRAND LOCKUPS -->
+<div class="guide-section">
+  <div class="guide-label">05 — Brand Lockups</div>
+  <div class="guide-title">Fixed Recipes</div>
+  <div class="guide-desc">These typographic treatments are locked. Never improvise them — always reference this spec.</div>
+
+  <div style="background:var(--jp-bg-secondary);border-radius:var(--jp-radius-lg);padding:40px;margin-bottom:16px;">
+    <div style="font-family:var(--jp-font-body);font-size:13px;letter-spacing:7px;color:var(--jp-peach);font-weight:300;text-transform:uppercase;">THE</div>
+    <div style="font-family:var(--jp-font-display);font-size:clamp(42px,5vw,60px);font-weight:700;letter-spacing:4px;color:var(--jp-gold);line-height:0.85;margin-top:4px;">JACKPOT</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
+      <div style="font-family:var(--jp-font-display);font-size:16px;color:var(--jp-text-secondary);font-style:italic;">you found something special</div>
+      <div style="flex:1;"></div>
+      <svg width="14" height="14" viewBox="0 0 14 14"><g transform="translate(7,7)"><line x1="0" y1="-6" x2="0" y2="6" stroke="#e8a040" stroke-width="0.8" opacity="0.6"/><line x1="-6" y1="0" x2="6" y2="0" stroke="#e8a040" stroke-width="0.8" opacity="0.6"/><line x1="-4" y1="-4" x2="4" y2="4" stroke="#d4a930" stroke-width="0.5" opacity="0.4"/><line x1="4" y1="-4" x2="-4" y2="4" stroke="#d4a930" stroke-width="0.5" opacity="0.4"/><circle cx="0" cy="0" r="1.2" fill="#ff9050"/></g></svg>
+      <div style="font-family:var(--jp-font-body);font-size:12px;letter-spacing:5px;color:var(--jp-text-secondary);font-weight:400;text-transform:uppercase;">CHICAGO</div>
+    </div>
+  </div>
+
+  <div style="font:var(--jp-text-body-sm);color:var(--jp-text-tertiary);line-height:1.8;">
+    THE &rarr; Outfit 300, ls: 7px, uppercase, color: --jp-peach, size: ~15% of JACKPOT<br>
+    JACKPOT &rarr; Cormorant 700, ls: 4px, uppercase, color: --jp-gold, never dark, never below 36px<br>
+    Tagline &rarr; Cormorant 400 italic, no ls, lowercase, color: --jp-text-secondary<br>
+    CHICAGO &rarr; Outfit 400, ls: 5px, uppercase, color: --jp-text-secondary, size: ~12% of JACKPOT<br>
+    Starburst &rarr; SVG, scales with text, center dot: --jp-peach, lines: --jp-gold + --jp-peach-soft
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center;padding:40px 0;border-top:1px solid var(--jp-divider);margin-top:40px;">
+  <div style="font:var(--jp-text-detail);letter-spacing:4px;text-transform:uppercase;color:var(--jp-text-tertiary);">The Jackpot Chicago &middot; Living Brand System &middot; 2025</div>
+  <div style="font:var(--jp-text-body-sm);color:var(--jp-text-tertiary);margin-top:8px;">This document is the source of truth. All CSS variables in the :root block are production-ready — copy them directly into any project.</div>
+</div>
+
+</div>
+
+</body>
+</html>

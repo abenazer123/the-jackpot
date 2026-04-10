@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Jackpot Chicago — Brand Assets Audit</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --jp-gold: #d4a930;
+  --jp-gold-bright: #e8b923;
+  --jp-peach: #ff9050;
+  --jp-linen: #faf6ef;
+  --jp-sage: #8aa077;
+  --jp-terra: #c08050;
+  --jp-olive: #7a6030;
+  --jp-olive-light: #a08840;
+  --jp-olive-soft: #b09860;
+  --jp-bg-tertiary: #f5eddd;
+  --jp-border: rgba(139, 112, 64, 0.12);
+  --jp-divider: rgba(139, 112, 64, 0.10);
+  --jp-gradient: linear-gradient(135deg, #e0a520 0%, #e8b020 20%, #f0a830 45%, #f09040 70%, #ee8045 100%);
+  --jp-font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --jp-font-body: 'Outfit', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  margin: 0;
+  background: var(--jp-linen);
+  color: var(--jp-olive);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============ Page chrome ============ */
+.page-header {
+  padding: 80px 64px 48px;
+  border-bottom: 1px solid var(--jp-border);
+  background: #fff;
+}
+.page-header .eyebrow {
+  font-size: 11px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: var(--jp-peach);
+  font-weight: 300;
+  margin-bottom: 8px;
+}
+.page-header h1 {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: clamp(48px, 6vw, 80px);
+  letter-spacing: 3px;
+  line-height: 0.85;
+  color: var(--jp-gold);
+  margin: 0 0 16px;
+  text-transform: uppercase;
+}
+.page-header .meta {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--jp-olive-light);
+}
+.page-header .date {
+  font-size: 11px;
+  color: var(--jp-olive-soft);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-top: 24px;
+}
+
+section {
+  padding: 64px;
+  border-bottom: 1px solid var(--jp-border);
+}
+section:last-of-type { border-bottom: none; }
+
+.section-num {
+  font-family: var(--jp-font-body);
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--jp-peach);
+  margin-bottom: 8px;
+}
+.section-title {
+  font-family: var(--jp-font-display);
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--jp-gold);
+  margin: 0 0 8px;
+  line-height: 1.1;
+}
+.section-desc {
+  font-size: 14px;
+  color: var(--jp-olive-light);
+  max-width: 640px;
+  line-height: 1.6;
+  margin: 0 0 32px;
+}
+
+h3 {
+  font-family: var(--jp-font-body);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--jp-olive-light);
+  font-weight: 500;
+  margin: 32px 0 12px;
+}
+
+/* ============ Background swatches for logo audit ============ */
+.bg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 16px;
+}
+.bg-cell {
+  padding: 32px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+.bg-cell.white { background: #fff; border: 1px solid var(--jp-border); }
+.bg-cell.linen { background: var(--jp-linen); border: 1px solid var(--jp-border); }
+.bg-cell.gradient { background: var(--jp-gradient); }
+.bg-cell.sage { background: var(--jp-sage); }
+.bg-cell img { display: block; max-width: 100%; height: auto; }
+.bg-label-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  margin-top: 6px;
+  margin-bottom: 24px;
+}
+.bg-label {
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--jp-olive-soft);
+  text-align: center;
+}
+
+/* ============ Favicon section ============ */
+.favicon-row {
+  display: flex;
+  gap: 32px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.favicon-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.favicon-card .actual {
+  background: #fff;
+  padding: 12px;
+  border: 1px solid var(--jp-border);
+  border-radius: 6px;
+}
+.favicon-card .scaled {
+  background: #fff;
+  padding: 12px;
+  border: 1px solid var(--jp-border);
+  border-radius: 6px;
+}
+.favicon-card .label {
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--jp-olive-soft);
+}
+.favicon-card img { display: block; image-rendering: pixelated; }
+.favicon-card img.smooth { image-rendering: auto; }
+
+.tab-mock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #e5e5e5;
+  border-radius: 8px 8px 0 0;
+  padding: 10px 14px;
+  max-width: 240px;
+  margin-right: 8px;
+}
+.tab-mock img { width: 16px; height: 16px; }
+.tab-mock .title {
+  font-size: 12px;
+  color: #444;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bookmarks {
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+}
+.bookmark { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #444; }
+.bookmark img { width: 16px; height: 16px; }
+
+/* ============ Social section ============ */
+.social-row { display: flex; gap: 32px; align-items: flex-end; flex-wrap: wrap; }
+.social-card { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.social-card .label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--jp-olive-soft); }
+.social-card .square img { display: block; }
+.social-card .circle {
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-block;
+}
+.social-card .circle img { display: block; }
+
+.ig-mock {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  background: #fff;
+  padding: 24px 28px;
+  border-radius: 12px;
+  border: 1px solid var(--jp-border);
+  margin-top: 24px;
+}
+.ig-mock .avatar {
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.ig-mock .avatar img { width: 100%; height: 100%; display: block; }
+.ig-mock .meta { color: #000; font-family: -apple-system, sans-serif; }
+.ig-mock .username { font-size: 18px; font-weight: 600; }
+.ig-mock .bio { font-size: 14px; color: #444; margin-top: 6px; max-width: 320px; line-height: 1.5; }
+.ig-mock .stats { font-size: 13px; color: #666; margin-top: 10px; }
+
+/* ============ OG image section ============ */
+.og-row { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+.og-card { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.og-card img { display: block; border-radius: 8px; border: 1px solid var(--jp-border); }
+.og-card .label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--jp-olive-soft); }
+
+.twitter-card {
+  display: inline-block;
+  width: 500px;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #cfd9de;
+}
+.twitter-card img { display: block; width: 100%; height: auto; }
+.twitter-card .meta {
+  padding: 12px 16px;
+  font-family: -apple-system, sans-serif;
+}
+.twitter-card .domain { font-size: 13px; color: #536471; }
+.twitter-card .title { font-size: 15px; color: #0f1419; margin-top: 2px; }
+
+.imessage-card {
+  display: inline-block;
+  width: 300px;
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+.imessage-card img { display: block; width: 100%; height: auto; }
+.imessage-card .meta { padding: 10px 14px; font-family: -apple-system, sans-serif; }
+.imessage-card .title { font-size: 13px; color: #000; font-weight: 500; }
+.imessage-card .url { font-size: 11px; color: #999; margin-top: 2px; }
+
+/* ============ Pattern tiles section ============ */
+.pattern-block {
+  width: 100%;
+  padding: 64px 80px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--jp-border);
+}
+.pattern-gold {
+  background-color: var(--jp-linen);
+  background-image: url('patterns/pattern-starburst-gold.svg');
+  background-repeat: repeat;
+}
+.pattern-white {
+  background-image:
+    url('patterns/pattern-starburst-white.svg'),
+    var(--jp-gradient);
+  background-repeat: repeat, no-repeat;
+}
+.pattern-block .content { max-width: 720px; }
+.pattern-block h4 {
+  font-family: var(--jp-font-display);
+  font-size: 36px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  line-height: 1.1;
+}
+.pattern-block p {
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+}
+.pattern-gold h4 { color: var(--jp-gold); }
+.pattern-gold p { color: var(--jp-olive); }
+.pattern-white h4 { color: #fff; }
+.pattern-white p { color: #fff; }
+
+/* ============ Photo overlay section ============ */
+.photo-hero {
+  position: relative;
+  width: 100%;
+  margin-bottom: 16px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--jp-border);
+}
+.photo-hero img.bg { display: block; width: 100%; height: auto; }
+.photo-hero .overlay {
+  position: absolute;
+  inset: 0;
+  background-image: url('overlays/photo-overlay.svg');
+  background-size: 100% 100%;
+  pointer-events: none;
+}
+.photo-hero .text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6%;
+  text-align: center;
+  color: #fff;
+  pointer-events: none;
+}
+.photo-hero .text .eyebrow {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 13px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-bottom: 8px;
+}
+.photo-hero .text .headline {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: 48px;
+  line-height: 1;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+/* ============ Color accuracy ============ */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.color-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--jp-border);
+  overflow: hidden;
+}
+.color-card .swatch {
+  height: 100px;
+}
+.color-card .info {
+  padding: 14px 18px;
+}
+.color-card .name {
+  font-family: var(--jp-font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--jp-olive);
+}
+.color-card .hex {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-size: 12px;
+  color: var(--jp-olive-light);
+  margin-top: 4px;
+}
+.color-card .token {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-size: 10px;
+  color: var(--jp-olive-soft);
+  margin-top: 2px;
+}
+.color-card .check {
+  font-size: 10px;
+  color: var(--jp-sage);
+  margin-top: 6px;
+}
+.color-card .check::before {
+  content: '✓ ';
+}
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="eyebrow">Brand Assets Audit</div>
+  <h1>The Jackpot</h1>
+  <div class="meta">A complete inventory of every asset · Chicago</div>
+  <div class="date">2026 · Production-ready</div>
+</header>
+
+<!-- ============================================ -->
+<!-- SECTION 1: LOGO SYSTEM                       -->
+<!-- ============================================ -->
+<section>
+  <div class="section-num">01 — Logo System</div>
+  <h2 class="section-title">Wordmarks, Monogram & Starbursts</h2>
+  <p class="section-desc">Ten production SVGs with all text outlined as paths. Each rendered on white, linen, the brand gradient, and sage to verify legibility across the brand's surface palette.</p>
+
+  <h3>Wordmark Primary — Gold</h3>
+  <div class="bg-grid">
+    <div class="bg-cell white"><img src="logos/wordmark-primary-gold.svg" width="280"></div>
+    <div class="bg-cell linen"><img src="logos/wordmark-primary-gold.svg" width="280"></div>
+    <div class="bg-cell gradient"><img src="logos/wordmark-primary-white.svg" width="280"></div>
+    <div class="bg-cell sage"><img src="logos/wordmark-primary-white.svg" width="280"></div>
+  </div>
+  <div class="bg-label-row"><div class="bg-label">white</div><div class="bg-label">linen</div><div class="bg-label">gradient (white variant)</div><div class="bg-label">sage (white variant)</div></div>
+
+  <h3>Wordmark Compact</h3>
+  <div class="bg-grid">
+    <div class="bg-cell white"><img src="logos/wordmark-compact-gold.svg" width="240"></div>
+    <div class="bg-cell linen"><img src="logos/wordmark-compact-gold.svg" width="240"></div>
+    <div class="bg-cell gradient"><img src="logos/wordmark-compact-white.svg" width="240"></div>
+    <div class="bg-cell sage"><img src="logos/wordmark-compact-white.svg" width="240"></div>
+  </div>
+  <div class="bg-label-row"><div class="bg-label">white</div><div class="bg-label">linen</div><div class="bg-label">gradient (white variant)</div><div class="bg-label">sage (white variant)</div></div>
+
+  <h3>Monogram — J Twinkle</h3>
+  <div class="bg-grid">
+    <div class="bg-cell white"><img src="logos/monogram-jtwinkle-gold.svg" width="120"></div>
+    <div class="bg-cell linen"><img src="logos/monogram-jtwinkle-gold.svg" width="120"></div>
+    <div class="bg-cell gradient"><img src="logos/monogram-jtwinkle-white.svg" width="120"></div>
+    <div class="bg-cell sage"><img src="logos/monogram-jtwinkle-white.svg" width="120"></div>
+  </div>
+  <div class="bg-label-row"><div class="bg-label">white</div><div class="bg-label">linen</div><div class="bg-label">gradient (white variant)</div><div class="bg-label">sage (white variant)</div></div>
+
+  <h3>Starburst — Full (8 lines)</h3>
+  <div class="bg-grid">
+    <div class="bg-cell white"><img src="logos/starburst-full-gold.svg" width="80"></div>
+    <div class="bg-cell linen"><img src="logos/starburst-full-gold.svg" width="80"></div>
+    <div class="bg-cell gradient"><img src="logos/starburst-full-white.svg" width="80"></div>
+    <div class="bg-cell sage"><img src="logos/starburst-full-white.svg" width="80"></div>
+  </div>
+  <div class="bg-label-row"><div class="bg-label">white</div><div class="bg-label">linen</div><div class="bg-label">gradient (white variant)</div><div class="bg-label">sage (white variant)</div></div>
+
+  <h3>Starburst — Simple (4 lines)</h3>
+  <div class="bg-grid">
+    <div class="bg-cell white"><img src="logos/starburst-simple-gold.svg" width="48"></div>
+    <div class="bg-cell linen"><img src="logos/starburst-simple-gold.svg" width="48"></div>
+    <div class="bg-cell gradient"><img src="logos/starburst-simple-white.svg" width="48"></div>
+    <div class="bg-cell sage"><img src="logos/starburst-simple-white.svg" width="48"></div>
+  </div>
+  <div class="bg-label-row"><div class="bg-label">white</div><div class="bg-label">linen</div><div class="bg-label">gradient (white variant)</div><div class="bg-label">sage (white variant)</div></div>
+</section>
+
+<!-- ============================================ -->
+<!-- SECTION 2: FAVICON PROGRESSION               -->
+<!-- ============================================ -->
+<section>
+  <div class="section-num">02 — Favicons</div>
+  <h2 class="section-title">Favicon Progression</h2>
+  <p class="section-desc">Five favicons sized for every browser context. The twinkle degrades gracefully: 8 lines at 512, 6 lines at 192/180, 4 lines at 32, dot only at 16. Each is a deliberate redesign for its size, not a mechanical resize.</p>
+
+  <h3>Actual size + 4× zoom (showing pixel grid)</h3>
+  <div class="favicon-row">
+    <div class="favicon-card">
+      <div class="actual"><img src="favicons/favicon-16.png" width="16" height="16"></div>
+      <div class="scaled"><img src="favicons/favicon-16.png" width="64" height="64"></div>
+      <div class="label">16 → 64</div>
+    </div>
+    <div class="favicon-card">
+      <div class="actual"><img src="favicons/favicon-32.png" width="32" height="32"></div>
+      <div class="scaled"><img src="favicons/favicon-32.png" width="128" height="128"></div>
+      <div class="label">32 → 128</div>
+    </div>
+    <div class="favicon-card">
+      <div class="actual"><img class="smooth" src="favicons/favicon-180.png" width="180" height="180"></div>
+      <div class="label">180 (Apple touch)</div>
+    </div>
+    <div class="favicon-card">
+      <div class="actual"><img class="smooth" src="favicons/favicon-192.png" width="192" height="192"></div>
+      <div class="label">192</div>
+    </div>
+    <div class="favicon-card">
+      <div class="actual"><img class="smooth" src="favicons/favicon-512.png" width="256" height="256"></div>
+      <div class="label">512 → shown 256</div>
+    </div>
+  </div>
+
+  <h3>Browser tab simulation (16px)</h3>
+  <div class="favicon-row">
+    <div class="tab-mock"><img src="favicons/favicon-16.png"><div class="title">The Jackpot Chicago</div></div>
+    <div class="tab-mock"><img src="favicons/favicon-16.png"><div class="title">Book your stay — The Jackpot</div></div>
+    <div class="tab-mock"><img src="favicons/favicon-16.png"><div class="title">Gallery</div></div>
+  </div>
+
+  <h3>Bookmarks bar simulation (16px)</h3>
+  <div class="favicon-row">
+    <div class="bookmarks">
+      <div class="bookmark"><img src="favicons/favicon-16.png">The Jackpot</div>
+      <div class="bookmark"><img src="favicons/favicon-16.png">Book Now</div>
+      <div class="bookmark"><img src="favicons/favicon-16.png">Gallery</div>
+      <div class="bookmark"><img src="favicons/favicon-16.png">About</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- SECTION 3: SOCIAL AVATAR                     -->
+<!-- ============================================ -->
+<section>
+  <div class="section-num">03 — Social Avatar</div>
+  <h2 class="section-title">Instagram Profile Picture</h2>
+  <p class="section-desc">1080×1080 square that gets circle-cropped by Instagram. The combined J + twinkle bounding box is centered exactly at (540, 540) so nothing clips when the circular mask is applied.</p>
+
+  <div class="social-row">
+    <div class="social-card">
+      <div class="square"><img src="social/social-avatar-1080.png" width="280" height="280"></div>
+      <div class="label">square (uploaded)</div>
+    </div>
+    <div class="social-card">
+      <div class="circle"><img src="social/social-avatar-1080.png" width="280" height="280"></div>
+      <div class="label">circle clipped</div>
+    </div>
+    <div class="social-card">
+      <div class="circle"><img src="social/social-avatar-1080.png" width="110" height="110"></div>
+      <div class="label">110 (IG profile)</div>
+    </div>
+    <div class="social-card">
+      <div class="circle"><img src="social/social-avatar-1080.png" width="40" height="40"></div>
+      <div class="label">40 (comments)</div>
+    </div>
+  </div>
+
+  <div class="ig-mock">
+    <div class="avatar"><img src="social/social-avatar-1080.png"></div>
+    <div class="meta">
+      <div class="username">thejackpotchi</div>
+      <div class="bio">A luxury group home in Chicago. Sleeps 14. You found something special.</div>
+      <div class="stats">2,841 posts · 18.2k followers · 412 following</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- SECTION 4: OG IMAGE                          -->
+<!-- ============================================ -->
+<section>
+  <div class="section-num">04 — OG Image</div>
+  <h2 class="section-title">Link Preview Card</h2>
+  <p class="section-desc">1200×630 image rendered when thejackpotchi.com is shared on Twitter, Slack, iMessage, etc. JACKPOT remains the dominant element at every typical thumbnail size.</p>
+
+  <h3>Full size (1200 × 630)</h3>
+  <div class="og-card">
+    <img src="social/og-image.png" width="900">
+    <div class="label">Shown at 900 wide (75% scale). Actual file is 1200×630.</div>
+  </div>
+
+  <h3 style="margin-top: 32px;">Twitter card simulation (~500px wide)</h3>
+  <div class="twitter-card">
+    <img src="social/og-image.png">
+    <div class="meta">
+      <div class="domain">thejackpotchi.com</div>
+      <div class="title">The Jackpot Chicago — You found something special</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 32px;">iMessage card simulation (~300px wide)</h3>
+  <div class="imessage-card">
+    <img src="social/og-image.png">
+    <div class="meta">
+      <div class="title">The Jackpot Chicago</div>
+      <div class="url">thejackpotchi.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- SECTION 5: PATTERN TILES                     -->
+<!-- ============================================ -->
+<section>
+  <div class="section-num">05 — Pattern Tiles</div>
+  <h2 class="section-title">Repeating Background Texture</h2>
+  <p class="section-desc">Two seamless 80×80 pattern tiles for adding subtle starburst texture to content sections. The gold variant tiles over linen surfaces; the white variant tiles over the brand gradient.</p>
+
+  <h3>Gold pattern on linen — body text overlaid</h3>
+  <div class="pattern-block pattern-gold">
+    <div class="content">
+      <h4>You found something special</h4>
+      <p>A luxury group home in Chicago that sleeps 14. Hot tub, cinema, game room, fire pit under the stars. Book by Sunday for our spring rate. The pattern below the text is texture, not graphic — body copy stays fully readable.</p>
+    </div>
+  </div>
+
+  <h3>White pattern on gradient — white text overlaid</h3>
+  <div class="pattern-block pattern-white">
+    <div class="content">
+      <h4>You just hit the Jackpot</h4>
+      <p>A luxury group home in Chicago that sleeps 14. Hot tub, cinema, game room, fire pit under the stars. Book by Sunday for our spring rate. The white sparkle pattern over the gradient adds depth without competing with this body copy.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- SECTION 6: PHOTO OVERLAY                     -->
+<!-- ============================================ -->
+<section>
+  <div class="section-num">06 — Photo Overlay</div>
+  <h2 class="section-title">Warm Gold Wash for Property Photos</h2>
+  <p class="section-desc">A vertical linear gradient from transparent at the top to gold (#c88c1e) at 40% opacity at the bottom. White headline text sits on the warm wash. Never dark, never a shadow — golden hour light pooling under the photo.</p>
+
+  <h3>Patio · golden hour exterior</h3>
+  <div class="photo-hero">
+    <img class="bg" src="docs/photos/patio.png" alt="Patio at golden hour">
+    <div class="overlay"></div>
+    <div class="text">
+      <div class="eyebrow">THE JACKPOT</div>
+      <p class="headline">You just hit the Jackpot</p>
+    </div>
+  </div>
+
+  <h3>Dining room · warm interior</h3>
+  <div class="photo-hero">
+    <img class="bg" src="docs/photos/dining.jpg" alt="Dining room">
+    <div class="overlay"></div>
+    <div class="text">
+      <div class="eyebrow">THE JACKPOT</div>
+      <p class="headline">You found something special</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- SECTION 7: COLOR ACCURACY                    -->
+<!-- ============================================ -->
+<section>
+  <div class="section-num">07 — Color Accuracy</div>
+  <h2 class="section-title">Token Spot-Check</h2>
+  <p class="section-desc">Five key brand colors rendered as live CSS swatches. The hex shown matches the brand token spec exactly. If a swatch looks off in your browser, color management is the culprit, not the spec.</p>
+
+  <div class="color-grid">
+    <div class="color-card">
+      <div class="swatch" style="background: #d4a930;"></div>
+      <div class="info">
+        <div class="name">Honey Gold</div>
+        <div class="hex">#d4a930</div>
+        <div class="token">--jp-gold</div>
+        <div class="check">matches spec</div>
+      </div>
+    </div>
+    <div class="color-card">
+      <div class="swatch" style="background: #ff9050;"></div>
+      <div class="info">
+        <div class="name">Electric Peach</div>
+        <div class="hex">#ff9050</div>
+        <div class="token">--jp-peach</div>
+        <div class="check">matches spec</div>
+      </div>
+    </div>
+    <div class="color-card">
+      <div class="swatch" style="background: #faf6ef; border-bottom: 1px solid var(--jp-border);"></div>
+      <div class="info">
+        <div class="name">Linen Cream</div>
+        <div class="hex">#faf6ef</div>
+        <div class="token">--jp-linen</div>
+        <div class="check">matches spec</div>
+      </div>
+    </div>
+    <div class="color-card">
+      <div class="swatch" style="background: #8aa077;"></div>
+      <div class="info">
+        <div class="name">Fresh Sage</div>
+        <div class="hex">#8aa077</div>
+        <div class="token">--jp-sage</div>
+        <div class="check">matches spec</div>
+      </div>
+    </div>
+    <div class="color-card">
+      <div class="swatch" style="background: #7a6030;"></div>
+      <div class="info">
+        <div class="name">Warm Olive</div>
+        <div class="hex">#7a6030</div>
+        <div class="token">--jp-olive</div>
+        <div class="check">matches spec</div>
+      </div>
+    </div>
+    <div class="color-card">
+      <div class="swatch" style="background: linear-gradient(135deg, #e0a520 0%, #e8b020 20%, #f0a830 45%, #f09040 70%, #ee8045 100%);"></div>
+      <div class="info">
+        <div class="name">Brand Gradient</div>
+        <div class="hex">5-stop · 135°</div>
+        <div class="token">--jp-gradient</div>
+        <div class="check">matches spec</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer style="padding: 48px 64px; text-align: center; border-top: 1px solid var(--jp-border); background: #fff;">
+  <div style="font-family: var(--jp-font-display); font-style: italic; font-size: 16px; color: var(--jp-olive-light);">you found something special</div>
+  <div style="font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--jp-olive-soft); margin-top: 8px;">The Jackpot Chicago · Brand Assets · 2026</div>
+</footer>
+
+</body>
+</html>
