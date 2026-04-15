@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Jackpot — Highlights H2 · Numbered Narrative</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../brand/tokens/brand.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; }
+body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  color: var(--jp-text-primary);
+  background: var(--jp-linen);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================
+   HIGHLIGHTS H2 — Numbered Narrative
+   Typography is the entire design. No photos.
+   Reads like the chapter list of a slim guidebook.
+   ============================================ */
+.highlights {
+  padding: 112px 6vw 128px;
+  background: var(--jp-linen);
+}
+
+/* Section header — same eyebrow + Cormorant title pattern as H1 */
+.section-header {
+  max-width: 760px;
+  margin: 0 auto 80px;
+  text-align: center;
+}
+.eyebrow {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--jp-peach);
+  margin-bottom: 14px;
+}
+.section-title {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(36px, 4.6vw, 64px);
+  line-height: 1.05;
+  color: var(--jp-olive);
+  letter-spacing: -0.5px;
+}
+
+/* The narrative — vertical list of entries */
+.tour {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: baseline;
+  column-gap: 28px;
+  padding: 32px 0;
+  border-bottom: 1px solid var(--jp-divider);
+}
+.entry:first-child { padding-top: 8px; }
+.entry:last-child { border-bottom: none; }
+
+/* Numeral column — small Outfit caps with a starburst sitting in the gutter */
+.numeral {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--jp-peach);
+}
+.numeral svg { flex-shrink: 0; opacity: 0.85; }
+
+/* Name + caption stack */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.name {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 36px;
+  line-height: 1;
+  letter-spacing: -0.4px;
+  color: var(--jp-olive);
+}
+.caption {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--jp-text-secondary);
+  max-width: 540px;
+}
+
+/* A subtle full-width starburst footer ornament so the section
+   doesn't end on a hard hairline */
+.footer-ornament {
+  margin: 88px auto 0;
+  display: flex;
+  justify-content: center;
+  opacity: 0.4;
+}
+
+/* ============================================
+   MOBILE
+   ============================================ */
+@media (max-width: 900px) {
+  .highlights { padding: 80px 24px 96px; }
+  .section-header { margin-bottom: 56px; }
+  .entry {
+    grid-template-columns: 1fr;
+    column-gap: 0;
+    row-gap: 12px;
+    padding: 26px 0;
+  }
+  .numeral { font-size: 10px; }
+  .name { font-size: 30px; }
+  .caption { font-size: 16px; }
+  .footer-ornament { margin-top: 64px; }
+}
+</style>
+</head>
+<body>
+
+<section class="highlights">
+  <header class="section-header">
+    <div class="eyebrow">THE HOUSE</div>
+    <h2 class="section-title">Six reasons<br>you came</h2>
+  </header>
+
+  <div class="tour">
+
+    <article class="entry">
+      <div class="numeral">
+        01
+        <svg width="14" height="14" viewBox="-7 -7 14 14" aria-hidden="true">
+          <line x1="0" y1="-6" x2="0" y2="6" stroke="#d4a930" stroke-width="0.9" opacity="0.9"/>
+          <line x1="-6" y1="0" x2="6" y2="0" stroke="#d4a930" stroke-width="0.9" opacity="0.9"/>
+          <line x1="-4.2" y1="-4.2" x2="4.2" y2="4.2" stroke="#d4a930" stroke-width="0.6" opacity="0.65"/>
+          <line x1="4.2" y1="-4.2" x2="-4.2" y2="4.2" stroke="#d4a930" stroke-width="0.6" opacity="0.65"/>
+          <circle cx="0" cy="0" r="1.2" fill="#ff9050"/>
+        </svg>
+      </div>
+      <div class="body">
+        <div class="name">Hot tub</div>
+        <p class="caption">for eight, beneath a louvered pergola wrapped in string lights.</p>
+      </div>
+    </article>
+
+    <article class="entry">
+      <div class="numeral">
+        02
+        <svg width="14" height="14" viewBox="-7 -7 14 14" aria-hidden="true">
+          <line x1="0" y1="-6" x2="0" y2="6" stroke="#d4a930" stroke-width="0.9" opacity="0.9"/>
+          <line x1="-6" y1="0" x2="6" y2="0" stroke="#d4a930" stroke-width="0.9" opacity="0.9"/>
+          <line x1="-4.2" y1="-4.2" x2="4.2" y2="4.2" stroke="#d4a930" stroke-width="0.6" opacity="0.65"/>
+          <line x1="4.2" y1="-4.2" x2="-4.2" y2="4.2" stroke="#d4a930" stroke-width="0.6" opacity="0.65"/>
+          <circle cx="0" cy="0" r="1.2" fill="#ff9050"/>
+        </svg>
+      </div>
+      <div class="body">
+        <div class="name">Cinema</div>
+        <p class="caption">one hundred and twenty inches, a popcorn machine, the lights down low.</p>
+      </div>
+    </article>
+
+    <article class="entry">
+      <div class="numeral">
+        03
+        <svg width="14" height="14" viewBox="-7 -7 14 14" aria-hidden="true">
+          <line x1="0" y1="-6" x2="0" y2="6" stroke="#d4a930" stroke-width="0.9" opacity="0.9"/>
+          <line x1="-6" y1="0" x2="6" y2="0" stroke="#d4a930" stroke-width="0.9" opacity="0.9"/>
+          <line x1="-4.2" y1="-4.2" x2="4.2" y2="4.2" stroke="#d4a930" stroke-width="0.6" opacity="0.65"/>
+          <line x1="4.2" y1="-4.2" x2="-4.2" y2="4.2" stroke="#d4a930" stroke-width="0.6" opacity="0.65"/>
+          <circle cx="0" cy="0" r="1.2" fill="#ff9050"/>
+        </svg>
+      </div>
+      <div class="body">
+        <div class="name">Game room</div>
+        <p class="caption">poker, foosball, ping pong, a record player, and a fully stocked bar.</p>
+      </div>
+    </article>
+
+    <article class="entry">
+      <div class="numeral">
+        04
+        <svg width="14" height="14" viewBox="-7 -7 14 14" aria-hidden="true">
+          <line x1="0" y1="-6" x2="0" y2="6" stroke="#d4a930" stroke-width="0.9" opacity="0.9"/>
+          <line x1="-6" y1="0" x2="6" y2="0" stroke="#d4a930" stroke-width="0.9" opacity="0.9"/>
+          <line x1="-4.2" y1="-4.2" x2="4.2" y2="4.2" stroke="#d4a930" stroke-width="0.6" opacity="0.65"/>
+          <line x1="4.2" y1="-4.2" x2="-4.2" y2="4.2" stroke="#d4a930" stroke-width="0.6" opacity="0.65"/>
+          <circle cx="0" cy="0" r="1.2" fill="#ff9050"/>
+        </svg>
+      </div>
+      <div class="body">
+        <div class="name">Fire pit</div>
+        <p class="caption">Adirondack chairs and a fenced yard that feels like nobody else exists.</p>
+      </div>
+    </article>
+
+    <article class="entry">
+      <div class="numeral">
+        05
+        <svg width="14" height="14" viewBox="-7 -7 14 14" aria-hidden="true">
+          <line x1="0" y1="-6" x2="0" y2="6" stroke="#d4a930" stroke-width="0.9" opacity="0.9"/>
+          <line x1="-6" y1="0" x2="6" y2="0" stroke="#d4a930" stroke-width="0.9" opacity="0.9"/>
+          <line x1="-4.2" y1="-4.2" x2="4.2" y2="4.2" stroke="#d4a930" stroke-width="0.6" opacity="0.65"/>
+          <line x1="4.2" y1="-4.2" x2="-4.2" y2="4.2" stroke="#d4a930" stroke-width="0.6" opacity="0.65"/>
+          <circle cx="0" cy="0" r="1.2" fill="#ff9050"/>
+        </svg>
+      </div>
+      <div class="body">
+        <div class="name">Chef's kitchen</div>
+        <p class="caption">coffee in the morning, dinner for fourteen at night.</p>
+      </div>
+    </article>
+
+    <article class="entry">
+      <div class="numeral">
+        06
+        <svg width="14" height="14" viewBox="-7 -7 14 14" aria-hidden="true">
+          <line x1="0" y1="-6" x2="0" y2="6" stroke="#d4a930" stroke-width="0.9" opacity="0.9"/>
+          <line x1="-6" y1="0" x2="6" y2="0" stroke="#d4a930" stroke-width="0.9" opacity="0.9"/>
+          <line x1="-4.2" y1="-4.2" x2="4.2" y2="4.2" stroke="#d4a930" stroke-width="0.6" opacity="0.65"/>
+          <line x1="4.2" y1="-4.2" x2="-4.2" y2="4.2" stroke="#d4a930" stroke-width="0.6" opacity="0.65"/>
+          <circle cx="0" cy="0" r="1.2" fill="#ff9050"/>
+        </svg>
+      </div>
+      <div class="body">
+        <div class="name">Backyard</div>
+        <p class="caption">private, enclosed, and built for the hours after the sun goes down.</p>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="footer-ornament">
+    <svg width="36" height="36" viewBox="-18 -18 36 36" aria-hidden="true">
+      <line x1="0" y1="-16" x2="0" y2="16" stroke="#d4a930" stroke-width="1.6" opacity="0.9"/>
+      <line x1="-16" y1="0" x2="16" y2="0" stroke="#d4a930" stroke-width="1.6" opacity="0.9"/>
+      <line x1="-11" y1="-11" x2="11" y2="11" stroke="#d4a930" stroke-width="1" opacity="0.65"/>
+      <line x1="11" y1="-11" x2="-11" y2="11" stroke="#d4a930" stroke-width="1" opacity="0.65"/>
+      <line x1="-4" y1="-15" x2="4" y2="15" stroke="#e8a040" stroke-width="0.7" opacity="0.45"/>
+      <line x1="4" y1="-15" x2="-4" y2="15" stroke="#e8a040" stroke-width="0.7" opacity="0.45"/>
+      <circle cx="0" cy="0" r="3" fill="#ff9050"/>
+    </svg>
+  </div>
+</section>
+
+</body>
+</html>

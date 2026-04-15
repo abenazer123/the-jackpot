@@ -96,3 +96,7 @@ a:hover {
   outline: 2px solid var(--jp-border-focus);
   outline-offset: 2px;
 }
+
+/* The sticky booking bar is `position: fixed` and only appears after the
+   hero has scrolled out of view — so the hero can start at y=0 with no
+   reserved padding. The bar overlays subsequent sections when visible. */

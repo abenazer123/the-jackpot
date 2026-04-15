@@ -1,0 +1,453 @@
+/*
+ * HighlightsSection — the "what's inside" beat after the hero.
+ *
+ * 5-card asymmetric magazine-plate grid. Hot tub is the hero card spanning
+ * 2 rows on the left; cinema and game room stack to its right; sun room
+ * and fire pit close along the bottom with fire pit as the wider anchor.
+ *
+ * Each card splits into two zones: a photo region on top (uncompromised,
+ * just the warm-filtered image and the placeholder badge) and a clean
+ * linen caption strip below (name in olive Cormorant + italic caption).
+ * No overlay wash on the photos — the type lives on a surface designed
+ * for type, the photos stay pristine.
+ *
+ * Photos are placeholders — every card carries a visible "Placeholder"
+ * badge. The warm filter on photos is hardcoded; tokenize as
+ * --jp-photo-filter once we use the same filter in 3+ places.
+ */
+
+.section {
+  padding: 112px 6vw 56px;
+  background: var(--jp-bg-primary);
+}
+
+/* Centered section header — option E (the Virgil wink):
+   gold starburst alone over an italic Cormorant headline. */
+.sectionHeader {
+  max-width: 760px;
+  margin: 0 auto 72px;
+  text-align: center;
+}
+
+.headerMark {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 22px;
+  opacity: 0.9;
+}
+
+.sectionTitle {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(36px, 4.6vw, 64px);
+  line-height: 1.05;
+  color: var(--jp-olive);
+  letter-spacing: -0.5px;
+  margin: 0 auto;
+  max-width: 720px;
+}
+
+/* Gradient-clipped accent on the emphasized word — mirrors the JACKPOT
+   wordmark / "PERFECT" accent: bold italic Cormorant, uppercase,
+   letter-spaced, painted with the full 5-stop brand gradient. Caps + bold
+   break the italic rhythm so the word reads as a typographic moment of
+   pride. */
+.sectionTitleAccent {
+  font-weight: 700;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  background: var(--jp-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  padding: 0 0.04em 0.08em;
+}
+
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .sectionTitleAccent {
+    color: var(--jp-gold-deep);
+    -webkit-text-fill-color: var(--jp-gold-deep);
+  }
+}
+
+/* The 12-col asymmetric grid — locked 5-card composition. Courtyard is NOT
+   in this grid; it lives below as a separate full-width cinematic reveal. */
+.grid {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: 380px 380px 380px;
+  gap: 18px;
+}
+
+/* Grid placement — locked spec:
+   - Spa:          cols 1-7, rows 1-2 (biggest, hero)
+   - Cinema:       cols 8-12, row 1
+   - Parlor:       cols 8-12, row 2
+   - Supper club:  cols 1-5, row 3
+   - Fireside:     cols 6-12, row 3 (wide anchor) */
+.cellSpa        { grid-column: 1 / span 7; grid-row: 1 / span 2; }
+.cellCinema     { grid-column: 8 / span 5; grid-row: 1 / span 1; }
+.cellParlor     { grid-column: 8 / span 5; grid-row: 2 / span 1; }
+.cellSupperClub { grid-column: 1 / span 5; grid-row: 3 / span 1; }
+.cellFireside   { grid-column: 6 / span 7; grid-row: 3 / span 1; }
+
+/* Courtyard stays hidden in the grid at every breakpoint — it's rendered as
+   the separate cinematic reveal card below. */
+.cellCourtyard { display: none !important; }
+
+
+/* Card — full-bleed photo with name + caption overlaid at the bottom,
+   matching the Courtyard cinematic reveal's treatment. Button resets keep
+   the native <button> rendering visually identical to the earlier <a>. */
+.card {
+  position: relative;
+  display: block;
+  border: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  text-align: inherit;
+  font: inherit;
+  border-radius: var(--jp-radius-md);
+  background: var(--jp-linen-deep);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  box-shadow: 0 0 0 rgba(122, 96, 48, 0);
+  transition: box-shadow 300ms ease;
+  overflow: hidden;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+/* Photo fills the entire card — absolute inset:0 inside the positioned
+   card. ::before holds the background image (so the hover scale is
+   applied to the image without moving the caption / gradient above it). */
+.cardPhoto {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Dark-to-transparent fade up from the bottom so the white overlay type
+   stays legible regardless of the photo below. Mirrors the Courtyard
+   reveal's gradient (slightly taller/denser because the cards are
+   smaller). */
+.cardGradient {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 55%;
+  background: linear-gradient(
+    to top,
+    rgba(28, 26, 22, 0.78) 0%,
+    rgba(28, 26, 22, 0) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cardPhoto::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-repeat: no-repeat;
+  transform: scale(1);
+  transform-origin: center;
+  transition: transform 600ms ease;
+}
+
+/* Per-card photo source + crop position */
+.cellSpa .cardPhoto::before {
+  background-image: url("../../../brand/docs/photos/hot-tub.png");
+  background-position: center center;
+}
+.cellCinema .cardPhoto::before {
+  background-image: url("../../../brand/docs/photos/cinema.png");
+  background-position: center center;
+}
+.cellParlor .cardPhoto::before {
+  background-image: url("../../../brand/docs/photos/game-room.png");
+  background-position: center center;
+}
+.cellSupperClub .cardPhoto::before {
+  background-image: url("../../../brand/docs/photos/supper-club.png");
+  background-position: center center;
+}
+.cellFireside .cardPhoto::before {
+  background-image: url("../../../brand/docs/photos/fire-pit.png");
+  background-position: center 80%;
+}
+
+/* Hover — desktop only. Photo opens up, card lifts, name shifts to gold. */
+@media (hover: hover) {
+  .card:hover {
+    box-shadow: 0 12px 32px rgba(122, 96, 48, 0.16);
+  }
+  .card:hover .cardPhoto::before {
+    transform: scale(1.04);
+  }
+  .card:hover .cardName {
+    color: var(--jp-gold);
+  }
+}
+
+/* Placeholder photo badge — top-right corner of the photo region */
+.placeholderBadge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(20, 12, 0, 0.55);
+  backdrop-filter: blur(4px);
+  border-radius: var(--jp-radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+.placeholderBadge::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--jp-peach);
+}
+
+/* Caption block — overlaid on the gradient at the bottom of the card. No
+   linen strip now; text is white Cormorant on the dark fade. */
+.cardCaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  background: transparent;
+  padding: 22px 26px 26px;
+}
+.cellSpa .cardCaption { padding: 28px 32px 32px; }
+.cellFireside .cardCaption { padding: 24px 32px 28px; }
+
+.cardName {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1.05;
+  letter-spacing: -0.3px;
+  color: #faf6ef;
+  margin: 0 0 6px;
+  transition: color 300ms ease;
+}
+.cellSpa .cardName { font-size: 38px; }
+.cellFireside .cardName { font-size: 30px; }
+
+.cardCaptionText {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.4;
+  color: rgba(250, 246, 239, 0.85);
+  margin: 0;
+  max-width: 540px;
+}
+.cellSpa .cardCaptionText { font-size: 17px; max-width: 460px; }
+
+/* ============================================
+   COURTYARD CINEMATIC REVEAL — full-width card below the grid.
+   Not a grid cell; its own beat. Photo + dark gradient + white type.
+   ============================================ */
+.courtyardReveal {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 1280px;
+  margin: 48px auto 0;
+  height: 440px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 0 0 rgba(122, 96, 48, 0);
+  transition: box-shadow 350ms ease;
+}
+
+.courtyardReveal:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+.courtyardRevealPhoto {
+  position: absolute;
+  inset: 0;
+  background-image: url("../../../brand/docs/photos/hero.png");
+  background-size: cover;
+  background-position: center 60%;
+  background-repeat: no-repeat;
+  transform: scale(1);
+  transition: transform 600ms ease;
+}
+
+.courtyardRevealGradient {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50%;
+  background: linear-gradient(
+    to top,
+    rgba(28, 26, 22, 0.7) 0%,
+    rgba(28, 26, 22, 0) 100%
+  );
+  pointer-events: none;
+}
+
+.courtyardRevealCopy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 48px 40px 36px;
+  z-index: 1;
+}
+
+.courtyardRevealName {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: -0.3px;
+  color: #faf6ef;
+  margin: 0 0 6px;
+}
+
+.courtyardRevealCaption {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 16px;
+  line-height: 1.4;
+  color: rgba(250, 246, 239, 0.8);
+  margin: 0;
+}
+
+@media (hover: hover) {
+  .courtyardReveal:hover {
+    box-shadow: 0 16px 48px rgba(122, 96, 48, 0.2);
+  }
+  .courtyardReveal:hover .courtyardRevealPhoto {
+    transform: scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .courtyardRevealPhoto,
+  .courtyardReveal:hover .courtyardRevealPhoto {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ============================================
+   MOBILE — stack 5 cards vertically
+   Order: hot tub, cinema, game, sun, fire
+   ============================================ */
+@media (max-width: 900px) {
+  .section {
+    padding: 80px 24px 32px;
+    /* Flex so Courtyard can lead on mobile — desktop keeps DOM order
+       (grid, then reveal, then strip) as visual order. */
+    display: flex;
+    flex-direction: column;
+  }
+  .sectionHeader { margin-bottom: 56px; order: 0; }
+  .courtyardReveal { order: 1; margin: 0 auto 32px; }
+  .grid { order: 2; }
+  .section > section { order: 3; }
+
+  .grid {
+    width: 100%;
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    gap: 14px;
+  }
+
+  /* Reset every cell — single column, explicit order, explicit height so
+     the card's absolute-positioned photo has a real containing box.
+     Min-height doesn't reliably resolve for absolute children on auto
+     grid rows, so we use hard heights here (matching the Courtyard
+     reveal's pattern, which works). */
+  .cellSpa,
+  .cellCinema,
+  .cellParlor,
+  .cellSupperClub,
+  .cellFireside {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    height: 56vh;
+  }
+  /* Outdoor pair first (fireside, spa), then indoor — supper club closes
+     as the last card. */
+  .cellFireside { order: 1; height: 50vh; }
+  .cellSpa  { order: 2; height: 64vh; }
+  .cellCinema  { order: 3; }
+  .cellParlor { order: 4; }
+  .cellSupperClub { order: 5; }
+  /* Desktop nudges the fire-pit crop down so the flames land mid-frame on the
+     wide 7-col card; mobile is a taller, narrower card so reset to center. */
+  .cellFireside .cardPhoto::before { background-position: center center; }
+
+  .cardCaption,
+  .cellSpa .cardCaption,
+  .cellFireside .cardCaption {
+    padding: 20px 22px 22px;
+  }
+  .cardName { font-size: 24px; }
+  .cellSpa .cardName { font-size: 32px; }
+  .cellFireside .cardName { font-size: 28px; }
+  .cardCaptionText { font-size: 14px; }
+  .cellSpa .cardCaptionText { font-size: 16px; }
+
+  /* Courtyard reveal — mobile sizing (≤ 768px range effectively; ≤ 900 here
+     matches the rest of the section's breakpoint). Reveal sits above the
+     grid on all breakpoints now. */
+  .courtyardReveal {
+    height: 280px;
+    border-radius: 14px;
+    margin: 0 auto 32px;
+  }
+  .courtyardRevealCopy { padding: 28px 24px 22px; }
+  .courtyardRevealName { font-size: 24px; }
+  .courtyardRevealCaption { font-size: 14px; }
+  .courtyardRevealGradient { height: 60%; }
+}
+
+/* Tablet band — the spec calls for a dedicated 768-1024 sizing. */
+@media (min-width: 901px) and (max-width: 1024px) {
+  .courtyardReveal { height: 360px; }
+  .courtyardRevealCopy { padding: 36px 32px 28px; }
+  .courtyardRevealName { font-size: 28px; }
+  .courtyardRevealCaption { font-size: 15px; }
+}

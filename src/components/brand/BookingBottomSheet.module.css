@@ -1,0 +1,108 @@
+/*
+ * BookingBottomSheet — mobile sheet shell. The form fields, steps, chips,
+ * and success state all live in BookingFunnelSteps.module.css; this file
+ * owns the dialog, backdrop, sheet card, handle bar, and close button.
+ *
+ * Desktop counterpart is BookingPricingModal.module.css — the two are
+ * freely swappable based on viewport (parent decides).
+ */
+
+.dialog {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--jp-text-primary);
+  width: 100vw;
+  max-width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Only lay the dialog out when it's actually open — a closed <dialog> must
+   stay display:none (the UA default) or it'll render as a flow element
+   behind the page content. Applying display:flex unconditionally would
+   break that. */
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.dialog::backdrop {
+  background: var(--jp-backdrop);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Sheet card — pinned to the bottom edge, rounded top corners only. */
+.sheet {
+  position: relative;
+  width: 100%;
+  max-height: 90vh;
+  padding: 12px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  background: var(--jp-bg-primary);
+  border-radius: var(--jp-radius-lg) var(--jp-radius-lg) 0 0;
+  box-shadow: 0 -8px 28px rgba(20, 12, 0, 0.22);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  animation: sheetIn 280ms ease-out both;
+}
+
+@keyframes sheetIn {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+/* Visual handle bar at the top — a native-feeling cue. Not interactive. */
+.handle {
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(122, 96, 48, 0.22);
+  margin: 0 auto 12px;
+}
+
+.close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  background: transparent;
+  color: var(--jp-text-secondary);
+  cursor: pointer;
+  transition: background var(--jp-transition), color var(--jp-transition);
+}
+
+.close:hover {
+  background: var(--jp-linen-mid);
+  color: var(--jp-gold);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
+}
+
+.close svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet { animation: none; }
+}

@@ -1,0 +1,269 @@
+/*
+ * RoomsStrip — the supporting-cast horizontal carousel that follows the
+ * magazine grid. Smaller cards, scroll-snap, edge fades, optional desktop
+ * hover arrows. Click on any card opens the unified PhotoGalleryModal.
+ */
+
+.section {
+  padding: 32px 0 32px;
+}
+
+.subhead {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(20px, 2.2vw, 26px);
+  color: var(--jp-text-primary);
+  text-align: center;
+  margin: 0 0 28px;
+  letter-spacing: -0.2px;
+  opacity: 0.9;
+}
+
+.stripWrap {
+  position: relative;
+}
+
+.strip {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 8px 6vw 32px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(122, 96, 48, 0.3) transparent;
+}
+
+.strip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.strip::-webkit-scrollbar-thumb {
+  background: rgba(122, 96, 48, 0.22);
+  border-radius: var(--jp-radius-full);
+}
+
+.card {
+  position: relative;
+  flex: 0 0 clamp(180px, 22vw, 240px);
+  scroll-snap-align: start;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  border: 0;
+  padding: 0;
+  text-align: inherit;
+  font: inherit;
+  border-radius: var(--jp-radius-md);
+  background: var(--jp-linen);
+  color: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 0 0 rgba(122, 96, 48, 0);
+  transition: box-shadow 300ms ease, transform 200ms ease;
+}
+
+.card:hover {
+  box-shadow: 0 12px 28px rgba(122, 96, 48, 0.18);
+  transform: translateY(-2px);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+/* Photo region — 3:2 aspect, owns the warm filter via ::before. */
+.cardPhoto {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: var(--jp-linen-deep);
+}
+
+.cardPhoto::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--card-photo-url);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: scale(1);
+  transition: transform 600ms ease;
+}
+
+.card:hover .cardPhoto::before {
+  transform: scale(1.04);
+}
+
+/* Placeholder badge — top-right of the photo, marks rooms without real
+   photos yet. Mirrors the original highlights placeholder badge. */
+.placeholderBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(20, 12, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-radius: var(--jp-radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 8px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.placeholderBadge::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--jp-peach);
+}
+
+.cardCaption {
+  padding: 12px 16px 14px;
+  background: var(--jp-linen);
+}
+
+.cardName {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.1;
+  letter-spacing: -0.2px;
+  color: var(--jp-text-primary);
+  margin: 0;
+  transition: color 300ms ease;
+}
+
+.card:hover .cardName {
+  color: var(--jp-gold);
+}
+
+/* Edge fades — hint that there's more content scrolling out. Sit above
+   the strip, ignore pointer events. */
+.edgeFade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 56px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.edgeFadeLeft {
+  left: 0;
+  background: linear-gradient(
+    to right,
+    var(--jp-bg-primary) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+.edgeFadeRight {
+  right: 0;
+  background: linear-gradient(
+    to left,
+    var(--jp-bg-primary) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+/* Desktop hover arrows — small dark pills that scroll the strip. */
+.arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  background: rgba(20, 12, 0, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--jp-linen);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 200ms ease, background 200ms ease, color 200ms ease, transform 200ms ease;
+}
+
+.stripWrap:hover .arrow,
+.arrow:focus-visible {
+  opacity: 1;
+}
+
+.arrow:hover {
+  background: rgba(20, 12, 0, 0.62);
+  color: var(--jp-gold);
+  transform: translateY(-50%) scale(1.06);
+}
+
+.arrow:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+.arrow svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.arrowPrev { left: 14px; }
+.arrowNext { right: 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card:hover,
+  .arrow,
+  .arrow:hover {
+    transform: none;
+  }
+  .cardPhoto::before {
+    transition: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .section {
+    padding: 16px 0 16px;
+  }
+  .subhead {
+    margin-bottom: 20px;
+  }
+  .strip {
+    padding: 8px 24px 24px;
+    gap: 12px;
+  }
+  .card {
+    flex: 0 0 clamp(160px, 60vw, 200px);
+  }
+  .edgeFade {
+    width: 24px;
+  }
+  /* Hide hover arrows on touch — swipe is the natural nav. */
+  .arrow {
+    display: none;
+  }
+}

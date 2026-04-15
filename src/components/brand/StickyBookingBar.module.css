@@ -1,0 +1,380 @@
+/*
+ * StickyBookingBar — persistent conversion affordance pinned to the TOP of
+ * the viewport. Appears once the user has scrolled past the hero (driven by
+ * an IntersectionObserver on the `#hero-end` sentinel rendered after the
+ * <HeroSection />), disappears when `#inquiry` enters the viewport.
+ *
+ * Desktop: a warm cream-gold bar with a faded gradient + starburst
+ *   watermark, two date fields (matching HeroBookingBar grammar), and a
+ *   dark warm-brown CTA with gradient-clipped text (matching the hero
+ *   submit grammar).
+ * Mobile: a single floating gradient pill (untouched here — Phase C
+ *   replaces it with a peeking card + bottom sheet).
+ */
+
+/* Root wrapper — controls visibility + fade transitions. Not visible until
+   `data-visible="true"` is set by the component. The desktop bar pins to
+   the TOP of the viewport; the mobile floating pill (positioned within
+   `.floating`) anchors against the bottom edge of the wrapper. */
+.root {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+.root[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    transition: none;
+    transform: none;
+  }
+  .root[data-visible="true"] {
+    transform: none;
+  }
+}
+
+/* ============================================
+   DESKTOP BAR
+   ============================================ */
+
+/* Layered surface: the full brand gradient with a faint white starburst
+   watermark centered on top (single emblem, no repeat). */
+.bar {
+  display: none;
+  width: 100%;
+  height: 56px;
+  padding: 0 24px;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-30 -30 60 60' width='180' height='180'><g stroke='%23ffffff' fill='none' stroke-linecap='round' stroke-opacity='0.1'><line x1='0' y1='-28' x2='0' y2='28' stroke-width='3'/><line x1='-28' y1='0' x2='28' y2='0' stroke-width='3'/><line x1='-20' y1='-20' x2='20' y2='20' stroke-width='1.8'/><line x1='20' y1='-20' x2='-20' y2='20' stroke-width='1.8'/></g><circle cx='0' cy='0' r='2.5' fill='%23ffffff' fill-opacity='0.12'/></svg>")
+      center / 180px no-repeat,
+    var(--jp-gradient);
+  border-bottom: 1px solid rgba(122, 96, 48, 0.18);
+  box-shadow: var(--jp-shadow-sm);
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+}
+
+/* ============================================
+   LEFT GROUP — starburst + wordmark
+   ============================================ */
+
+.left {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  line-height: 1;
+  color: #fff;
+  transition: opacity var(--jp-transition);
+}
+
+.wordmark:hover {
+  opacity: 0.78;
+}
+
+.wordmark:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+.wordmarkText {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ============================================
+   RIGHT GROUP — date fields + CTA
+   ============================================ */
+
+.right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Field grammar — mirrors HeroBookingBar.module.css `.field` and
+   BookingFunnelSteps.module.css `.field`: tiny uppercase label stacked
+   above the value inside a radius-full white pill. */
+.field {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  height: 44px;
+  min-width: 150px;
+  padding: 6px 18px 7px;
+  border: 1px solid rgba(122, 96, 48, 0.15);
+  border-radius: var(--jp-radius-full);
+  background: var(--jp-bg-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.field:hover {
+  border-color: rgba(122, 96, 48, 0.28);
+}
+
+/* Active field — gold ring + warm tint + gold-shifted label. Matches the
+   hero/modal field active state so the brand language is consistent. */
+.field:focus-visible,
+.field[aria-expanded="true"] {
+  outline: none;
+  background: var(--jp-gold-10);
+  border-color: var(--jp-gold);
+  box-shadow: 0 0 0 3px rgba(212, 169, 48, 0.5);
+}
+
+.fieldLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: rgba(122, 96, 48, 0.7);
+  line-height: 1.2;
+  transition: color 160ms ease;
+}
+
+.field[aria-expanded="true"] .fieldLabel,
+.field:focus-visible .fieldLabel {
+  color: var(--jp-gold-deep);
+}
+
+.fieldValue {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--jp-text-primary);
+}
+
+.fieldValue[data-empty="true"] {
+  color: rgba(122, 96, 48, 0.45);
+  font-weight: 300;
+}
+
+/* ============================================
+   CTA — matches hero submit grammar (Outfit, dark warm-brown bg,
+   gradient-clipped text)
+   ============================================ */
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  background: #1f1608;
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition: background var(--jp-transition), box-shadow var(--jp-transition), transform var(--jp-transition);
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(20, 12, 0, 0.22);
+}
+
+.ctaText {
+  background: var(--jp-gradient-button);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  transition: filter var(--jp-transition);
+}
+
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .ctaText {
+    color: #fff;
+    -webkit-text-fill-color: #fff;
+  }
+}
+
+.cta:hover {
+  background: #2a1f0d;
+  box-shadow: var(--jp-shadow-gold-hover);
+}
+
+.cta:hover .ctaText {
+  filter: brightness(1.1) saturate(1.05);
+}
+
+.cta:active {
+  transform: scale(0.98);
+  transition-duration: 80ms;
+}
+
+.cta:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+/* Disabled — fill both dates to enable. */
+.cta:disabled,
+.cta:disabled:hover {
+  background: rgba(20, 12, 0, 0.35);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.cta:disabled .ctaText,
+.cta:disabled:hover .ctaText {
+  filter: saturate(0.5) brightness(0.85);
+  opacity: 0.7;
+}
+
+/* ============================================
+   MOBILE PEEK CARD
+   Always-visible bottom strip that opens the BookingBottomSheet on tap.
+   Handle bar + one-line prompt on the left, gradient CTA on the right.
+   ============================================ */
+
+/* Hidden by default — physically absent (display:none) so it cannot peek
+   through, flash, or occupy space while the user is still on the hero.
+   Only at ≤767px viewport AND data-visible="true" does the peek appear.
+
+   Rendered as a semantic <button>: whole card is tappable, swipe-up on the
+   card opens the sheet. Button chrome (border, background, font) is reset;
+   the visible CTA pill inside is a styled <span>. */
+.peek {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: var(--jp-bg-primary);
+  border: 0;
+  border-top: 1px solid rgba(122, 96, 48, 0.12);
+  box-shadow: 0 -4px 20px rgba(139, 112, 64, 0.10);
+  box-sizing: border-box;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  animation: peekIn 260ms ease-out both;
+  /* Route all gestures through our pointer handlers so the browser doesn't
+     intercept a vertical drag as a page scroll before we can detect the
+     swipe-up. Safe because the peek is a small surface. */
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.peek:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: -4px;
+}
+
+.peek:active {
+  background: var(--jp-linen);
+}
+
+@media (max-width: 767px) {
+  .peek[data-visible="true"] {
+    display: flex;
+  }
+}
+
+@keyframes peekIn {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .peek {
+    animation: none;
+  }
+}
+
+.peekHandle {
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(122, 96, 48, 0.22);
+  margin: 0 auto;
+}
+
+/* Presence line in the peek — centered above the prompt/CTA row. */
+.peekPresence {
+  align-self: center;
+}
+
+.peekRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.peekPrompt {
+  flex: 1;
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.2;
+  color: var(--jp-text-primary);
+}
+
+.peekCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--jp-radius-full);
+  background: var(--jp-gradient);
+  color: var(--jp-text-on-color);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.4px;
+  box-shadow: 0 4px 14px rgba(139, 112, 64, 0.22);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.peek:active .peekCta {
+  filter: brightness(1.08);
+}
+

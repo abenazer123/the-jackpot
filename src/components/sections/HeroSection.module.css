@@ -1,0 +1,141 @@
+/*
+ * HeroSection — C4 layout (photo column + inline stats)
+ * Owns the 60/40 grid, the gradient + pattern overlay, the warm seam,
+ * the photo column overlay, and the optional starburst rotation.
+ */
+
+.hero {
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 60fr 40fr;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Left column — gradient with brand content */
+.left {
+  position: relative;
+  background: var(--jp-gradient);
+  overflow: hidden;
+}
+
+/* Pattern overlay — white starburst tile */
+.left::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("../../../brand/patterns/pattern-starburst-white.svg");
+  background-repeat: repeat;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Warm seam where the gradient meets the photo column */
+.left::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 100px;
+  background: linear-gradient(
+    90deg,
+    rgba(238, 128, 69, 0) 0%,
+    rgba(238, 128, 69, 0.22) 100%
+  );
+  pointer-events: none;
+}
+
+/* Faint corner background starburst */
+.bgStarburst {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: min(720px, 70%);
+  opacity: 0.05;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+/* Optional rotation — 1deg/sec, barely perceptible */
+.bgStarburstRotate {
+  animation: hero-rotate 360s linear infinite;
+}
+
+@keyframes hero-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .bgStarburstRotate { animation: none; }
+}
+
+/* Bottom-anchored brand content stack */
+.content {
+  position: absolute;
+  bottom: 8vh;
+  left: 6vw;
+  right: 4vw;
+  z-index: 1;
+  max-width: 600px;
+  color: #fff;
+}
+
+.tagline {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(24px, 2.6vw, 36px);
+  line-height: 1.15;
+  color: #fff;
+  opacity: 0.95;
+  margin-top: 32px;
+  max-width: 480px;
+}
+
+.statStrip { margin-top: 24px; }
+
+.bookingBar {
+  margin-top: 28px;
+  max-width: 520px;
+}
+
+/* Right column — positioned container the HeroPhotoCarousel fills. The
+   photo, caption, and arrow styles all live in HeroPhotoCarousel.module.css. */
+.right {
+  position: relative;
+  background-color: var(--jp-linen-deep);
+}
+
+/* Mobile — drop the photo column entirely.
+   Reason: on mobile the hero photo (patio.png) ended up stacked directly above
+   the highlights' hot tub card (also patio.png cropped), creating a duplicate-
+   image collision. On mobile the hero is now brand-content-only and the first
+   photos the visitor sees belong to the highlights section. The testimonial
+   between hero and highlights still provides a social-proof beat. */
+@media (max-width: 900px) {
+  .hero {
+    height: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  .left {
+    min-height: 100vh;
+  }
+  .right {
+    display: none;
+  }
+  .left::after { display: none; }
+  .content {
+    left: 24px;
+    right: 24px;
+    bottom: 6vh;
+    max-width: none;
+  }
+  .tagline {
+    font-size: clamp(22px, 6vw, 32px);
+    margin-top: 24px;
+  }
+}

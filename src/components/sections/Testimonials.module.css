@@ -1,0 +1,345 @@
+/*
+ * Testimonials — horizontal scrolling carousel of curated 5-star guest
+ * reviews. Sits between the courtyard reveal and the sticky bar, on a
+ * white section background so the linen cards read against two linen
+ * neighbours with a breath of contrast in between.
+ *
+ * Structure mirrors RoomsStrip: native overflow-x strip with scroll-snap,
+ * desktop hover arrows, edge peek on the last card to signal scrollability.
+ */
+
+.section {
+  padding: 64px 24px 56px;
+  background: var(--jp-bg-primary);
+}
+
+.inner {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.headline {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(24px, 2.6vw, 32px);
+  line-height: 1.2;
+  color: var(--jp-text-primary);
+  text-align: center;
+  margin: 0 0 32px;
+}
+
+/* ============================================
+   STRIP
+   ============================================ */
+
+.stripWrap {
+  position: relative;
+}
+
+.strip {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 8px 24px 24px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(122, 96, 48, 0.22) transparent;
+}
+
+.strip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.strip::-webkit-scrollbar-thumb {
+  background: rgba(122, 96, 48, 0.22);
+  border-radius: var(--jp-radius-full);
+}
+
+/* ============================================
+   CARD
+   ============================================ */
+
+.card {
+  flex: 0 0 clamp(280px, 26vw, 320px);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 24px 24px;
+  background: var(--jp-linen-mid);
+  border-radius: var(--jp-radius-lg);
+  box-shadow: 0 0 0 rgba(122, 96, 48, 0);
+  transition: box-shadow 300ms ease;
+}
+
+.card:hover {
+  box-shadow: 0 8px 24px rgba(139, 112, 64, 0.08);
+}
+
+/* Top row — stars + platform tag */
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.stars {
+  color: var(--jp-gold);
+  font-size: 12px;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+.platform {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Platform brand colors — same literal hex values already used in
+   TrustBadges.module.css (.pillAirbnb / .pillVrbo), kept as literals so
+   the color language stays consistent across the social-proof strip. */
+.platform_airbnb {
+  color: #ff5a5f;
+}
+
+.platform_vrbo {
+  color: #3c5b98;
+}
+
+.quote {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--jp-text-primary);
+  margin: 0 0 18px;
+  flex: 1;
+}
+
+.footer {
+  border-top: 1px solid rgba(122, 96, 48, 0.08);
+  padding-top: 14px;
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--jp-text-primary);
+  margin: 0;
+  flex-wrap: wrap;
+}
+
+/* Small "Verified guest" inline badge sitting next to the name. The
+   checkmark pill uses the sage palette so it reads as "confirmed" without
+   competing with the platform color-coding. */
+.verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 9.5px;
+  letter-spacing: 0.6px;
+  color: var(--jp-sage-deep);
+  text-transform: uppercase;
+}
+
+.verifiedIcon {
+  width: 11px;
+  height: 11px;
+  color: var(--jp-sage-deep);
+  flex-shrink: 0;
+}
+
+.occasion {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--jp-text-secondary);
+  margin: 2px 0 10px;
+}
+
+/* Per-card source link — "Read on Airbnb ↗" / "Read on VRBO ↗". Uses the
+   platform's own brand color (inherits from .platform_airbnb / _vrbo) so
+   the link reads as trust-transfer to the host site. */
+.sourceLink {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10.5px;
+  letter-spacing: 0.6px;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 1px;
+  opacity: 0.85;
+  transition: opacity 160ms ease;
+}
+
+.sourceLink:hover {
+  opacity: 1;
+}
+
+.sourceLink:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+  opacity: 1;
+}
+
+/* ============================================
+   DESKTOP HOVER ARROWS — mirrors RoomsStrip
+   ============================================ */
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  background: rgba(20, 12, 0, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--jp-linen);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 200ms ease, background 200ms ease, color 200ms ease, transform 200ms ease;
+}
+
+.stripWrap:hover .arrow,
+.arrow:focus-visible {
+  opacity: 1;
+}
+
+.arrow:hover {
+  background: rgba(20, 12, 0, 0.62);
+  color: var(--jp-gold);
+  transform: translateY(-50%) scale(1.06);
+}
+
+.arrow:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+.arrow svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.arrowPrev { left: 14px; }
+.arrowNext { right: 14px; }
+
+/* ============================================
+   ALL-REVIEWS LINK
+   ============================================ */
+
+.allLinkRow {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.allLink {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: var(--jp-gold);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(212, 169, 48, 0.3);
+  padding-bottom: 2px;
+  transition: border-color 200ms ease, color 200ms ease;
+}
+
+.allLink:hover {
+  border-bottom-color: var(--jp-gold);
+  color: var(--jp-gold-deep);
+}
+
+.allLink:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 4px;
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card:hover,
+  .arrow,
+  .arrow:hover {
+    transition: none;
+    transform: none;
+  }
+  .arrow:hover {
+    transform: translateY(-50%);
+  }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1023px) {
+  .strip {
+    gap: 16px;
+  }
+  .card {
+    flex: 0 0 clamp(260px, 42vw, 300px);
+  }
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 48px 0 40px;
+  }
+  .headline {
+    font-size: 24px;
+    margin: 0 24px 24px;
+  }
+  .strip {
+    padding: 8px 24px 20px;
+    gap: 14px;
+  }
+  .card {
+    flex: 0 0 min(80vw, 280px);
+  }
+  /* Hover arrows hidden on touch — swipe is the nav. */
+  .arrow {
+    display: none;
+  }
+  .allLinkRow {
+    margin-top: 20px;
+    padding: 0 24px;
+  }
+}

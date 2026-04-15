@@ -1,0 +1,103 @@
+/*
+ * BookingPricingModal — shell styling only. The form fields, steps,
+ * chips, and success state all live in BookingFunnelSteps.module.css.
+ * This file owns the dialog, backdrop, card, and close button.
+ */
+
+.dialog {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--jp-text-primary);
+  max-width: 100vw;
+  max-height: 100vh;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.dialog::backdrop {
+  background: var(--jp-backdrop);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Center the card in the viewport */
+.body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.card {
+  position: relative;
+  width: min(480px, 100%);
+  max-height: 100vh;
+  margin: auto;
+  padding: 40px 36px 36px;
+  background: var(--jp-bg-primary);
+  border-radius: 20px;
+  box-shadow: 0 28px 56px rgba(20, 12, 0, 0.38);
+  overflow-y: auto;
+  box-sizing: border-box;
+  animation: cardIn 220ms ease-out both;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  background: transparent;
+  color: var(--jp-text-secondary);
+  cursor: pointer;
+  transition: background var(--jp-transition), color var(--jp-transition);
+}
+
+.close:hover {
+  background: var(--jp-linen-mid);
+  color: var(--jp-gold);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
+}
+
+.close svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card { animation: none; }
+}
+
+@media (max-width: 640px) {
+  .body {
+    padding: 16px;
+  }
+  .card {
+    padding: 32px 24px 28px;
+  }
+}

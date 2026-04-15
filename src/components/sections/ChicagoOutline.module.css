@@ -1,0 +1,49 @@
+/*
+ * ChicagoOutline — wrapper sizing + a gentle pulse on the property marker's
+ * two halo circles. Every other style is inline on the SVG itself.
+ */
+
+.map {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  display: block;
+}
+
+/* Two concentric halos around the property pin. Offset timing so the pulse
+   reads as a gentle, non-synchronized glow. transform-origin targets the
+   pin's center (cx=330, cy=195). */
+.haloOuter,
+.haloInner {
+  transform-origin: 330px 195px;
+  transform-box: fill-box;
+}
+
+.haloOuter {
+  opacity: 0.1;
+  animation: haloPulse 3s ease-in-out infinite;
+}
+
+.haloInner {
+  opacity: 0.15;
+  animation: haloPulse 3s ease-in-out infinite;
+  animation-delay: -1.2s;
+}
+
+@keyframes haloPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.08;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.22;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .haloOuter,
+  .haloInner {
+    animation: none;
+  }
+}

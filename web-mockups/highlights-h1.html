@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Jackpot — Highlights H1 · Editorial Cards</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../brand/tokens/brand.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; }
+body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  color: var(--jp-text-primary);
+  background: var(--jp-linen);
+  -webkit-font-smoothing: antialiased;
+}
+img { display: block; max-width: 100%; }
+
+/* ============================================
+   HIGHLIGHTS H1 — Editorial Cards
+   Asymmetric 12-col grid: hot tub gets the most
+   weight, fire pit closes as a wide banner.
+   ============================================ */
+.highlights {
+  padding: 96px 6vw 112px;
+  background: var(--jp-linen);
+}
+
+/* Section header — eyebrow + Cormorant title */
+.section-header {
+  max-width: 1280px;
+  margin: 0 auto 56px;
+}
+.eyebrow {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--jp-peach);
+  margin-bottom: 14px;
+}
+.section-title {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(36px, 4.6vw, 64px);
+  line-height: 1.05;
+  color: var(--jp-olive);
+  letter-spacing: -0.5px;
+  max-width: 760px;
+}
+
+/* The 12-col asymmetric grid */
+.grid {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: 320px 320px 280px;
+  gap: 18px;
+}
+
+/* Card placement */
+.card--hot-tub  { grid-column: 1 / span 8; grid-row: 1 / span 2; }
+.card--cinema   { grid-column: 9 / span 4; grid-row: 1 / span 1; }
+.card--game     { grid-column: 9 / span 4; grid-row: 2 / span 1; }
+.card--fire     { grid-column: 1 / span 12; grid-row: 3 / span 1; }
+
+.card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--jp-radius-md);
+  background: var(--jp-linen-deep);
+  isolation: isolate;
+}
+
+/* Photo layer — applied via ::before so the warm filter only
+   touches the image, not the overlay/text. TODO: tokenize the
+   filter as --jp-photo-filter once we use it in 2+ places. */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: saturate(1.05) brightness(1.02) sepia(0.05);
+  z-index: 0;
+}
+
+/* Photo crops — same two photos reused per the placeholder map */
+.card--hot-tub::before {
+  background-image: url('../brand/docs/photos/patio.png');
+  background-position: 75% 35%;
+}
+.card--cinema::before {
+  background-image: url('../brand/docs/photos/dining.jpg');
+  background-position: center 60%;
+}
+.card--game::before {
+  background-image: url('../brand/docs/photos/dining.jpg');
+  background-position: 30% 40%;
+  background-size: 140%;
+}
+.card--fire::before {
+  background-image: url('../brand/docs/photos/patio.png');
+  background-position: center 70%;
+}
+
+/* Legibility wash — soft warm gradient at the bottom */
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(122, 96, 48, 0) 0%,
+    rgba(122, 96, 48, 0) 35%,
+    rgba(122, 96, 48, 0.55) 80%,
+    rgba(70, 50, 18, 0.78) 100%);
+  z-index: 1;
+}
+
+/* Placeholder photo badge — top-right of every card */
+.placeholder-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(20, 12, 0, 0.55);
+  backdrop-filter: blur(4px);
+  border-radius: var(--jp-radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+.placeholder-badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--jp-peach);
+}
+
+/* Card content — lower-left, white type */
+.card-content {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 26px;
+  z-index: 2;
+  color: #fff;
+}
+.card--hot-tub .card-content { left: 36px; bottom: 32px; }
+.card--fire .card-content { left: 36px; bottom: 28px; max-width: 520px; }
+
+.card-eyebrow {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 10px;
+}
+.card-name {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: -0.3px;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.card--hot-tub .card-name { font-size: 44px; }
+.card--fire .card-name { font-size: 34px; }
+
+.card-caption {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 16px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.88);
+  max-width: 360px;
+}
+.card--hot-tub .card-caption { font-size: 19px; max-width: 420px; }
+
+/* ============================================
+   MOBILE — stack cards vertically
+   ============================================ */
+@media (max-width: 900px) {
+  .highlights { padding: 72px 24px 88px; }
+  .section-header { margin-bottom: 40px; }
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    gap: 14px;
+  }
+  .card--hot-tub,
+  .card--cinema,
+  .card--game,
+  .card--fire {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    height: 56vh;
+    min-height: 320px;
+  }
+  .card--hot-tub { height: 64vh; }
+  .card--fire { height: 50vh; }
+  .card-content { left: 24px; right: 24px; bottom: 22px; }
+  .card--hot-tub .card-content,
+  .card--fire .card-content { left: 24px; }
+  .card-name { font-size: 28px; }
+  .card--hot-tub .card-name { font-size: 36px; }
+  .card--fire .card-name { font-size: 30px; }
+  .card-caption { font-size: 15px; }
+  .card--hot-tub .card-caption { font-size: 17px; }
+}
+</style>
+</head>
+<body>
+
+<section class="highlights">
+  <header class="section-header">
+    <div class="eyebrow">THE HOUSE</div>
+    <h2 class="section-title">Inside the Jackpot</h2>
+  </header>
+
+  <div class="grid">
+
+    <article class="card card--hot-tub">
+      <div class="placeholder-badge">Placeholder · Hot tub</div>
+      <div class="card-content">
+        <div class="card-eyebrow">01 / The hot tub</div>
+        <div class="card-name">Hot tub</div>
+        <p class="card-caption">for eight, beneath a louvered pergola wrapped in string lights.</p>
+      </div>
+    </article>
+
+    <article class="card card--cinema">
+      <div class="placeholder-badge">Placeholder · Cinema</div>
+      <div class="card-content">
+        <div class="card-eyebrow">02</div>
+        <div class="card-name">Cinema</div>
+        <p class="card-caption">120 inches, popcorn machine, lights down low.</p>
+      </div>
+    </article>
+
+    <article class="card card--game">
+      <div class="placeholder-badge">Placeholder · Game room</div>
+      <div class="card-content">
+        <div class="card-eyebrow">03</div>
+        <div class="card-name">Game room</div>
+        <p class="card-caption">poker, foosball, ping pong, and a fully stocked bar.</p>
+      </div>
+    </article>
+
+    <article class="card card--fire">
+      <div class="placeholder-badge">Placeholder · Fire pit</div>
+      <div class="card-content">
+        <div class="card-eyebrow">04 / The yard</div>
+        <div class="card-name">Fire pit</div>
+        <p class="card-caption">Adirondack chairs and a fenced yard that feels like nobody else exists.</p>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+</body>
+</html>

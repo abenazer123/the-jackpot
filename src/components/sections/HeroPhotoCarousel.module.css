@@ -1,0 +1,167 @@
+/*
+ * HeroPhotoCarousel — the cycling photo column in the hero (desktop only).
+ *
+ * All slides are stacked with position: absolute; only the active one has
+ * opacity 1 and a 700ms cross-fade does the rest. The caption and dots
+ * pager sit on top of the photo at the bottom-right. Small prev/next
+ * arrow pills live at the vertical midpoint of the column edges.
+ */
+
+.carousel {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 700ms ease;
+  pointer-events: none;
+}
+
+.slideActive {
+  opacity: 1;
+}
+
+.image {
+  object-fit: cover;
+  object-position: center 40%;
+}
+
+/* Caption — bottom-right, matches the original hero photoCaption position.
+   Keyed by currentIndex so it cross-fades with the photo. */
+.caption {
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+  z-index: 2;
+  text-align: right;
+  color: #fff;
+  animation: captionFadeIn 700ms ease both;
+}
+
+.captionLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 4px;
+}
+
+.captionPlace {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: 18px;
+}
+
+@keyframes captionFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Dots pager — small row below the caption */
+.dots {
+  position: absolute;
+  bottom: 14px;
+  right: 32px;
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(250, 246, 239, 0.42);
+  cursor: pointer;
+  transition: background 200ms ease, transform 200ms ease;
+}
+
+.dot:hover {
+  background: rgba(250, 246, 239, 0.75);
+}
+
+.dot:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+.dotActive,
+.dotActive:hover {
+  background: var(--jp-gold);
+  transform: scale(1.25);
+}
+
+/* Arrow pills — paired at the bottom-left corner of the photo column. */
+.arrow {
+  position: absolute;
+  bottom: 32px;
+  z-index: 3;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  background: rgba(20, 12, 0, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--jp-linen);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 250ms ease, background 200ms ease, color 200ms ease, transform 200ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Show arrows when the carousel is hovered OR when arrows receive focus */
+.carousel:hover .arrow,
+.arrow:focus-visible {
+  opacity: 1;
+}
+
+.arrow:hover {
+  background: rgba(20, 12, 0, 0.62);
+  color: var(--jp-gold);
+  transform: scale(1.06);
+}
+
+.arrow:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+.arrow svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.prev { left: 32px; }
+.next { left: 84px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .slide { transition: none; }
+  .caption { animation: none; }
+  .arrow,
+  .arrow:hover {
+    transform: none;
+  }
+  .dot,
+  .dotActive {
+    transition: none;
+  }
+}

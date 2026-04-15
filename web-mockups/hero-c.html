@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Jackpot — Hero C · Bottom-Anchored Atmospheric</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../brand/tokens/brand.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  color: var(--jp-text-primary);
+  background: var(--jp-bg-primary);
+  -webkit-font-smoothing: antialiased;
+}
+img { display: block; max-width: 100%; }
+
+/* ============================================
+   HERO C — Bottom-Anchored Atmospheric · Cinematic
+   ============================================ */
+.hero {
+  height: 80vh;
+  background: var(--jp-gradient);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Faint pattern texture across the whole gradient — uses the production white pattern tile */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('../brand/patterns/pattern-starburst-white.svg');
+  background-repeat: repeat;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Large background starburst, top-right area, very subtle */
+.hero .bg-starburst {
+  position: absolute;
+  top: -8%;
+  right: -8%;
+  width: min(900px, 70vw);
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+/* Soft fade at the bottom of the hero so the gradient transitions into the photo peek */
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  background: linear-gradient(180deg, rgba(238, 128, 69, 0) 0%, rgba(232, 160, 64, 0.18) 100%);
+  pointer-events: none;
+}
+
+/* Content sits in the lower-left third — atmospheric, cinematic */
+.hero-content {
+  position: absolute;
+  bottom: 8vh;
+  left: 8vw;
+  z-index: 1;
+  color: #fff;
+  max-width: 640px;
+}
+
+.the {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 13px;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+
+.jackpot {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: clamp(64px, 10vw, 132px);
+  line-height: 0.92;
+  letter-spacing: 3px;
+  color: #fff;
+  padding-bottom: 0.18em;
+}
+
+.chicago-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.chicago {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 12px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0.7;
+}
+
+.tagline {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(18px, 2.2vw, 26px);
+  color: #fff;
+  opacity: 0.92;
+  margin-top: 28px;
+}
+
+.cta-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 17px 38px;
+  background: #fff;
+  color: var(--jp-gold-deep);
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 1px;
+  border-radius: var(--jp-radius-full);
+  text-decoration: none;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.18);
+}
+
+.grounding {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0.55;
+}
+
+/* Reveal photo peek — taller and more integrated for the cinematic effect */
+.reveal-peek {
+  height: 20vh;
+  background-image: url('../brand/docs/photos/patio.png');
+  background-size: cover;
+  background-position: center 35%;
+  position: relative;
+}
+.reveal-peek::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(232, 160, 64, 0.45) 0%, rgba(232, 160, 64, 0) 100%);
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .hero-content { left: 24px; right: 24px; bottom: 6vh; }
+  .cta { padding: 14px 28px; font-size: 12px; }
+  .tagline { font-size: 17px; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <!-- Background starburst -->
+  <svg class="bg-starburst" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(60,60)">
+      <line x1="0" y1="-55" x2="0" y2="55" stroke="#fff" stroke-width="1.8"/>
+      <line x1="-55" y1="0" x2="55" y2="0" stroke="#fff" stroke-width="1.8"/>
+      <line x1="-39" y1="-39" x2="39" y2="39" stroke="#fff" stroke-width="1.2"/>
+      <line x1="39" y1="-39" x2="-39" y2="39" stroke="#fff" stroke-width="1.2"/>
+      <line x1="-14" y1="-53" x2="14" y2="53" stroke="#fff" stroke-width="0.8"/>
+      <line x1="14" y1="-53" x2="-14" y2="53" stroke="#fff" stroke-width="0.8"/>
+      <line x1="-53" y1="-14" x2="53" y2="14" stroke="#fff" stroke-width="0.8"/>
+      <line x1="-53" y1="14" x2="53" y2="-14" stroke="#fff" stroke-width="0.8"/>
+      <circle cx="0" cy="0" r="3.5" fill="#fff"/>
+    </g>
+  </svg>
+
+  <div class="hero-content">
+    <div class="the">THE</div>
+    <h1 class="jackpot">JACKPOT</h1>
+    <div class="chicago-row">
+      <svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(7,7)">
+          <line x1="0" y1="-5" x2="0" y2="5" stroke="#fff" stroke-width="0.9" opacity="0.8"/>
+          <line x1="-5" y1="0" x2="5" y2="0" stroke="#fff" stroke-width="0.9" opacity="0.8"/>
+          <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5" stroke="#fff" stroke-width="0.6" opacity="0.55"/>
+          <line x1="3.5" y1="-3.5" x2="-3.5" y2="3.5" stroke="#fff" stroke-width="0.6" opacity="0.55"/>
+          <circle cx="0" cy="0" r="1.1" fill="#fff"/>
+        </g>
+      </svg>
+      <span class="chicago">CHICAGO</span>
+    </div>
+    <div class="tagline">you found something special</div>
+    <div class="cta-row">
+      <a class="cta" href="#book">Check availability</a>
+      <span class="grounding">A luxury group home ✦ Sleeps 14</span>
+    </div>
+  </div>
+</header>
+
+<div class="reveal-peek"></div>
+
+</body>
+</html>

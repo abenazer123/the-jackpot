@@ -1,0 +1,185 @@
+/*
+ * ChicagoMapViewer — click-to-enlarge affordance wrapping ChicagoOutline.
+ * The inline map is wrapped in a button; clicking anywhere on the map opens
+ * a native <dialog> with a full-screen larger version. A small pill in the
+ * top-right corner of the inline map signals that it's clickable.
+ */
+
+.trigger {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  border-radius: var(--jp-radius-md);
+  overflow: hidden;
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.trigger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(20, 12, 0, 0.28);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+/* Enlarge hint — small gold-inked pill in the top-right of the map. */
+.hint {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(20, 12, 0, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(212, 169, 48, 0.38);
+  border-radius: var(--jp-radius-full);
+  color: var(--jp-gold);
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  pointer-events: none;
+  transition: background 200ms ease, border-color 200ms ease;
+}
+
+.trigger:hover .hint {
+  background: rgba(20, 12, 0, 0.72);
+  border-color: var(--jp-gold);
+}
+
+.hint svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ============================================
+   ENLARGED DIALOG
+   ============================================ */
+
+.dialog {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--jp-linen);
+  max-width: 100vw;
+  max-height: 100vh;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.dialog::backdrop {
+  background: rgba(20, 12, 0, 0.88);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.dialogBody {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 32px;
+  box-sizing: border-box;
+}
+
+.enlarged {
+  width: 100%;
+  max-width: min(1200px, 96vw);
+  animation: mapIn 220ms ease-out both;
+}
+
+/* Override ChicagoOutline's own max-width so the SVG fills our enlarged
+   container. */
+.enlarged > svg {
+  max-width: 100%;
+  height: auto;
+}
+
+@keyframes mapIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  background: rgba(250, 246, 239, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--jp-linen);
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease;
+}
+
+.close:hover {
+  background: rgba(250, 246, 239, 0.22);
+  color: var(--jp-gold);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+.close svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enlarged { animation: none; }
+  .trigger,
+  .trigger:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .hint {
+    top: 10px;
+    right: 10px;
+    padding: 5px 8px;
+    font-size: 9px;
+    letter-spacing: 1.2px;
+  }
+  .dialogBody {
+    padding: 60px 12px 20px;
+  }
+  .close {
+    top: 14px;
+    right: 14px;
+    width: 40px;
+    height: 40px;
+  }
+}

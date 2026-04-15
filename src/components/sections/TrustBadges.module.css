@@ -1,0 +1,323 @@
+/*
+ * TrustBadges — compact credibility strip between the hero and the
+ * highlights grid. Two platform cards (Airbnb + VRBO) with native brand
+ * colors, ratings in the brand's display font, platform-specific
+ * accolades, and an anchor line totalling the reviews. No CTAs, no
+ * photos — credibility only.
+ */
+
+.section {
+  padding: 56px 24px 48px;
+  background: var(--jp-linen);
+}
+
+.inner {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.starburst {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.headline {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 26px;
+  line-height: 1.2;
+  color: var(--jp-text-primary);
+  margin: 0;
+}
+
+/* Gradient-clipped accent on the emphasized word — mirrors the JACKPOT
+   wordmark's treatment: bold Cormorant, uppercase, letter-spaced, painted
+   with the full 5-stop brand gradient via background-clip:text. Drops the
+   surrounding italic so the word reads as a typographic break — bold
+   roman among italic script — instead of just a color swap. */
+.headlineAccent {
+  font-weight: 700;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  background: var(--jp-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  padding: 0 0.04em 0.08em;
+}
+
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .headlineAccent {
+    color: var(--jp-gold-deep);
+    -webkit-text-fill-color: var(--jp-gold-deep);
+  }
+}
+
+/* ============================================
+   CARDS
+   ============================================ */
+
+.cards {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.card {
+  flex: 0 1 360px;
+  min-width: 280px;
+  padding: 32px 36px;
+  background: var(--jp-linen-mid);
+  border-radius: 14px;
+  text-align: center;
+  transition: box-shadow 300ms ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.card:hover {
+  box-shadow: 0 8px 24px rgba(139, 112, 64, 0.08);
+}
+
+/* ============================================
+   LOGOS
+   ============================================ */
+
+.logoRow {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 20px;
+  line-height: 1;
+}
+
+.airbnbLogo {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+
+.vrboLogo {
+  height: 26px;
+  width: auto;
+  display: block;
+}
+
+/* ============================================
+   GUEST FAVORITE BADGE (Airbnb)
+   Laurel + text + laurel, matches Airbnb's native display.
+   ============================================ */
+
+.guestFavorite {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.laurel {
+  width: 22px;
+  height: 28px;
+  color: #caa63a;
+  flex-shrink: 0;
+}
+
+.laurelRight {
+  transform: scaleX(-1);
+}
+
+.guestFavoriteText {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--jp-text-primary);
+  letter-spacing: -0.1px;
+}
+
+.guestFavoriteSub {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--jp-text-secondary);
+  margin: 0 0 16px;
+  max-width: 260px;
+}
+
+/* ============================================
+   RATING
+   ============================================ */
+
+.rating {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: 44px;
+  line-height: 1;
+  color: var(--jp-text-primary);
+  margin: 0 0 4px;
+}
+
+.stars {
+  color: var(--jp-gold);
+  font-size: 15px;
+  letter-spacing: 4px;
+  margin-bottom: 14px;
+}
+
+.ratingLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+  margin-bottom: 14px;
+}
+
+/* ============================================
+   SECONDARY PILLS (Superhost / Top 5% / VRBO "Exceptional")
+   ============================================ */
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.pillAirbnb {
+  background: rgba(255, 90, 95, 0.1);
+  color: #ff5a5f;
+}
+
+.pillVrbo {
+  background: rgba(60, 91, 152, 0.1);
+  color: #3c5b98;
+}
+
+.pillNeutral {
+  background: rgba(212, 169, 48, 0.12);
+  color: var(--jp-gold-deep);
+}
+
+.pillIcon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+}
+
+/* VRBO card — inline category score row with dot separators. */
+.categoryScores {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11.5px;
+  color: var(--jp-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  max-width: 280px;
+}
+
+.categoryScore {
+  color: var(--jp-text-primary);
+  font-weight: 600;
+  letter-spacing: -0.1px;
+}
+
+.categoryDot {
+  color: rgba(122, 96, 48, 0.38);
+}
+
+.reviewCount {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 12px;
+  color: var(--jp-text-secondary);
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+/* ============================================
+   ANCHOR LINE
+   ============================================ */
+
+.anchor {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 15px;
+  color: #b89840;
+  text-align: center;
+  margin: 32px 0 0;
+}
+
+/* ============================================
+   MOBILE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .section {
+    padding: 40px 24px 36px;
+  }
+  .headline {
+    font-size: 22px;
+  }
+  .header {
+    margin-bottom: 32px;
+  }
+  .cards {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .card {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 28px 24px;
+  }
+  .rating {
+    font-size: 38px;
+  }
+  .guestFavoriteText {
+    font-size: 15px;
+  }
+  .guestFavoriteSub {
+    font-size: 12px;
+  }
+  .anchor {
+    margin-top: 24px;
+  }
+}

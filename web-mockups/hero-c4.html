@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Jackpot — Hero C4 · Photo + Stats</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../brand/tokens/brand.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  color: var(--jp-text-primary);
+  background: var(--jp-bg-primary);
+  -webkit-font-smoothing: antialiased;
+}
+img { display: block; max-width: 100%; }
+
+/* ============================================
+   HERO C4 — Photo Column + Inline Stats
+   Best of C1 (photo) + C3 (stats), bigger tagline,
+   mobile orders photo BELOW brand content
+   ============================================ */
+.hero {
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 60fr 40fr;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Left column — gradient with brand content */
+.hero-left {
+  position: relative;
+  background: var(--jp-gradient);
+  overflow: hidden;
+}
+.hero-left::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('../brand/patterns/pattern-starburst-white.svg');
+  background-repeat: repeat;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.hero-left .bg-starburst {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: min(720px, 70%);
+  opacity: 0.05;
+  pointer-events: none;
+}
+/* Soft warm seam where the gradient meets the photo column */
+.hero-left::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 100px;
+  background: linear-gradient(90deg, rgba(238, 128, 69, 0) 0%, rgba(238, 128, 69, 0.22) 100%);
+  pointer-events: none;
+}
+
+/* Right column — patio photo full bleed */
+.hero-right {
+  background-image: url('../brand/docs/photos/patio.png');
+  background-size: cover;
+  background-position: center 40%;
+  position: relative;
+}
+.hero-right::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(232, 160, 64, 0.22) 0%,
+    rgba(232, 160, 64, 0) 25%,
+    rgba(232, 160, 64, 0) 55%,
+    rgba(200, 140, 30, 0.35) 100%);
+  pointer-events: none;
+}
+
+/* Bottom-left content stack — the brand-first composition */
+.hero-content {
+  position: absolute;
+  bottom: 8vh;
+  left: 6vw;
+  right: 4vw;
+  z-index: 1;
+  color: #fff;
+  max-width: 600px;
+}
+
+.the {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 13px;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+.jackpot {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: clamp(64px, 8.5vw, 124px);
+  line-height: 0.92;
+  letter-spacing: 3px;
+  color: #fff;
+  padding-bottom: 0.18em;
+}
+.chicago-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+.chicago {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 12px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0.7;
+}
+
+/* TAGLINE — significantly larger and more prominent than before */
+.tagline {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(24px, 2.6vw, 36px);
+  line-height: 1.15;
+  color: #fff;
+  opacity: 0.95;
+  margin-top: 32px;
+  max-width: 480px;
+}
+
+/* Inline stat strip — small, editorial, doesn't compete with the tagline */
+.stat-strip {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #fff;
+}
+.stat-strip .stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.stat-strip .num {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0;
+  color: #fff;
+}
+.stat-strip .num em {
+  font-style: italic;
+  font-weight: 400;
+  font-size: 13px;
+  opacity: 0.85;
+}
+.stat-strip .lbl {
+  opacity: 0.7;
+}
+.stat-strip .sep {
+  width: 1px;
+  height: 18px;
+  background: #fff;
+  opacity: 0.25;
+}
+
+.cta-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 17px 38px;
+  background: #fff;
+  color: var(--jp-gold-deep);
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 1px;
+  border-radius: var(--jp-radius-full);
+  text-decoration: none;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.18);
+}
+.grounding {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0.55;
+}
+
+/* Photo column micro-caption (overlay at bottom of photo) */
+.photo-caption {
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+  z-index: 1;
+  text-align: right;
+  color: #fff;
+}
+.photo-caption .lbl {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 4px;
+}
+.photo-caption .place {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: 18px;
+}
+
+/* ============================================
+   MOBILE — photo BELOW brand content (not above)
+   ============================================ */
+@media (max-width: 900px) {
+  .hero {
+    height: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+  .hero-left {
+    min-height: 78vh;
+    order: 1;
+  }
+  .hero-right {
+    height: 38vh;
+    order: 2;
+  }
+  .hero-left::after { display: none; }
+  .hero-content {
+    left: 24px;
+    right: 24px;
+    bottom: 6vh;
+    max-width: none;
+  }
+  .tagline { font-size: clamp(22px, 6vw, 32px); margin-top: 24px; }
+  .cta { padding: 14px 28px; font-size: 12px; }
+  .photo-caption { bottom: 16px; right: 16px; }
+  .photo-caption .place { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-left">
+    <svg class="bg-starburst" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(60,60)">
+        <line x1="0" y1="-55" x2="0" y2="55" stroke="#fff" stroke-width="1.8"/>
+        <line x1="-55" y1="0" x2="55" y2="0" stroke="#fff" stroke-width="1.8"/>
+        <line x1="-39" y1="-39" x2="39" y2="39" stroke="#fff" stroke-width="1.2"/>
+        <line x1="39" y1="-39" x2="-39" y2="39" stroke="#fff" stroke-width="1.2"/>
+        <circle cx="0" cy="0" r="3.5" fill="#fff"/>
+      </g>
+    </svg>
+
+    <div class="hero-content">
+      <div class="the">THE</div>
+      <h1 class="jackpot">JACKPOT</h1>
+      <div class="chicago-row">
+        <svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
+          <g transform="translate(7,7)">
+            <line x1="0" y1="-5" x2="0" y2="5" stroke="#fff" stroke-width="0.9" opacity="0.8"/>
+            <line x1="-5" y1="0" x2="5" y2="0" stroke="#fff" stroke-width="0.9" opacity="0.8"/>
+            <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5" stroke="#fff" stroke-width="0.6" opacity="0.55"/>
+            <line x1="3.5" y1="-3.5" x2="-3.5" y2="3.5" stroke="#fff" stroke-width="0.6" opacity="0.55"/>
+            <circle cx="0" cy="0" r="1.1" fill="#fff"/>
+          </g>
+        </svg>
+        <span class="chicago">CHICAGO</span>
+      </div>
+
+      <div class="tagline">you found something special</div>
+
+      <div class="stat-strip">
+        <span class="stat"><span class="num">14</span><span class="lbl">sleeps</span></span>
+        <span class="sep"></span>
+        <span class="stat"><span class="num">5</span><span class="lbl">BR</span></span>
+        <span class="sep"></span>
+        <span class="stat"><span class="num">3</span><span class="lbl">BA</span></span>
+        <span class="sep"></span>
+        <span class="stat"><span class="num">5.0 <em>★ 47</em></span></span>
+      </div>
+
+      <div class="cta-row">
+        <a class="cta" href="#book">Check availability</a>
+        <span class="grounding">A luxury group home in Chicago</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="photo-caption">
+      <div class="lbl">THE BACKYARD</div>
+      <div class="place">at golden hour</div>
+    </div>
+  </div>
+</header>
+
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hero C Iterations — Compare</title>
+<link rel="stylesheet" href="../brand/tokens/brand.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  background: var(--jp-linen);
+  color: var(--jp-text-primary);
+  padding: 24px 32px 48px;
+}
+h1 {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 28px;
+  color: var(--jp-gold);
+  margin-bottom: 4px;
+}
+.subtitle {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+  margin-bottom: 28px;
+}
+.variants {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.variant {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--jp-border-default);
+  overflow: hidden;
+}
+.variant header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--jp-border-default);
+  background: var(--jp-bg-secondary);
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.variant .label {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--jp-peach);
+  flex-shrink: 0;
+}
+.variant .name {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 22px;
+  color: var(--jp-gold);
+  flex-shrink: 0;
+}
+.variant .desc {
+  font-size: 12px;
+  color: var(--jp-text-secondary);
+  line-height: 1.6;
+  max-width: 700px;
+}
+.variant iframe {
+  width: 100%;
+  height: 720px;
+  border: 0;
+  display: block;
+}
+.variant .actions {
+  padding: 12px 24px;
+  background: var(--jp-bg-tertiary);
+  border-top: 1px solid var(--jp-border-default);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+}
+.variant .actions a {
+  color: var(--jp-text-link);
+  text-decoration: none;
+  margin-right: 16px;
+}
+.variant .actions a:hover { color: var(--jp-text-link-hover); }
+</style>
+</head>
+<body>
+
+<h1>Hero · C iterations</h1>
+<div class="subtitle">three takes on filling the right side · same C foundation · same brand tokens</div>
+
+<div class="variants">
+
+  <div class="variant">
+    <header>
+      <span class="label">Baseline</span>
+      <span class="name">C — Original</span>
+      <span class="desc">The bottom-anchored atmospheric hero you liked. Brand on the lower-left, big breathing room above, reveal photo peek at bottom. Right side is intentionally empty.</span>
+    </header>
+    <iframe src="hero-c.html" title="Hero C baseline"></iframe>
+    <div class="actions"><a href="hero-c.html" target="_blank">open standalone →</a></div>
+  </div>
+
+  <div class="variant">
+    <header>
+      <span class="label">C1</span>
+      <span class="name">Vertical photo column</span>
+      <span class="desc">Most cinematic. Splits the hero ~58/42 — gradient + brand on the left, the patio photo as a tall vertical column on the right with a soft gold seam. The reveal photo is integrated into the column itself, not below. Mobile collapses photo above content.</span>
+    </header>
+    <iframe src="hero-c1.html" title="Hero C1"></iframe>
+    <div class="actions"><a href="hero-c1.html" target="_blank">open standalone →</a></div>
+  </div>
+
+  <div class="variant">
+    <header>
+      <span class="label">C2</span>
+      <span class="name">Pull quote sidebar</span>
+      <span class="desc">Most editorial. ~62/38 split with a 5-star pull quote on the right, italic Cormorant, soft hairline divider. Adds social proof in a magazine-sidebar way without competing with the brand voice. Reveal photo peek stays at the bottom.</span>
+    </header>
+    <iframe src="hero-c2.html" title="Hero C2"></iframe>
+    <div class="actions"><a href="hero-c2.html" target="_blank">open standalone →</a></div>
+  </div>
+
+  <div class="variant">
+    <header>
+      <span class="label">C3</span>
+      <span class="name">Stat stack + availability card</span>
+      <span class="desc">Most conversion-leaning. ~60/40 split. Right side has an editorial stat-stack (14 sleeps, 5 BR, 3 BA, 5.0 / 47 reviews) plus a frosted glass "Open this weekend · from $57" micro-card. Information without pressure.</span>
+    </header>
+    <iframe src="hero-c3.html" title="Hero C3"></iframe>
+    <div class="actions"><a href="hero-c3.html" target="_blank">open standalone →</a></div>
+  </div>
+
+  <div class="variant">
+    <header>
+      <span class="label">C4 ★</span>
+      <span class="name">Photo + inline stats</span>
+      <span class="desc">The combo. C1's vertical photo column on the right, C3's stats as a small editorial strip in the brand content area, and a noticeably larger tagline. Mobile orders the photo BELOW the brand content (not above). The grounding line is shorter ("A luxury group home in Chicago") since the stat strip already says "14 sleeps".</span>
+    </header>
+    <iframe src="hero-c4.html" title="Hero C4"></iframe>
+    <div class="actions"><a href="hero-c4.html" target="_blank">open standalone →</a></div>
+  </div>
+
+</div>
+
+</body>
+</html>

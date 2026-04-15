@@ -1,0 +1,462 @@
+/*
+ * BookingFunnelSteps — shared step content used by both the desktop
+ * BookingPricingModal and the mobile BookingBottomSheet. Handles four
+ * visual states: collect (conditional field set) → checking (branded
+ * pulse animation) → form (name/phone/guests/reason) → success.
+ *
+ * All colors reference brand tokens — no hardcoded hex or rgba in this
+ * file. Motion keyframes live at the bottom and respect
+ * prefers-reduced-motion.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Step wrapper — each step gets a slide+fade entry so transitions feel
+   intentional. Keyed remounts in the parent drive this animation. */
+.step {
+  display: flex;
+  flex-direction: column;
+  animation: stepEnter 300ms ease-out both;
+}
+
+@keyframes stepEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   STEP 1 — COLLECT
+   ============================================ */
+
+.intro {
+  text-align: center;
+  max-width: 440px;
+  margin: 0 auto 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.heading {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(24px, 2.6vw, 30px);
+  line-height: 1.15;
+  color: var(--jp-text-primary);
+  letter-spacing: -0.3px;
+  text-align: center;
+  margin: 0;
+}
+
+.subHeadline {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--jp-text-secondary);
+  text-align: center;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 16px 12px;
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-chip);
+  border-radius: var(--jp-radius-md);
+  transition: background var(--jp-transition), border-color var(--jp-transition), box-shadow var(--jp-transition);
+}
+
+/* Active field — gold ring + subtle warm tint + gold label so the
+   focused field is unmistakable across the modal / sheet. */
+.field:focus-within {
+  background: var(--jp-gold-10);
+  border-color: var(--jp-gold);
+  box-shadow: 0 0 0 3px rgba(212, 169, 48, 0.45);
+}
+
+.fieldLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: rgba(122, 96, 48, 0.68);
+  transition: color var(--jp-transition);
+}
+
+.field:focus-within .fieldLabel {
+  color: var(--jp-gold-deep);
+}
+
+.input {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 15px;
+  color: var(--jp-text-primary);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  outline: none;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.input::placeholder {
+  color: rgba(122, 96, 48, 0.42);
+}
+
+/* ============================================
+   STEP 2 — CHECKING BEAT
+   ============================================ */
+
+.checking {
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px 0;
+}
+
+.pulseWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--jp-radius-full);
+}
+
+.pulsing {
+  animation: starburstPulse 400ms ease-in-out 2;
+}
+
+.resolving {
+  animation: starburstResolve 600ms ease-out both;
+  box-shadow: var(--jp-shadow-gold-glow);
+}
+
+@keyframes starburstPulse {
+  0%, 100% { transform: scale(1.0); opacity: 0.6; }
+  50%      { transform: scale(0.9); opacity: 0.9; }
+}
+
+@keyframes starburstResolve {
+  0%   { transform: scale(1.0); }
+  40%  { transform: scale(1.05); }
+  100% { transform: scale(1.0); }
+}
+
+.revealText {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--jp-gold);
+  text-align: center;
+  margin: 0;
+  animation: stepEnter 400ms ease-out both;
+}
+
+.revealRange {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--jp-text-secondary);
+  text-align: center;
+  margin: 0;
+  animation: stepEnter 500ms ease-out both;
+}
+
+/* ============================================
+   STEP 3 — FORM
+   ============================================ */
+
+/* Guests select — sits inside the shared .field pill so it matches the
+   name/phone inputs exactly. Native <select>; the chevron is an overlaid
+   SVG so the browser's default arrow doesn't double up. */
+.selectWrap {
+  position: relative;
+  display: block;
+}
+
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 15px;
+  color: var(--jp-text-primary);
+  background: transparent;
+  border: 0;
+  padding: 0 24px 0 0;
+  margin: 0;
+  width: 100%;
+  outline: none;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.select::-ms-expand {
+  display: none;
+}
+
+.selectChevron {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 8px;
+  color: var(--jp-text-secondary);
+  pointer-events: none;
+}
+
+/* Reason chips */
+.reasonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reasonLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: rgba(122, 96, 48, 0.68);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 8px 16px;
+  background: var(--jp-linen-mid);
+  border: 1px solid var(--jp-border-chip);
+  border-radius: var(--jp-radius-full);
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--jp-text-primary);
+  cursor: pointer;
+  transition: background var(--jp-transition), border-color var(--jp-transition), color var(--jp-transition);
+}
+
+.chip:hover {
+  border-color: var(--jp-border-chip-hover);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
+}
+
+.chipActive,
+.chipActive:hover {
+  background: var(--jp-gradient);
+  border-color: transparent;
+  color: var(--jp-text-on-color);
+  font-weight: 500;
+}
+
+/* Host online indicator now lives in HostPresence.module.css — the
+   <HostPresence /> component is consumed directly in the form step. */
+
+.consent {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--jp-text-tertiary);
+  margin: 4px 0 0;
+}
+
+/* ============================================
+   SUBMIT BUTTON
+   ============================================ */
+
+.submit {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  background: var(--jp-gradient);
+  color: var(--jp-text-on-color);
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition: filter var(--jp-transition), box-shadow var(--jp-transition), transform var(--jp-transition);
+}
+
+.submit:hover {
+  filter: brightness(1.08);
+  box-shadow: var(--jp-shadow-gold-hover);
+}
+
+.submit:active {
+  transform: scale(0.98);
+  transition-duration: 80ms;
+}
+
+.submit:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+.submit:disabled,
+.submit:disabled:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
+  box-shadow: none;
+  transform: none;
+}
+
+/* ============================================
+   SUCCESS STATE
+   ============================================ */
+
+.success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px 0 0;
+  gap: 14px;
+  animation: stepEnter 400ms ease-out both;
+}
+
+.successMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--jp-radius-full);
+  box-shadow: var(--jp-shadow-gold-glow);
+  animation: starburstResolve 600ms ease-out both;
+}
+
+.successHeading {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--jp-text-primary);
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.successBody {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--jp-text-secondary);
+  max-width: 380px;
+  margin: 0;
+}
+
+.successEmail {
+  color: var(--jp-text-primary);
+  font-weight: 500;
+}
+
+.successLink {
+  margin-top: 8px;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--jp-gold);
+  background: none;
+  border: 0;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: color var(--jp-transition);
+}
+
+.successLink:hover {
+  color: var(--jp-gold-deep);
+}
+
+.successLink:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .step,
+  .revealText,
+  .revealRange,
+  .success,
+  .successMark {
+    animation: none;
+  }
+  .pulsing {
+    animation: none;
+  }
+  .resolving {
+    animation: none;
+  }
+  .submit,
+  .submit:active {
+    transform: none;
+  }
+}
+
+/* ============================================
+   MOBILE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+  .checking {
+    min-height: 220px;
+  }
+}

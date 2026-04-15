@@ -1,0 +1,226 @@
+/*
+ * LocationSection — the "where you'll stay" beat between the highlights
+ * grid and the reveal photo.
+ *
+ * Centered editorial header, a Cormorant italic pull-quote reframe set
+ * between gold hairline rules, then a two-column split on desktop
+ * (distance list | stylized Chicago outline) that stacks on mobile.
+ */
+
+.section {
+  padding: 48px 6vw 112px;
+  background: var(--jp-bg-primary);
+}
+
+.inner {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.headerMark {
+  opacity: 0.9;
+}
+
+.headline {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(36px, 4.6vw, 64px);
+  line-height: 1.05;
+  letter-spacing: -0.5px;
+  color: var(--jp-olive);
+  margin: 0;
+}
+
+.paragraph {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--jp-text-primary);
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.namedSpots {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  color: rgba(122, 96, 48, 0.65);
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.55;
+}
+
+/* ============================================
+   SPLIT ROW — distances + map
+   ============================================ */
+
+/* Two-col on desktop: distances on the left, rich map on the right. Map gets
+   more column width so its inline labels stay readable. */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 56px;
+  align-items: center;
+  margin: 56px auto 40px;
+  max-width: 1080px;
+}
+
+.distanceList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.distance {
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(122, 96, 48, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.distance:first-child {
+  padding-top: 0;
+}
+
+.distance:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.distanceTime {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--jp-text-primary);
+  letter-spacing: -0.2px;
+}
+
+.distanceLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(122, 96, 48, 0.62);
+}
+
+.mapWrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ============================================
+   CTA
+   ============================================ */
+
+.ctaWrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 40px;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  background: var(--jp-gradient-button);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.4px;
+  text-decoration: none;
+  cursor: pointer;
+  transform: translateY(0);
+  transition: filter 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  box-shadow: 0 10px 22px rgba(200, 110, 30, 0.32);
+}
+
+.ctaText {
+  color: #fff;
+}
+
+.cta:hover {
+  filter: brightness(1.05) saturate(1.04);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(200, 110, 30, 0.42);
+}
+
+.cta:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 5px 12px rgba(200, 110, 30, 0.34);
+  transition-duration: 80ms;
+}
+
+.cta:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta,
+  .cta:hover,
+  .cta:active {
+    transform: none;
+  }
+}
+
+/* ============================================
+   MOBILE
+   ============================================ */
+
+@media (max-width: 900px) {
+  .section {
+    padding: 24px 24px 80px;
+  }
+  .split {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    margin: 40px auto 32px;
+  }
+  /* Mobile: distances first as a compact horizontal wrap row, map second. */
+  .distanceList {
+    order: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px 28px;
+  }
+  .distance,
+  .distance:first-child,
+  .distance:last-child {
+    padding: 0;
+    border-bottom: 0;
+    align-items: center;
+    text-align: center;
+  }
+  .distanceTime { font-size: 18px; }
+  .distanceLabel { font-size: 9px; letter-spacing: 1.8px; }
+  .mapWrap { order: 2; }
+}

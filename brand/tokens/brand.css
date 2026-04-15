@@ -134,4 +134,27 @@
      ========================================== */
   --jp-transition: 200ms ease;
   --jp-transition-slow: 400ms ease;
+
+  /* ==========================================
+     BOOKING FUNNEL TOKENS
+     ========================================== */
+  /* Shadows (warm only) */
+  --jp-shadow-sm: 0 2px 12px rgba(139, 112, 64, 0.06);
+  --jp-shadow-up: 0 -4px 24px rgba(139, 112, 64, 0.12);
+  --jp-shadow-gold-hover: 0 4px 12px rgba(212, 169, 48, 0.2);
+  --jp-shadow-gold-glow: 0 0 24px rgba(212, 169, 48, 0.15);
+
+  /* Backdrops (warm dark overlays) */
+  --jp-backdrop: rgba(20, 12, 0, 0.62);
+  --jp-backdrop-light: rgba(20, 12, 0, 0.5);
+
+  /* Borders */
+  --jp-border-subtle: rgba(122, 96, 48, 0.08);
+  --jp-border-chip: rgba(122, 96, 48, 0.1);
+  --jp-border-chip-hover: rgba(122, 96, 48, 0.25);
+  --jp-handle-bar: rgba(122, 96, 48, 0.15);
+
+  /* Feedback */
+  --jp-error: #c05040;
+  --jp-online-dot: var(--jp-sage);
 }

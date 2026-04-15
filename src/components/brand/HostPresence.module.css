@@ -1,0 +1,97 @@
+/*
+ * HostPresence — styling for the shared online indicator. The dot changes
+ * color + pulse based on the online state; the text fades in on each copy
+ * change (key-based remount in the component drives the animation).
+ */
+
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--jp-font-body);
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+}
+
+.variantFull {
+  font-weight: 300;
+  font-size: 12px;
+}
+
+.variantCompact {
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+}
+
+/* ---------- tones ---------- */
+
+.default {
+  color: var(--jp-text-secondary);
+}
+
+.light {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ---------- dot ---------- */
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(122, 96, 48, 0.35);
+  transition: background 400ms ease;
+  flex-shrink: 0;
+}
+
+.light .dot {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.dotOnline {
+  background: var(--jp-online-dot);
+  animation: hostPulse 2s ease-in-out infinite;
+}
+
+.light .dotOnline {
+  background: var(--jp-online-dot);
+}
+
+@keyframes hostPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(138, 160, 119, 0.55);
+  }
+  60% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 6px rgba(138, 160, 119, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(138, 160, 119, 0);
+  }
+}
+
+/* ---------- text fade on copy change ---------- */
+
+.text {
+  animation: hostTextIn 320ms ease-out both;
+}
+
+@keyframes hostTextIn {
+  from { opacity: 0; transform: translateY(1px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot,
+  .dotOnline {
+    animation: none;
+    transition: none;
+    box-shadow: none;
+  }
+  .text {
+    animation: none;
+  }
+}
