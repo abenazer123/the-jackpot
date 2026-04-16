@@ -12,9 +12,53 @@
  * animation (disabled under prefers-reduced-motion).
  */
 
+import type { OccasionId } from "@/components/brand/OccasionProvider";
+
 import styles from "./ChicagoOutline.module.css";
 
-export function ChicagoOutline() {
+interface ChicagoOutlineProps {
+  occasion?: OccasionId | null;
+}
+
+const PIN_COLOR = "#d48879";
+
+interface MapPin {
+  x: number;
+  y: number;
+  label: string;
+  labelPos?: "above" | "below" | "right";
+  cluster?: boolean;
+}
+
+const OVERLAY_PINS: Partial<Record<OccasionId, MapPin[]>> = {
+  bachelorette: [
+    { x: 485, y: 280, label: "Boats", labelPos: "right" },
+    { x: 440, y: 315, label: "Hibachi row", labelPos: "right" },
+    { x: 425, y: 340, label: "Rooftop bars", labelPos: "right" },
+    { x: 330, y: 170, label: "Pickups here", labelPos: "above" },
+  ],
+  wedding: [
+    { x: 365, y: 165, label: "Artifact Events", labelPos: "above" },
+    { x: 375, y: 310, label: "Morgan MFG", labelPos: "right" },
+    { x: 385, y: 365, label: "West Loop", labelPos: "below", cluster: true },
+    { x: 410, y: 430, label: "Bridgeport Art Ctr", labelPos: "below" },
+    { x: 375, y: 410, label: "Lacuna Lofts", labelPos: "right" },
+  ],
+  family: [
+    { x: 460, y: 235, label: "Lincoln Park Zoo", labelPos: "right" },
+    { x: 490, y: 275, label: "Navy Pier", labelPos: "right" },
+    { x: 485, y: 395, label: "Shedd Aquarium", labelPos: "right" },
+    { x: 475, y: 415, label: "Field Museum", labelPos: "below" },
+  ],
+  birthday: [
+    { x: 385, y: 365, label: "West Loop dining", labelPos: "below", cluster: true },
+    { x: 440, y: 310, label: "River North", labelPos: "right", cluster: true },
+    { x: 375, y: 350, label: "Fulton Market", labelPos: "right" },
+    { x: 425, y: 335, label: "Rooftop bars", labelPos: "above" },
+  ],
+};
+
+export function ChicagoOutline({ occasion }: ChicagoOutlineProps) {
   return (
     <svg
       viewBox="0 0 680 520"
@@ -520,6 +564,77 @@ export function ChicagoOutline() {
       >
         NORTH PARK &middot; CHICAGO
       </text>
+
+      {/* Occasion overlay pins — one sub-group per occasion, opacity-toggled */}
+      {(["bachelorette", "wedding", "family", "birthday"] as const).map(
+        (id) => {
+          const pins = OVERLAY_PINS[id];
+          if (!pins) return null;
+          const active = occasion === id;
+          return (
+            <g
+              key={id}
+              className={
+                active ? styles.overlayActive : styles.overlayHidden
+              }
+            >
+              {pins.map((pin) => {
+                const tx =
+                  pin.labelPos === "right"
+                    ? pin.x + 8
+                    : pin.labelPos === "above"
+                      ? pin.x
+                      : pin.x;
+                const ty =
+                  pin.labelPos === "right"
+                    ? pin.y + 3
+                    : pin.labelPos === "above"
+                      ? pin.y - 10
+                      : pin.y + 14;
+                const anchor =
+                  pin.labelPos === "right" ? "start" : "middle";
+
+                return (
+                  <g key={pin.label}>
+                    <title>{pin.label}</title>
+                    {pin.cluster ? (
+                      <circle
+                        cx={pin.x}
+                        cy={pin.y}
+                        r="25"
+                        fill="none"
+                        stroke={PIN_COLOR}
+                        strokeWidth="0.8"
+                        strokeDasharray="4 3"
+                        opacity="0.15"
+                      />
+                    ) : null}
+                    <circle
+                      cx={pin.x}
+                      cy={pin.y}
+                      r="3"
+                      fill={PIN_COLOR}
+                      opacity="0.7"
+                    />
+                    <text
+                      x={tx}
+                      y={ty}
+                      fontFamily="Outfit, sans-serif"
+                      fontSize="9"
+                      fill={PIN_COLOR}
+                      opacity="0.6"
+                      textAnchor={anchor}
+                      fontWeight="400"
+                    >
+                      {pin.label}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+          );
+        },
+      )}
     </svg>
   );
 }

@@ -224,3 +224,125 @@
   .distanceLabel { font-size: 9px; letter-spacing: 1.8px; }
   .mapWrap { order: 2; }
 }
+
+/* ============================================
+   OCCASION-AWARE SECONDARY PILLS ROW
+   ============================================ */
+
+.occasionRow {
+  max-width: 960px;
+  margin: 8px auto 32px;
+  padding: 32px 0 8px;
+  text-align: center;
+  border-top: 1px solid rgba(212, 136, 121, 0.18);
+  opacity: 1;
+  animation: occasionRowIn 400ms ease-out both;
+}
+
+@keyframes occasionRowIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.occasionRow[data-occasion="getaway"],
+.occasionRow[data-occasion="none"] {
+  opacity: 0;
+  max-height: 0;
+  margin: 0 auto;
+  padding: 0;
+  overflow: hidden;
+  border-top: 0;
+  animation: none;
+}
+
+.occasionEyebrow {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(212, 136, 121, 0.85);
+  letter-spacing: 0.1px;
+  margin: 0 auto 22px;
+  max-width: 520px;
+}
+
+.occasionList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 10px 34px;
+}
+
+.occasionPill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.occasionTime {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: 19px;
+  line-height: 1.1;
+  color: #d48879;
+  letter-spacing: -0.2px;
+}
+
+.occasionLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(212, 136, 121, 0.65);
+  white-space: nowrap;
+}
+
+.occasionSub {
+  display: block;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 11px;
+  color: rgba(212, 136, 121, 0.6);
+  margin-top: 2px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+@media (max-width: 900px) {
+  .occasionRow {
+    margin: 4px auto 24px;
+    padding: 24px 0 4px;
+  }
+  .occasionEyebrow {
+    font-size: 12px;
+    max-width: 440px;
+    margin-bottom: 18px;
+    padding: 0 12px;
+  }
+  .occasionList {
+    gap: 10px 22px;
+  }
+  .occasionTime {
+    font-size: 17px;
+  }
+  .occasionLabel {
+    font-size: 9px;
+    letter-spacing: 1.8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .occasionRow {
+    animation: none;
+  }
+}

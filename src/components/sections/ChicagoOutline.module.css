@@ -41,9 +41,28 @@
   }
 }
 
+/* ============================================
+   OCCASION OVERLAY PIN GROUPS
+   ============================================ */
+
+.overlayActive {
+  opacity: 1;
+  transition: opacity 400ms ease-out;
+}
+
+.overlayHidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 400ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .haloOuter,
   .haloInner {
     animation: none;
+  }
+  .overlayActive,
+  .overlayHidden {
+    transition: none;
   }
 }

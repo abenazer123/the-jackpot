@@ -11,10 +11,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { OccasionId } from "@/components/brand/OccasionProvider";
+
 import { ChicagoOutline } from "./ChicagoOutline";
 import styles from "./ChicagoMapViewer.module.css";
 
-export function ChicagoMapViewer() {
+interface ChicagoMapViewerProps {
+  occasion?: OccasionId | null;
+}
+
+export function ChicagoMapViewer({ occasion }: ChicagoMapViewerProps) {
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -45,7 +51,7 @@ export function ChicagoMapViewer() {
         onClick={() => setOpen(true)}
         aria-label="Open an enlarged view of the Chicago location map"
       >
-        <ChicagoOutline />
+        <ChicagoOutline occasion={occasion} />
         <span className={styles.hint}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 10V4h6M20 10V4h-6M4 14v6h6M20 14v6h-6" />
@@ -73,7 +79,7 @@ export function ChicagoMapViewer() {
             </svg>
           </button>
           <div className={styles.enlarged}>
-            <ChicagoOutline />
+            <ChicagoOutline occasion={occasion} />
           </div>
         </div>
       </dialog>
