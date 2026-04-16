@@ -1,0 +1,419 @@
+/*
+ * OccasionSelector — "What are you planning?" section.
+ *
+ * Five occasion tabs with per-occasion two-column content cards.
+ * Typography-heavy; the emotional weight comes from the italic serif
+ * tagline, not graphics or color. All values use existing brand tokens.
+ */
+
+/* ============================================
+   SECTION WRAPPER
+   ============================================ */
+
+.section {
+  padding: 80px 24px;
+  background: var(--jp-bg-secondary);
+}
+
+.inner {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.eyebrow {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  text-align: center;
+  margin: 0 0 12px;
+}
+
+.headline {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-size: var(--jp-size-display-l);
+  line-height: 1.15;
+  color: var(--jp-text-primary);
+  text-align: center;
+  margin: 0;
+}
+
+.headline em {
+  font-style: italic;
+}
+
+.lead {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: var(--jp-size-body);
+  line-height: 1.7;
+  color: var(--jp-text-secondary);
+  text-align: center;
+  max-width: 520px;
+  margin: 8px auto 0;
+}
+
+/* ============================================
+   TABS
+   ============================================ */
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 36px auto 0;
+  max-width: 720px;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 120px;
+  padding: 14px 20px;
+  border: 1px solid var(--jp-border-default);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--jp-text-primary);
+  cursor: pointer;
+  font: inherit;
+  transition:
+    background 400ms ease-out,
+    border-color 400ms ease-out,
+    color 400ms ease-out;
+}
+
+.tab:hover:not(.tabActive) {
+  border-color: var(--jp-border-hover);
+  background: var(--jp-bg-wash);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--jp-border-focus);
+  outline-offset: 2px;
+}
+
+.tabActive {
+  background: #1f1608;
+  border-color: #1f1608;
+  color: var(--jp-text-on-color);
+}
+
+.tabEmoji {
+  font-size: 15px;
+  line-height: 1;
+  filter: grayscale(0.15);
+  transition: transform 400ms ease-out, filter 400ms ease-out;
+}
+
+.tabEmojiActive {
+  transform: scale(1.1);
+  filter: none;
+}
+
+.tabLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+
+.tabActive .tabLabel {
+  font-weight: 600;
+}
+
+.tabSublabel {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 9.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  line-height: 1.2;
+}
+
+.tabActive .tabSublabel {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* ============================================
+   CONTENT AREA
+   ============================================ */
+
+.content {
+  display: grid;
+  grid-template-columns: 7fr 1px 5fr;
+  gap: 40px;
+  margin: 48px 0 0;
+  animation: contentIn 600ms ease-out both;
+}
+
+@keyframes contentIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.divider {
+  background: var(--jp-divider);
+  align-self: stretch;
+}
+
+/* ============================================
+   LEFT COLUMN — tagline + copy
+   ============================================ */
+
+.left {
+  display: flex;
+  flex-direction: column;
+}
+
+.contentEyebrow {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin: 0;
+}
+
+.tagline {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(26px, 4vw, 44px);
+  line-height: 1.15;
+  color: var(--jp-text-primary);
+  margin: 8px 0 0;
+}
+
+.paragraph {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--jp-text-secondary);
+  max-width: 42ch;
+  margin: 16px 0 0;
+}
+
+/* ============================================
+   RIGHT COLUMN — highlights + CTA
+   ============================================ */
+
+.right {
+  display: flex;
+  flex-direction: column;
+}
+
+.rightEyebrow {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin: 0;
+}
+
+.highlights {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.highlight {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--jp-text-primary);
+  animation: highlightIn 500ms ease-out both;
+  animation-delay: var(--delay);
+}
+
+@keyframes highlightIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.bullet {
+  display: inline-block;
+  width: 18px;
+  height: 1px;
+  background: var(--jp-text-tertiary);
+  margin-top: 10px;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+/* ============================================
+   CTA BUTTON
+   ============================================ */
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  margin: 28px 0 0;
+  padding: 14px 24px;
+  background: #1f1608;
+  color: var(--jp-text-on-color);
+  border-radius: 3px;
+  text-decoration: none;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.4px;
+  transition: background var(--jp-transition), box-shadow var(--jp-transition);
+}
+
+.cta:hover {
+  background: #2a1f0d;
+  box-shadow: var(--jp-shadow-gold-hover);
+}
+
+.cta:focus-visible {
+  outline: 2px solid var(--jp-border-focus);
+  outline-offset: 3px;
+}
+
+.ctaArrow {
+  width: 16px;
+  height: 16px;
+  transition: transform 200ms ease;
+}
+
+.cta:hover .ctaArrow {
+  transform: translateX(4px);
+}
+
+/* ============================================
+   WEDDING — VENUE INPUT
+   ============================================ */
+
+.venueGroup {
+  margin: 24px 0 0;
+}
+
+.venueLabel {
+  display: block;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin: 0 0 8px;
+}
+
+.venueInput {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--jp-border-default);
+  background: transparent;
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 15px;
+  color: var(--jp-text-primary);
+  padding: 8px 0;
+  outline: none;
+  transition: border-color var(--jp-transition);
+}
+
+.venueInput:focus {
+  border-bottom-color: var(--jp-olive);
+}
+
+.venueInput::placeholder {
+  color: var(--jp-text-tertiary);
+  font-style: italic;
+}
+
+.venueHint {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 12px;
+  color: var(--jp-text-tertiary);
+  margin: 6px 0 0;
+}
+
+.textAbe {
+  display: inline-block;
+  margin: 12px 0 0;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--jp-text-secondary);
+  text-decoration: none;
+}
+
+.textAbe:hover {
+  text-decoration: underline;
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .content,
+  .highlight {
+    animation: none;
+  }
+  .tab,
+  .tabEmoji {
+    transition: none;
+  }
+  .ctaArrow {
+    transition: none;
+  }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .section {
+    padding: 56px 20px;
+  }
+
+  .tabs {
+    gap: 8px;
+  }
+
+  .tab {
+    min-width: 100px;
+    padding: 12px 14px;
+  }
+
+  .content {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    margin: 36px 0 0;
+  }
+
+  .divider {
+    height: 1px;
+    width: 100%;
+  }
+}
