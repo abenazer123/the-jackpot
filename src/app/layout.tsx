@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Outfit } from "next/font/google";
 
 import { HostPresenceProvider } from "@/components/brand/HostPresenceProvider";
+import { PostHogProvider } from "@/components/brand/PostHogProvider";
 
 import "./globals.css";
 
@@ -58,7 +59,9 @@ export default function RootLayout({
       className={`${cormorant.variable} ${outfit.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <HostPresenceProvider>{children}</HostPresenceProvider>
+        <PostHogProvider>
+          <HostPresenceProvider>{children}</HostPresenceProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

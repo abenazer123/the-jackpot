@@ -29,8 +29,13 @@ import {
 import { todayIso } from "./Calendar";
 import { DateField, type DateFieldHandle } from "./DateField";
 import { HostPresence } from "./HostPresence";
+import { capture, identify } from "./PostHogProvider";
 import { Starburst } from "./Starburst";
 import styles from "./BookingFunnelSteps.module.css";
+
+/** Which surface triggered the funnel — forwarded to analytics + the API
+ *  route so we can attribute leads to their acquisition point. */
+export type BookingSource = "hero" | "sticky_desktop" | "peek_mobile";
 
 const REASON_OPTIONS = [
   "Birthday",
@@ -53,6 +58,8 @@ interface BookingFunnelStepsProps {
   email: string;
   /** Which step to land on when the funnel opens. */
   initialStep: FunnelStep;
+  /** Acquisition surface — tagged onto analytics events + the Supabase row. */
+  source?: BookingSource;
   /** Called when the user chooses "Keep exploring" in the success state. */
   onClose: () => void;
 }
@@ -95,6 +102,7 @@ export function BookingFunnelSteps({
   departure: departureProp,
   email: emailProp,
   initialStep,
+  source,
   onClose,
 }: BookingFunnelStepsProps) {
   const [step, setStep] = useState<FunnelStep>(initialStep);
@@ -110,12 +118,19 @@ export function BookingFunnelSteps({
   const [phone, setPhone] = useState("");
   const [guests, setGuests] = useState(2);
   const [reason, setReason] = useState<Reason | "">("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Departure auto-open handle — fired after arrival is picked in Step 1.
   const departureRef = useRef<DateFieldHandle>(null);
 
   const needsDates = !arrivalProp || !departureProp;
   const needsEmail = !emailProp;
+
+  // Every step transition is a tracked event — primary funnel signal.
+  useEffect(() => {
+    capture("booking_funnel_step_viewed", { step, source });
+  }, [step, source]);
 
   // Step 2 beat: pulse → resolve → auto-advance to Step 3. Both
   // state changes happen inside setTimeout callbacks to stay off the
@@ -150,11 +165,43 @@ export function BookingFunnelSteps({
     setStep("checking");
   };
 
-  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim() || !phone.trim() || !reason) return;
-    // Mock — a real submission would hit an endpoint here.
-    setStep("success");
+    if (submitting) return;
+    setSubmitError(null);
+    setSubmitting(true);
+    const effectiveEmail = (emailProp || emailInput).trim();
+    // Tie this anonymous session to the guest's email in PostHog.
+    identify(effectiveEmail, { name, phone });
+    try {
+      const res = await fetch("/api/inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          arrival,
+          departure,
+          email: effectiveEmail,
+          name,
+          phone,
+          guests,
+          reason,
+          source,
+        }),
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        throw new Error(detail || `HTTP ${res.status}`);
+      }
+      setStep("success");
+    } catch (err) {
+      console.error("inquiry submit failed", err);
+      setSubmitError(
+        "We couldn\u2019t send that \u2014 give it another try, or email abe@thejackpotchi.com directly.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -359,10 +406,16 @@ export function BookingFunnelSteps({
             <button
               type="submit"
               className={styles.submit}
-              disabled={!name.trim() || !phone.trim() || !reason}
+              disabled={!name.trim() || !phone.trim() || !reason || submitting}
             >
-              Send my pricing guide
+              {submitting ? "Sending\u2026" : "Send my pricing guide"}
             </button>
+
+            {submitError ? (
+              <p className={styles.submitError} role="alert">
+                {submitError}
+              </p>
+            ) : null}
 
             <p className={styles.consent}>
               By submitting, you agree to receive your pricing guide via email.

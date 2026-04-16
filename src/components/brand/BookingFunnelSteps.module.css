@@ -303,6 +303,16 @@
   margin: 4px 0 0;
 }
 
+.submitError {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--jp-error);
+  margin: 8px 0 0;
+  text-align: center;
+}
+
 /* ============================================
    SUBMIT BUTTON
    ============================================ */

@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 import {
   BookingFunnelSteps,
+  type BookingSource,
   type FunnelStep,
 } from "./BookingFunnelSteps";
 import styles from "./BookingPricingModal.module.css";
@@ -25,6 +26,7 @@ interface BookingPricingModalProps {
   arrival: string;
   departure: string;
   email: string;
+  source?: BookingSource;
 }
 
 function pickInitialStep(
@@ -42,6 +44,7 @@ export function BookingPricingModal({
   arrival,
   departure,
   email,
+  source,
 }: BookingPricingModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -88,6 +91,7 @@ export function BookingPricingModal({
             departure={departure}
             email={email}
             initialStep={pickInitialStep(arrival, departure, email)}
+            source={source}
             onClose={onClose}
           />
         </div>

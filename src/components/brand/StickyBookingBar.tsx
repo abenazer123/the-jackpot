@@ -27,6 +27,7 @@ import { BookingBottomSheet } from "./BookingBottomSheet";
 import { BookingPricingModal } from "./BookingPricingModal";
 import { Calendar, todayIso } from "./Calendar";
 import { HostPresence } from "./HostPresence";
+import { capture } from "./PostHogProvider";
 import { Starburst } from "./Starburst";
 import styles from "./StickyBookingBar.module.css";
 
@@ -206,6 +207,9 @@ export function StickyBookingBar() {
   );
 
   const handleOpen = () => {
+    capture("booking_cta_clicked", {
+      surface: isMobile ? "peek_mobile" : "sticky_desktop",
+    });
     setModalKey((k) => k + 1);
     setModalOpen(true);
   };
@@ -339,6 +343,7 @@ export function StickyBookingBar() {
           arrival={arrival}
           departure={departure}
           email=""
+          source="peek_mobile"
         />
       ) : (
         <BookingPricingModal
@@ -348,6 +353,7 @@ export function StickyBookingBar() {
           arrival={arrival}
           departure={departure}
           email=""
+          source="sticky_desktop"
         />
       )}
     </>

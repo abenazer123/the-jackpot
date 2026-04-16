@@ -15,6 +15,7 @@ import { BookingPricingModal } from "./BookingPricingModal";
 import { todayIso } from "./Calendar";
 import { DateField, type DateFieldHandle } from "./DateField";
 import { HostPresence } from "./HostPresence";
+import { capture } from "./PostHogProvider";
 import styles from "./HeroBookingBar.module.css";
 
 interface HeroBookingBarProps {
@@ -54,6 +55,7 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!arrival || !departure || !email.trim()) return;
+    capture("booking_cta_clicked", { surface: "hero" });
     setModalKey((k) => k + 1);
     setModalOpen(true);
   };
@@ -121,6 +123,7 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
         arrival={arrival}
         departure={departure}
         email={email}
+        source="hero"
       />
     </>
   );

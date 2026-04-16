@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 import {
   BookingFunnelSteps,
+  type BookingSource,
   type FunnelStep,
 } from "./BookingFunnelSteps";
 import styles from "./BookingBottomSheet.module.css";
@@ -28,6 +29,7 @@ interface BookingBottomSheetProps {
   arrival: string;
   departure: string;
   email: string;
+  source?: BookingSource;
 }
 
 function pickInitialStep(
@@ -45,6 +47,7 @@ export function BookingBottomSheet({
   arrival,
   departure,
   email,
+  source,
 }: BookingBottomSheetProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -92,6 +95,7 @@ export function BookingBottomSheet({
           departure={departure}
           email={email}
           initialStep={pickInitialStep(arrival, departure, email)}
+          source={source}
           onClose={onClose}
         />
       </div>
