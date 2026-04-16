@@ -24,21 +24,21 @@ export type OccasionId =
   | "getaway";
 
 interface OccasionContextValue {
-  occasion: OccasionId;
+  occasion: OccasionId | null;
   setOccasion: (id: OccasionId) => void;
   venue: string;
   setVenue: (v: string) => void;
 }
 
 const OccasionContext = createContext<OccasionContextValue>({
-  occasion: "bachelorette",
+  occasion: null,
   setOccasion: () => {},
   venue: "",
   setVenue: () => {},
 });
 
 export function OccasionProvider({ children }: { children: ReactNode }) {
-  const [occasion, setOccasion] = useState<OccasionId>("bachelorette");
+  const [occasion, setOccasion] = useState<OccasionId | null>(null);
   const [venue, setVenue] = useState("");
 
   return (

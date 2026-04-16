@@ -133,7 +133,7 @@ function ArrowIcon({ className }: { className?: string }) {
 
 export function OccasionSelector() {
   const { occasion, setOccasion, venue, setVenue } = useOccasion();
-  const data = OCCASIONS[occasion];
+  const data = occasion ? OCCASIONS[occasion] : null;
 
   return (
     <section
@@ -182,71 +182,73 @@ export function OccasionSelector() {
           })}
         </div>
 
-        {/* ============ CONTENT ============ */}
-        <div className={styles.content} key={occasion}>
-          {/* Left — tagline + copy */}
-          <div className={styles.left}>
-            <p className={styles.contentEyebrow}>
-              {data.label.toLowerCase()}
-            </p>
-            <h3 className={styles.tagline}>{data.tagline}</h3>
-            <p className={styles.paragraph}>{data.paragraph}</p>
-          </div>
+        {/* ============ CONTENT (hidden until an occasion is picked) ============ */}
+        {data ? (
+          <div className={styles.content} key={occasion}>
+            {/* Left — tagline + copy */}
+            <div className={styles.left}>
+              <p className={styles.contentEyebrow}>
+                {data.label.toLowerCase()}
+              </p>
+              <h3 className={styles.tagline}>{data.tagline}</h3>
+              <p className={styles.paragraph}>{data.paragraph}</p>
+            </div>
 
-          <div className={styles.divider} aria-hidden="true" />
+            <div className={styles.divider} aria-hidden="true" />
 
-          {/* Right — highlights + CTA */}
-          <div className={styles.right}>
-            <p className={styles.rightEyebrow}>why this house</p>
-            <ul className={styles.highlights}>
-              {data.highlights.map((h, i) => (
-                <li
-                  key={h}
-                  className={styles.highlight}
-                  style={
-                    { "--delay": `${i * 80}ms` } as React.CSSProperties
-                  }
-                >
-                  <span className={styles.bullet} aria-hidden="true" />
-                  {h}
-                </li>
-              ))}
-            </ul>
+            {/* Right — highlights + CTA */}
+            <div className={styles.right}>
+              <p className={styles.rightEyebrow}>why this house</p>
+              <ul className={styles.highlights}>
+                {data.highlights.map((h, i) => (
+                  <li
+                    key={h}
+                    className={styles.highlight}
+                    style={
+                      { "--delay": `${i * 80}ms` } as React.CSSProperties
+                    }
+                  >
+                    <span className={styles.bullet} aria-hidden="true" />
+                    {h}
+                  </li>
+                ))}
+              </ul>
 
-            {occasion === "wedding" ? (
-              <div className={styles.venueGroup}>
-                <label
-                  htmlFor="venue-input"
-                  className={styles.venueLabel}
-                >
-                  What&rsquo;s your venue?
-                </label>
-                <input
-                  id="venue-input"
-                  type="text"
-                  className={styles.venueInput}
-                  value={venue}
-                  onChange={(e) => setVenue(e.target.value)}
-                  placeholder="e.g., Artifact Events, Morgan MFG, Bridgeport Art Center"
-                />
-                <p className={styles.venueHint}>
-                  Helps us tailor the package &mdash; and nothing more.
-                </p>
-              </div>
-            ) : null}
+              {occasion === "wedding" ? (
+                <div className={styles.venueGroup}>
+                  <label
+                    htmlFor="venue-input"
+                    className={styles.venueLabel}
+                  >
+                    What&rsquo;s your venue?
+                  </label>
+                  <input
+                    id="venue-input"
+                    type="text"
+                    className={styles.venueInput}
+                    value={venue}
+                    onChange={(e) => setVenue(e.target.value)}
+                    placeholder="e.g., Artifact Events, Morgan MFG, Bridgeport Art Center"
+                  />
+                  <p className={styles.venueHint}>
+                    Helps us tailor the package &mdash; and nothing more.
+                  </p>
+                </div>
+              ) : null}
 
-            <a href="#book" className={styles.cta}>
-              {data.cta}
-              <ArrowIcon className={styles.ctaArrow} />
-            </a>
-
-            {occasion === "wedding" ? (
-              <a href="sms:+10000000000" className={styles.textAbe}>
-                or text Abe directly &rarr;
+              <a href="#book" className={styles.cta}>
+                {data.cta}
+                <ArrowIcon className={styles.ctaArrow} />
               </a>
-            ) : null}
+
+              {occasion === "wedding" ? (
+                <a href="sms:+10000000000" className={styles.textAbe}>
+                  or text Abe directly &rarr;
+                </a>
+              ) : null}
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </section>
   );
