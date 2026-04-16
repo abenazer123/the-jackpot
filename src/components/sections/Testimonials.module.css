@@ -46,6 +46,11 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: rgba(122, 96, 48, 0.22) transparent;
+  transition: opacity 200ms ease-out;
+}
+
+.strip[data-reordering="true"] {
+  opacity: 0.6;
 }
 
 .strip::-webkit-scrollbar {

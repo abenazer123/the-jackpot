@@ -16,17 +16,24 @@
 
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import {
+  useOccasion,
+  type OccasionId,
+} from "@/components/brand/OccasionProvider";
 
 import styles from "./Testimonials.module.css";
 
 type Platform = "airbnb" | "vrbo";
 
 interface Testimonial {
+  id: string;
   quote: string;
   name: string;
   occasion: string;
   platform: Platform;
+  relevance: Record<OccasionId, 0 | 1 | 2>;
 }
 
 const AIRBNB_REVIEWS_URL =
@@ -35,70 +42,92 @@ const VRBO_REVIEWS_URL = "https://www.vrbo.com/4913261";
 
 const TESTIMONIALS: ReadonlyArray<Testimonial> = [
   {
-    // Christine Short · Airbnb · Nov 2025
+    id: "christine",
     quote:
       "If you are reading this review while searching for a rental property in Chicago, just stop immediately. THIS IS THE PLACE. Guaranteed.",
     name: "Christine S.",
     occasion: "Chicago getaway",
     platform: "airbnb",
+    relevance: { bachelorette: 0, wedding: 0, family: 0, birthday: 0, getaway: 2 },
   },
   {
-    // Margaret P. · VRBO · Nov 2025 · Traveled with family and young children
+    id: "margaret",
     quote:
       "Tucked in the middle of a friendly Chicago neighborhood, it truly felt like we were in an urban oasis. The kids loved the bunk beds, ping pong table and of course the hot tub. Abe was super responsive and went well above and beyond.",
     name: "Margaret P.",
     occasion: "Family visit",
     platform: "vrbo",
+    relevance: { bachelorette: 0, wedding: 0, family: 2, birthday: 0, getaway: 0 },
   },
   {
-    // Kim · Airbnb · 3 weeks ago · Group trip
+    id: "kim",
     quote:
       "We had a bachelorette party for 13 guests. Everyone had a bed, a place to eat, and a place to sit around and relax. It was really well done.",
     name: "Kim",
     occasion: "Bachelorette party",
     platform: "airbnb",
+    relevance: { bachelorette: 2, wedding: 1, family: 0, birthday: 1, getaway: 0 },
   },
   {
-    // Rob M. · VRBO · Feb 2026 · Traveled with family and young children
+    id: "rob",
     quote:
       "The house was very clean and comfortable. The kids loved the hot tub and the movie room. The host was very attentive and available for any questions we had.",
     name: "Rob M.",
     occasion: "Family weekend",
     platform: "vrbo",
+    relevance: { bachelorette: 0, wedding: 0, family: 2, birthday: 0, getaway: 0 },
   },
   {
-    // Becky · Airbnb · Feb 2026 · Group trip
+    id: "becky",
     quote:
       "The kitchen was the perfect space for entertaining for a girl\u2019s night! The outdoor hot tub and fire pit were a great bonus. Go ahead and save for your next girls trip to Chicago!",
     name: "Becky",
     occasion: "Girls\u2019 trip",
     platform: "airbnb",
+    relevance: { bachelorette: 1, wedding: 0, family: 0, birthday: 2, getaway: 0 },
   },
   {
-    // Jo Ann S. · VRBO · Mar 2026 · Traveled with partner
+    id: "joann",
     quote:
       "Clean, well-stocked, great amenities, inviting decor, accessible location. The host is organized, flexible, thoughtful and supportive.",
     name: "Jo Ann S.",
     occasion: "Couples getaway",
     platform: "vrbo",
+    relevance: { bachelorette: 0, wedding: 0, family: 1, birthday: 1, getaway: 1 },
   },
   {
-    // Nathan · Airbnb · March 2026 · Group trip
+    id: "nathan",
     quote:
       "Phenomenal space! It was perfect for my large group of 14!",
     name: "Nathan",
     occasion: "Friends getaway",
     platform: "airbnb",
+    relevance: { bachelorette: 1, wedding: 1, family: 0, birthday: 1, getaway: 1 },
   },
   {
-    // Gerry-Lynn W. · VRBO · Apr 2026 · Traveled with family and young children
+    id: "gerrylynn",
     quote:
       "This exceeded our expectations. The home was even nicer in person and the host was attentive every step of the way. It felt like we were staying at a 5-star hotel. We will definitely book again next time we are in Chicago.",
     name: "Gerry-Lynn W.",
     occasion: "Family trip",
     platform: "vrbo",
+    relevance: { bachelorette: 0, wedding: 0, family: 1, birthday: 0, getaway: 1 },
   },
 ];
+
+function sortForOccasion(
+  reviews: ReadonlyArray<Testimonial>,
+  occasion: OccasionId | null,
+): Testimonial[] {
+  if (!occasion) return [...reviews];
+  return [...reviews]
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => {
+      const diff = b.r.relevance[occasion] - a.r.relevance[occasion];
+      return diff !== 0 ? diff : a.i - b.i;
+    })
+    .map(({ r }) => r);
+}
 
 function VerifiedCheck({ className }: { className?: string }) {
   return (
@@ -127,7 +156,28 @@ function sourceLabel(platform: Platform): { label: string; url: string } {
 }
 
 export function Testimonials() {
+  const { occasion } = useOccasion();
   const stripRef = useRef<HTMLDivElement>(null);
+  const [reordering, setReordering] = useState(false);
+  const prevOccasionRef = useRef(occasion);
+
+  const sorted = useMemo(
+    () => sortForOccasion(TESTIMONIALS, occasion),
+    [occasion],
+  );
+
+  useEffect(() => {
+    if (prevOccasionRef.current === occasion) return;
+    prevOccasionRef.current = occasion;
+    const strip = stripRef.current;
+    if (strip) strip.scrollLeft = 0;
+    const t1 = window.setTimeout(() => setReordering(true), 0);
+    const t2 = window.setTimeout(() => setReordering(false), 250);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [occasion]);
 
   const scrollByCard = (direction: 1 | -1) => {
     const strip = stripRef.current;
@@ -160,11 +210,15 @@ export function Testimonials() {
             </svg>
           </button>
 
-          <div className={styles.strip} ref={stripRef}>
-            {TESTIMONIALS.map((t, i) => {
+          <div
+            className={styles.strip}
+            ref={stripRef}
+            data-reordering={reordering}
+          >
+            {sorted.map((t) => {
               const source = sourceLabel(t.platform);
               return (
-                <article key={`${t.name}-${i}`} className={styles.card}>
+                <article key={t.id} className={styles.card}>
                   <div className={styles.top}>
                     <span
                       className={styles.stars}
