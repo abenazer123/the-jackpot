@@ -13,6 +13,7 @@ import {
   useOccasion,
   type OccasionId,
 } from "@/components/brand/OccasionProvider";
+import { capture } from "@/components/brand/PostHogProvider";
 
 import styles from "./OccasionSelector.module.css";
 
@@ -236,10 +237,20 @@ export function OccasionSelector() {
                 </div>
               ) : null}
 
-              <a href="#book" className={styles.cta}>
+              <button
+                type="button"
+                className={styles.cta}
+                onClick={() => {
+                  capture("booking_cta_clicked", {
+                    surface: "occasion_selector",
+                    occasion,
+                  });
+                  window.dispatchEvent(new CustomEvent("open-booking"));
+                }}
+              >
                 {data.cta}
                 <ArrowIcon className={styles.ctaArrow} />
-              </a>
+              </button>
 
               {occasion === "wedding" ? (
                 <a href="sms:+10000000000" className={styles.textAbe}>

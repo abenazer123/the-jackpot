@@ -169,6 +169,7 @@ export function StickyBookingBar() {
     return () => mq.removeEventListener("change", apply);
   }, []);
 
+
   // Bar is visible when the user has scrolled past the hero AND the inquiry
   // section (if present) is NOT in view.
   const visible = pastHero && !inquiryVisible;
@@ -213,6 +214,18 @@ export function StickyBookingBar() {
     setModalKey((k) => k + 1);
     setModalOpen(true);
   };
+
+  // Let other sections (e.g. OccasionSelector CTA) open the booking
+  // funnel by dispatching a "open-booking" custom event on window.
+  // Uses stable setState calls directly so the effect has no deps.
+  useEffect(() => {
+    const handler = () => {
+      setModalKey((k) => k + 1);
+      setModalOpen(true);
+    };
+    window.addEventListener("open-booking", handler);
+    return () => window.removeEventListener("open-booking", handler);
+  }, []);
 
   // Peek swipe-up: track pointer, fire the sheet when the user drags the
   // peek card up by SWIPE_THRESHOLD px. The ref guards the follow-up click
