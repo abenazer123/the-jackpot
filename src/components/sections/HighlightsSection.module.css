@@ -377,14 +377,17 @@
 @media (max-width: 900px) {
   .section {
     padding: 80px 24px 32px;
-    /* Flex so Courtyard can lead on mobile — desktop keeps DOM order
-       (grid, then reveal, then strip) as visual order. */
+    /* Flex so we can reorder on mobile. Courtyard USED to lead on mobile,
+       but now that it already appears in the mobile hero photo, we move
+       it to the end of the magazine (after the grid, before the rooms
+       strip) so it doesn't read as a duplicate. Photo is still
+       swipeable in the unified gallery modal. */
     display: flex;
     flex-direction: column;
   }
   .sectionHeader { margin-bottom: 56px; order: 0; }
-  .courtyardReveal { order: 1; margin: 0 auto 32px; }
-  .grid { order: 2; }
+  .grid { order: 1; }
+  .courtyardReveal { order: 2; margin: 24px auto 8px; }
   .section > section { order: 3; }
 
   .grid {
