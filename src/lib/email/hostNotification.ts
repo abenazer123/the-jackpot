@@ -8,6 +8,7 @@
  */
 
 import { FROM_EMAIL, NOTIFY_EMAIL, getResend } from "../resend";
+import { channelLabel } from "./channelLabel";
 import { formatIsoDate, type InquiryPayload } from "./types";
 
 function renderHtml(p: InquiryPayload): string {
@@ -21,6 +22,22 @@ function renderHtml(p: InquiryPayload): string {
     ["Phone", `<a href="tel:${p.phone}" style="color:#c49025;text-decoration:none">${p.phone}</a>`],
     ...(p.source ? [["Source", p.source] as [string, string]] : []),
   ];
+
+  // Glance-line banner: "📍 This lead came from: {channel} ({campaign})".
+  // Only rendered when we have a UTM source. No banner = direct traffic.
+  const channel = channelLabel(
+    p.attribution?.utm_source,
+    p.attribution?.utm_medium,
+  );
+  const campaign = p.attribution?.utm_campaign;
+  const bannerHtml = channel
+    ? `
+    <tr><td style="padding:0 32px 4px;">
+      <div style="font-family:'Outfit',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#7a6030;background:#fbf6ea;border:1px solid #f0e4cc;border-radius:10px;padding:12px 16px;">
+        📍 <strong style="font-weight:600;">This lead came from: ${channel}</strong>${campaign ? ` <span style="font-style:italic;color:#a08840;">(${campaign})</span>` : ""}
+      </div>
+    </td></tr>`
+    : "";
 
   const rowsHtml = rows
     .map(
@@ -43,6 +60,7 @@ function renderHtml(p: InquiryPayload): string {
           <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:#a08840;">The Jackpot · New Inquiry</div>
           <h1 style="margin:6px 0 0;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-weight:500;font-size:24px;line-height:1.2;color:#7a6030;">${p.name} · ${p.nights} night${p.nights === 1 ? "" : "s"} · ${p.reason}</h1>
         </td></tr>
+        ${bannerHtml}
         <tr><td style="padding:0 16px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #f0e4cc;">
             ${rowsHtml}

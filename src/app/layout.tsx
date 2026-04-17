@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Outfit } from "next/font/google";
 
 import { HostPresenceProvider } from "@/components/brand/HostPresenceProvider";
 import { PostHogProvider } from "@/components/brand/PostHogProvider";
+import { UtmProvider } from "@/components/brand/UtmProvider";
 
 import "./globals.css";
 
@@ -60,7 +61,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <PostHogProvider>
-          <HostPresenceProvider>{children}</HostPresenceProvider>
+          <UtmProvider>
+            <HostPresenceProvider>{children}</HostPresenceProvider>
+          </UtmProvider>
         </PostHogProvider>
       </body>
     </html>

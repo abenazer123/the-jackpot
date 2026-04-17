@@ -43,11 +43,46 @@ interface IncomingBody {
   reason?: unknown;
   source?: unknown;
   venue?: unknown;
+  attribution?: unknown;
+}
+
+const ATTRIBUTION_KEYS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_term",
+  "utm_content",
+  "gclid",
+  "fbclid",
+  "msclkid",
+  "referrer",
+  "landing_path",
+  "current_path",
+] as const;
+
+type AttributionKey = (typeof ATTRIBUTION_KEYS)[number];
+type ParsedAttribution = Partial<Record<AttributionKey, string>>;
+
+function parseAttribution(raw: unknown): ParsedAttribution {
+  if (!raw || typeof raw !== "object") return {};
+  const input = raw as Record<string, unknown>;
+  const out: ParsedAttribution = {};
+  for (const key of ATTRIBUTION_KEYS) {
+    const v = input[key];
+    if (typeof v === "string") {
+      const trimmed = v.trim().slice(0, 255);
+      if (trimmed) out[key] = trimmed;
+    }
+  }
+  return out;
 }
 
 interface ParseResult {
   ok: true;
-  value: InquiryPayload & { source?: string };
+  value: InquiryPayload & {
+    source?: string;
+    attribution: ParsedAttribution;
+  };
 }
 interface ParseError {
   ok: false;
@@ -101,6 +136,7 @@ function parseBody(body: IncomingBody): ParseResult | ParseError {
       nights,
       source,
       venue: venue || undefined,
+      attribution: parseAttribution(body.attribution),
     },
   };
 }
@@ -138,6 +174,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         reason: p.reason,
         source: p.source ?? null,
         venue: p.venue ?? null,
+        utm_source: p.attribution.utm_source ?? null,
+        utm_medium: p.attribution.utm_medium ?? null,
+        utm_campaign: p.attribution.utm_campaign ?? null,
+        utm_term: p.attribution.utm_term ?? null,
+        utm_content: p.attribution.utm_content ?? null,
+        gclid: p.attribution.gclid ?? null,
+        fbclid: p.attribution.fbclid ?? null,
+        msclkid: p.attribution.msclkid ?? null,
+        referrer: p.attribution.referrer ?? null,
+        landing_path: p.attribution.landing_path ?? null,
+        current_path: p.attribution.current_path ?? null,
         user_agent: userAgent,
         ip,
       });
@@ -151,7 +198,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // 2. Analytics (server-side, authoritative). Awaited so we flush before
-  //    the serverless function exits.
+  //    the serverless function exits. Attribution fields are explicit event
+  //    properties (not just person-profile traits) so PostHog insights can
+  //    group by utm_* without relying on $initial_utm_* autocapture.
   await serverCapture({
     distinctId: p.email,
     event: "booking_inquiry_submitted",
@@ -160,6 +209,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       guests: p.guests,
       reason: p.reason,
       source: p.source,
+      ...p.attribution,
     },
     set: {
       email: p.email,

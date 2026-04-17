@@ -11,6 +11,21 @@ export interface InquiryPayload {
   source?: string;
   /** Wedding venue — only populated when occasion === "wedding". */
   venue?: string;
+  /** Attribution snapshot from UtmProvider — populated when UTMs were
+   *  present at first landing (localStorage persists 30 days). */
+  attribution?: {
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_term?: string;
+    utm_content?: string;
+    gclid?: string;
+    fbclid?: string;
+    msclkid?: string;
+    referrer?: string;
+    landing_path?: string;
+    current_path?: string;
+  };
 }
 
 export function formatIsoDate(iso: string): string {

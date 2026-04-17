@@ -32,6 +32,7 @@ import { HostPresence } from "./HostPresence";
 import { useOccasion } from "./OccasionProvider";
 import { capture, identify } from "./PostHogProvider";
 import { Starburst } from "./Starburst";
+import { useUtm } from "./UtmProvider";
 import styles from "./BookingFunnelSteps.module.css";
 
 /** Which surface triggered the funnel — forwarded to analytics + the API
@@ -127,6 +128,12 @@ export function BookingFunnelSteps({
   // leave it empty.
   const { occasion, venue } = useOccasion();
 
+  // UTM + referrer + landing/current path — captured at first-landing in
+  // UtmProvider (localStorage, 30-day sliding window) and read here at
+  // submit time. Spread into the POST body so the API route can attach
+  // attribution to the Supabase row, host email, and PostHog event.
+  const attribution = useUtm();
+
   // Departure auto-open handle — fired after arrival is picked in Step 1.
   const departureRef = useRef<DateFieldHandle>(null);
 
@@ -195,6 +202,7 @@ export function BookingFunnelSteps({
           source,
           // Wedding-only field — venue name from OccasionSelector's input.
           venue: occasion === "wedding" ? venue.trim() : "",
+          attribution,
         }),
       });
       if (!res.ok) {

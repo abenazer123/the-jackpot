@@ -25,3 +25,27 @@ alter table public.inquiries enable row level security;
 
 create index if not exists inquiries_created_at_idx on public.inquiries (created_at desc);
 create index if not exists inquiries_email_idx on public.inquiries (email);
+
+-- Attribution columns (added 2026-04-17). UTM params, click IDs, referrer,
+-- landing & current path. localStorage on the client keeps UTMs for 30 days
+-- (sliding window) so last-touch attribution holds across sessions.
+alter table public.inquiries
+  add column if not exists utm_source text,
+  add column if not exists utm_medium text,
+  add column if not exists utm_campaign text,
+  add column if not exists utm_term text,
+  add column if not exists utm_content text,
+  add column if not exists gclid text,
+  add column if not exists fbclid text,
+  add column if not exists msclkid text,
+  add column if not exists referrer text,
+  add column if not exists landing_path text,
+  add column if not exists current_path text;
+
+-- Partial indexes — only rows with actual attribution live in the tree.
+create index if not exists inquiries_utm_source_idx
+  on public.inquiries (utm_source)
+  where utm_source is not null;
+create index if not exists inquiries_utm_campaign_idx
+  on public.inquiries (utm_campaign)
+  where utm_campaign is not null;
