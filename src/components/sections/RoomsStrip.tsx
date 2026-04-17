@@ -12,8 +12,8 @@
 
 "use client";
 
+import Image, { type StaticImageData } from "next/image";
 import { useRef } from "react";
-import type { StaticImageData } from "next/image";
 
 import styles from "./RoomsStrip.module.css";
 
@@ -72,10 +72,14 @@ export function RoomsStrip({ cards, onOpen }: RoomsStripProps) {
               onClick={() => onOpen(i)}
               aria-label={`Open ${card.name} photo`}
             >
-              <div
-                className={styles.cardPhoto}
-                style={{ "--card-photo-url": `url(${card.photo.src})` } as React.CSSProperties}
-              >
+              <div className={styles.cardPhoto}>
+                <Image
+                  src={card.photo}
+                  alt={`${card.name} photo`}
+                  fill
+                  sizes="(max-width: 900px) 60vw, 240px"
+                  className={styles.cardPhotoImg}
+                />
                 {card.isPlaceholder ? (
                   <span className={styles.placeholderBadge}>Placeholder</span>
                 ) : null}

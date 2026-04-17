@@ -18,12 +18,12 @@
 
 import Image from "next/image";
 
-import cinemaPhoto from "@brand/docs/photos/cinema.png";
-import firePitPhoto from "@brand/docs/photos/fire-pit.png";
-import gameRoomPhoto from "@brand/docs/photos/game-room.png";
-import heroPhoto from "@brand/docs/photos/hero.png";
-import hotTubPhoto from "@brand/docs/photos/hot-tub.png";
-import supperClubPhoto from "@brand/docs/photos/supper-club.png";
+import cinemaPhoto from "@brand/docs/photos/cinema.jpg";
+import firePitPhoto from "@brand/docs/photos/fire-pit.jpg";
+import gameRoomPhoto from "@brand/docs/photos/game-room.jpg";
+import heroPhoto from "@brand/docs/photos/hero.jpg";
+import hotTubPhoto from "@brand/docs/photos/hot-tub.jpg";
+import supperClubPhoto from "@brand/docs/photos/supper-club.jpg";
 
 import { Wordmark } from "@/components/brand/Wordmark";
 import { StatStrip } from "@/components/brand/StatStrip";

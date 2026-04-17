@@ -8,6 +8,7 @@
 
 "use client";
 
+import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
 
 import sectionStyles from "./HighlightsSection.module.css";
@@ -71,7 +72,16 @@ export function HighlightsGrid({ magazine, rooms }: HighlightsGridProps) {
             onClick={() => setOpenIndex(i)}
             aria-label={`Open ${card.name} photo`}
           >
-            <div className={sectionStyles.cardPhoto} />
+            <div className={sectionStyles.cardPhoto}>
+              <Image
+                src={card.photo}
+                alt={card.name}
+                fill
+                sizes="(max-width: 900px) 100vw, (max-width: 1280px) 50vw, 640px"
+                className={sectionStyles.cardPhotoImg}
+                placeholder="blur"
+              />
+            </div>
             <div className={sectionStyles.cardGradient} aria-hidden="true" />
             <div className={sectionStyles.cardCaption}>
               <h3 className={sectionStyles.cardName}>{card.name}</h3>
@@ -88,6 +98,7 @@ export function HighlightsGrid({ magazine, rooms }: HighlightsGridProps) {
       {(() => {
         const courtyardIndex = magazine.findIndex((c) => c.name === "Courtyard");
         if (courtyardIndex < 0) return null;
+        const courtyard = magazine[courtyardIndex];
         return (
           <button
             type="button"
@@ -95,7 +106,16 @@ export function HighlightsGrid({ magazine, rooms }: HighlightsGridProps) {
             onClick={() => setOpenIndex(courtyardIndex)}
             aria-label="Open Courtyard photo"
           >
-            <div className={sectionStyles.courtyardRevealPhoto} />
+            <div className={sectionStyles.courtyardRevealPhoto}>
+              <Image
+                src={courtyard.photo}
+                alt="The Jackpot — courtyard at dusk"
+                fill
+                sizes="(max-width: 900px) 100vw, 1080px"
+                className={sectionStyles.courtyardRevealImg}
+                placeholder="blur"
+              />
+            </div>
             <div className={sectionStyles.courtyardRevealGradient} aria-hidden="true" />
             <div className={sectionStyles.courtyardRevealCopy}>
               <h3 className={sectionStyles.courtyardRevealName}>Courtyard</h3>

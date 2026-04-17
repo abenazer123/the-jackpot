@@ -156,37 +156,23 @@
   z-index: 1;
 }
 
-.cardPhoto::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-repeat: no-repeat;
+/* Photo is a next/image rendered with `fill` inside .cardPhoto.
+   The image replaces the old ::before pseudo + background-image pattern
+   so Next can serve optimized WebP at device-appropriate sizes (raw
+   source was 5-10 MB PNG per photo). Hover scale now applies to the
+   <img> element directly. */
+.cardPhotoImg {
+  object-fit: cover;
+  object-position: center center;
   transform: scale(1);
   transform-origin: center;
   transition: transform 600ms ease;
 }
 
-/* Per-card photo source + crop position */
-.cellSpa .cardPhoto::before {
-  background-image: url("../../../brand/docs/photos/hot-tub.png");
-  background-position: center center;
-}
-.cellCinema .cardPhoto::before {
-  background-image: url("../../../brand/docs/photos/cinema.png");
-  background-position: center center;
-}
-.cellParlor .cardPhoto::before {
-  background-image: url("../../../brand/docs/photos/game-room.png");
-  background-position: center center;
-}
-.cellSupperClub .cardPhoto::before {
-  background-image: url("../../../brand/docs/photos/supper-club.png");
-  background-position: center center;
-}
-.cellFireside .cardPhoto::before {
-  background-image: url("../../../brand/docs/photos/fire-pit.png");
-  background-position: center 80%;
+/* Per-card crop overrides — Fireside's flame sits mid-frame on the
+   desktop wide card with a slight downward bias. */
+.cellFireside .cardPhotoImg {
+  object-position: center 80%;
 }
 
 /* Hover — desktop only. Photo opens up, card lifts, name shifts to gold. */
@@ -194,7 +180,7 @@
   .card:hover {
     box-shadow: 0 12px 32px rgba(122, 96, 48, 0.16);
   }
-  .card:hover .cardPhoto::before {
+  .card:hover .cardPhotoImg {
     transform: scale(1.04);
   }
   .card:hover .cardName {
@@ -299,13 +285,18 @@
   outline-offset: 3px;
 }
 
+/* Courtyard reveal photo container — holds a next/image <img fill> so
+   Next can serve optimized WebP. Hover scale is applied to the nested
+   <img> via .courtyardRevealImg. */
 .courtyardRevealPhoto {
   position: absolute;
   inset: 0;
-  background-image: url("../../../brand/docs/photos/hero.png");
-  background-size: cover;
-  background-position: center 60%;
-  background-repeat: no-repeat;
+  overflow: hidden;
+}
+
+.courtyardRevealImg {
+  object-fit: cover;
+  object-position: center 60%;
   transform: scale(1);
   transition: transform 600ms ease;
 }
@@ -357,14 +348,14 @@
   .courtyardReveal:hover {
     box-shadow: 0 16px 48px rgba(122, 96, 48, 0.2);
   }
-  .courtyardReveal:hover .courtyardRevealPhoto {
+  .courtyardReveal:hover .courtyardRevealImg {
     transform: scale(1.02);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .courtyardRevealPhoto,
-  .courtyardReveal:hover .courtyardRevealPhoto {
+  .courtyardRevealImg,
+  .courtyardReveal:hover .courtyardRevealImg {
     transition: none;
     transform: none;
   }
@@ -423,7 +414,8 @@
   .cellCourtyard { display: block !important; order: 6; height: 50vh; }
   /* Desktop nudges the fire-pit crop down so the flames land mid-frame on the
      wide 7-col card; mobile is a taller, narrower card so reset to center. */
-  .cellFireside .cardPhoto::before { background-position: center center; }
+  /* Mobile Fireside card is narrower → reset the desktop downward crop bias. */
+  .cellFireside .cardPhotoImg { object-position: center center; }
 
   .cardCaption,
   .cellSpa .cardCaption,

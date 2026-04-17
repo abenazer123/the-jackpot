@@ -19,12 +19,12 @@
  * happens in the colocated module CSS; each card just gets a `gridArea`
  * class name.
  */
-import cinemaPhoto from "@brand/docs/photos/cinema.png";
-import firePitPhoto from "@brand/docs/photos/fire-pit.png";
-import gameRoomPhoto from "@brand/docs/photos/game-room.png";
-import heroPhoto from "@brand/docs/photos/hero.png";
-import hotTubPhoto from "@brand/docs/photos/hot-tub.png";
-import supperClubPhoto from "@brand/docs/photos/supper-club.png";
+import cinemaPhoto from "@brand/docs/photos/cinema.jpg";
+import firePitPhoto from "@brand/docs/photos/fire-pit.jpg";
+import gameRoomPhoto from "@brand/docs/photos/game-room.jpg";
+import heroPhoto from "@brand/docs/photos/hero.jpg";
+import hotTubPhoto from "@brand/docs/photos/hot-tub.jpg";
+import supperClubPhoto from "@brand/docs/photos/supper-club.jpg";
 
 import { Starburst } from "@/components/brand/Starburst";
 

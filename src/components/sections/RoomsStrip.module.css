@@ -85,19 +85,16 @@
   background: var(--jp-linen-deep);
 }
 
-.cardPhoto::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: var(--card-photo-url);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+/* Photo is a next/image <img fill> inside .cardPhoto — replaces the
+   previous ::before + background-image so Next can serve optimized WebP. */
+.cardPhotoImg {
+  object-fit: cover;
+  object-position: center;
   transform: scale(1);
   transition: transform 600ms ease;
 }
 
-.card:hover .cardPhoto::before {
+.card:hover .cardPhotoImg {
   transform: scale(1.04);
 }
 
@@ -240,7 +237,7 @@
   .arrow:hover {
     transform: none;
   }
-  .cardPhoto::before {
+  .cardPhotoImg {
     transition: none;
   }
 }
