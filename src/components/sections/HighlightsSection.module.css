@@ -377,18 +377,16 @@
 @media (max-width: 900px) {
   .section {
     padding: 80px 24px 32px;
-    /* Flex so we can reorder on mobile. Courtyard USED to lead on mobile,
-       but now that it already appears in the mobile hero photo, we move
-       it to the end of the magazine (after the grid, before the rooms
-       strip) so it doesn't read as a duplicate. Photo is still
-       swipeable in the unified gallery modal. */
     display: flex;
     flex-direction: column;
   }
   .sectionHeader { margin-bottom: 56px; order: 0; }
   .grid { order: 1; }
-  .courtyardReveal { order: 2; margin: 24px auto 8px; }
-  .section > section { order: 3; }
+  .section > section { order: 2; }
+  /* Mobile: hide the big cinematic Courtyard reveal entirely — it's already
+     in the hero photo and now renders as a regular card at the end of the
+     grid below. Desktop keeps the reveal (see base styles). */
+  .courtyardReveal { display: none; }
 
   .grid {
     width: 100%;
@@ -406,18 +404,23 @@
   .cellCinema,
   .cellParlor,
   .cellSupperClub,
-  .cellFireside {
+  .cellFireside,
+  .cellCourtyard {
     grid-column: 1 / -1;
     grid-row: auto;
     height: 56vh;
   }
-  /* Outdoor pair first (fireside, spa), then indoor — supper club closes
-     as the last card. */
+  /* Outdoor pair first (fireside, spa), then indoor, Courtyard closes the
+     magazine right before the rooms strip. */
   .cellFireside { order: 1; height: 50vh; }
   .cellSpa  { order: 2; height: 64vh; }
   .cellCinema  { order: 3; }
   .cellParlor { order: 4; }
   .cellSupperClub { order: 5; }
+  /* Unhide Courtyard on mobile so it reads as a regular magazine card at
+     the tail end. Desktop still hides it (base rule at the top of this
+     file — it's replaced by the cinematic reveal below the grid there). */
+  .cellCourtyard { display: block !important; order: 6; height: 50vh; }
   /* Desktop nudges the fire-pit crop down so the flames land mid-frame on the
      wide 7-col card; mobile is a taller, narrower card so reset to center. */
   .cellFireside .cardPhoto::before { background-position: center center; }
