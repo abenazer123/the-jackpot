@@ -15,6 +15,7 @@ function renderHtml(p: InquiryPayload): string {
     ["Dates", `${formatIsoDate(p.arrival)} → ${formatIsoDate(p.departure)}  ·  ${p.nights} night${p.nights === 1 ? "" : "s"}`],
     ["Guests", String(p.guests)],
     ["Occasion", p.reason],
+    ...(p.venue ? [["Venue", p.venue] as [string, string]] : []),
     ["Name", p.name],
     ["Email", `<a href="mailto:${p.email}" style="color:#c49025;text-decoration:none">${p.email}</a>`],
     ["Phone", `<a href="tel:${p.phone}" style="color:#c49025;text-decoration:none">${p.phone}</a>`],

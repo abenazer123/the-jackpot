@@ -180,9 +180,15 @@ export function LocationSection() {
         </div>
 
         <div className={styles.ctaWrap}>
-          <a href="#inquiry" className={styles.cta}>
+          <button
+            type="button"
+            className={styles.cta}
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent("open-booking"));
+            }}
+          >
             <span className={styles.ctaText}>See the price guide</span>
-          </a>
+          </button>
         </div>
       </div>
     </section>

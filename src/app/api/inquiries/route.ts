@@ -42,6 +42,7 @@ interface IncomingBody {
   guests?: unknown;
   reason?: unknown;
   source?: unknown;
+  venue?: unknown;
 }
 
 interface ParseResult {
@@ -65,6 +66,8 @@ function parseBody(body: IncomingBody): ParseResult | ParseError {
   const guests = typeof body.guests === "number" ? body.guests : NaN;
   const reason = typeof body.reason === "string" ? body.reason : "";
   const source = typeof body.source === "string" ? body.source : undefined;
+  const venue =
+    typeof body.venue === "string" ? body.venue.trim() : "";
 
   if (!ISO_DATE.test(arrival)) return { ok: false, error: "invalid arrival" };
   if (!ISO_DATE.test(departure)) return { ok: false, error: "invalid departure" };
@@ -97,6 +100,7 @@ function parseBody(body: IncomingBody): ParseResult | ParseError {
       reason,
       nights,
       source,
+      venue: venue || undefined,
     },
   };
 }
@@ -133,6 +137,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         guests: p.guests,
         reason: p.reason,
         source: p.source ?? null,
+        venue: p.venue ?? null,
         user_agent: userAgent,
         ip,
       });

@@ -272,7 +272,7 @@ export function StickyBookingBar() {
         <div className={styles.bar}>
           <div className={styles.left}>
             <a
-              href="#top"
+              href="#hero"
               className={styles.wordmark}
               aria-label="Jackpot — back to top"
             >

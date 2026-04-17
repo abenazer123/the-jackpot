@@ -253,7 +253,7 @@ export function OccasionSelector() {
               </button>
 
               {occasion === "wedding" ? (
-                <a href="sms:+10000000000" className={styles.textAbe}>
+                <a href="sms:+17084577164" className={styles.textAbe}>
                   or text Abe directly &rarr;
                 </a>
               ) : null}

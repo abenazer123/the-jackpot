@@ -289,7 +289,7 @@
    MOBILE
    ============================================ */
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .section {
     padding: 40px 24px 36px;
   }

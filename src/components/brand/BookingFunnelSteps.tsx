@@ -29,6 +29,7 @@ import {
 import { todayIso } from "./Calendar";
 import { DateField, type DateFieldHandle } from "./DateField";
 import { HostPresence } from "./HostPresence";
+import { useOccasion } from "./OccasionProvider";
 import { capture, identify } from "./PostHogProvider";
 import { Starburst } from "./Starburst";
 import styles from "./BookingFunnelSteps.module.css";
@@ -121,6 +122,11 @@ export function BookingFunnelSteps({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Wedding venue lives in the page-level OccasionProvider so both the
+  // OccasionSelector and the funnel can access it. Non-wedding visitors
+  // leave it empty.
+  const { occasion, venue } = useOccasion();
+
   // Departure auto-open handle — fired after arrival is picked in Step 1.
   const departureRef = useRef<DateFieldHandle>(null);
 
@@ -187,6 +193,8 @@ export function BookingFunnelSteps({
           guests,
           reason,
           source,
+          // Wedding-only field — venue name from OccasionSelector's input.
+          venue: occasion === "wedding" ? venue.trim() : "",
         }),
       });
       if (!res.ok) {

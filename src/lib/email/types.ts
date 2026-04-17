@@ -9,6 +9,8 @@ export interface InquiryPayload {
   guests: number;
   reason: string;
   source?: string;
+  /** Wedding venue — only populated when occasion === "wedding". */
+  venue?: string;
 }
 
 export function formatIsoDate(iso: string): string {

@@ -13,6 +13,7 @@ create table if not exists public.inquiries (
   guests int not null check (guests between 1 and 14),
   reason text not null,
   source text,
+  venue text,
   user_agent text,
   ip text
 );
