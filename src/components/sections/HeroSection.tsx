@@ -16,6 +16,8 @@
  *   takes over. Pure CSS, zero JS, already gated by prefers-reduced-motion.
  */
 
+import Image from "next/image";
+
 import cinemaPhoto from "@brand/docs/photos/cinema.png";
 import firePitPhoto from "@brand/docs/photos/fire-pit.png";
 import gameRoomPhoto from "@brand/docs/photos/game-room.png";
@@ -124,6 +126,25 @@ export function HeroSection({ animate = false }: HeroSectionProps) {
 
       <div className={styles.right}>
         <HeroPhotoCarousel photos={HERO_PHOTOS} />
+      </div>
+
+      {/* Mobile-only editorial photo — the desktop carousel stays hidden
+          on mobile; one strong static shot (courtyard at dusk) with an
+          uppercase-label + italic-place caption stands in for it. */}
+      <div className={styles.mobilePhoto}>
+        <div className={styles.mobilePhotoCard}>
+          <Image
+            src={heroPhoto}
+            alt="The Jackpot — courtyard at dusk"
+            className={styles.mobilePhotoImg}
+            sizes="(max-width: 600px) 100vw, 560px"
+            placeholder="blur"
+          />
+        </div>
+        <p className={styles.mobilePhotoCaption}>
+          <span className={styles.mobilePhotoLabel}>THE COURTYARD</span>
+          <span className={styles.mobilePhotoPlace}>at dusk</span>
+        </p>
       </div>
     </header>
   );

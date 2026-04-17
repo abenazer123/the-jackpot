@@ -109,6 +109,13 @@
   background-color: var(--jp-linen-deep);
 }
 
+/* Mobile-only editorial photo — hidden on desktop; turned on by the
+   ≤900px media query below. Sits under the booking form as a single
+   calm "show the place" moment that replaces the hidden carousel. */
+.mobilePhoto {
+  display: none;
+}
+
 /* Mobile — drop the photo column entirely.
    Reason: on mobile the hero photo (patio.png) ended up stacked directly above
    the highlights' hot tub card (also patio.png cropped), creating a duplicate-
@@ -137,5 +144,53 @@
   .tagline {
     font-size: clamp(22px, 6vw, 32px);
     margin-top: 24px;
+  }
+
+  .mobilePhoto {
+    display: block;
+    padding: 40px 24px 48px;
+    background: var(--jp-linen);
+    text-align: center;
+  }
+
+  .mobilePhotoCard {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    max-width: 560px;
+    margin: 0 auto;
+    border-radius: var(--jp-radius-md);
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(139, 112, 64, 0.15);
+  }
+
+  .mobilePhotoImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .mobilePhotoCaption {
+    margin: 18px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mobilePhotoLabel {
+    font-family: var(--jp-font-body);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--jp-text-tertiary);
+  }
+
+  .mobilePhotoPlace {
+    font-family: var(--jp-font-display);
+    font-weight: 500;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--jp-text-primary);
   }
 }
