@@ -51,7 +51,16 @@
   font-style: italic;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  background: var(--jp-gradient);
+  /* Darker custom gradient (gold-deep → terra-deep) so the background-clip
+     text reads reliably on the linen section bg. The full --jp-gradient
+     runs too light — its upper stops blend into linen at certain zoom
+     levels, making "perfect" partially invisible. */
+  background: linear-gradient(
+    135deg,
+    var(--jp-gold-deep) 0%,
+    var(--jp-terra) 60%,
+    var(--jp-terra-deep) 100%
+  );
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
@@ -61,8 +70,8 @@
 
 @supports not ((background-clip: text) or (-webkit-background-clip: text)) {
   .headlineAccent {
-    color: var(--jp-gold-deep);
-    -webkit-text-fill-color: var(--jp-gold-deep);
+    color: var(--jp-terra);
+    -webkit-text-fill-color: var(--jp-terra);
   }
 }
 
