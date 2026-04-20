@@ -18,6 +18,8 @@ import { sendGuestConfirmation } from "@/lib/email/guestConfirmation";
 import { sendHostNotification } from "@/lib/email/hostNotification";
 import type { InquiryPayload } from "@/lib/email/types";
 import { serverCapture } from "@/lib/posthog-server";
+import { computeQuote } from "@/lib/pricing/computeQuote";
+import type { Quote } from "@/lib/pricing/types";
 import { supabaseServer } from "@/lib/supabase-server";
 
 export const runtime = "nodejs"; // posthog-node + supabase-js need Node
@@ -159,8 +161,33 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const fwd = req.headers.get("x-forwarded-for") ?? "";
   const ip = fwd.split(",")[0]?.trim() || null;
 
-  // 1. Persist — if this fails, we fail the request. The UI can show
-  //    an error and the user can retry.
+  // 1a. Compute the quote up front so it lands in the same row as the
+  //     lead. If pricing tables aren't ready (cache empty, config gap,
+  //     out-of-window stay) we still save the inquiry — just with null
+  //     quote fields. Quote failures never block a lead.
+  let quote: Quote | null = null;
+  try {
+    const result = await computeQuote({
+      arrival: p.arrival,
+      departure: p.departure,
+      guests: p.guests,
+      occasion: p.reason,
+    });
+    if (result.ok) {
+      quote = result.quote;
+    } else {
+      console.warn(
+        "[inquiries] quote compute skipped",
+        result.error.code,
+        result.error.message,
+      );
+    }
+  } catch (err) {
+    console.error("[inquiries] quote compute threw", err);
+  }
+
+  // 1b. Persist — if this fails, we fail the request. The UI can show
+  //     an error and the user can retry.
   try {
     const { error } = await supabaseServer()
       .from("inquiries")
@@ -187,6 +214,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         current_path: p.attribution.current_path ?? null,
         user_agent: userAgent,
         ip,
+        quote_snapshot: quote,
+        quote_total_cents: quote?.totalCents ?? null,
       });
     if (error) throw error;
   } catch (err) {
@@ -234,5 +263,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, quote });
 }
