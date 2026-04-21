@@ -49,7 +49,9 @@ interface ListingPriceRow {
   rate_cents: number;
   min_stay: number;
   unbookable: boolean;
+  available: boolean;
   fetched_at: string;
+  raw_data: Record<string, unknown> | null;
 }
 
 interface DiscountRow {
@@ -148,7 +150,8 @@ export async function computeQuote(
 
   const dates = eachDate(input.arrival, input.departure);
   const nights = dates.length;
-  if (nights < 1) return err("min_stay", "departure must be after arrival", { required: 1 });
+  if (nights < 1)
+    return err("sub_floor", "departure must be after arrival", { required: 1 });
   if (nights < minStayFloor) {
     return err("sub_floor", `minimum stay is ${minStayFloor} nights`, { required: minStayFloor });
   }
@@ -156,7 +159,7 @@ export async function computeQuote(
   // --- 3. Nightly rates from cache --------------------------------------
   const pricesRes = await sb
     .from("listing_prices")
-    .select("listing_id,stay_date,rate_cents,min_stay,unbookable,fetched_at")
+    .select("listing_id,stay_date,rate_cents,min_stay,unbookable,available,fetched_at,raw_data")
     .eq("listing_id", listingId)
     .in("stay_date", dates);
   if (pricesRes.error) {
@@ -173,28 +176,35 @@ export async function computeQuote(
   let minNightlyFloorApplied = false;
   const nightly: Array<{ date: string; rateCents: number }> = [];
   let maxMinStay = 0;
+  let checkInRestricted = false;
+  let checkOutRestricted = false;
   let latestFetchedAt = "";
   for (const date of dates) {
     const row = byDate.get(date);
     if (!row) {
       return err("out_of_window", `no cached rate for ${date}`, { offendingDate: date });
     }
-    if (row.unbookable) {
-      return err("unbookable", `${date} is flagged unbookable in PriceLabs`, {
-        offendingDate: date,
-      });
+    // Hard unavailable: the date is booked on Airbnb (user_price=-1) OR
+    // PriceLabs flagged it unbookable. No rate to quote either way.
+    if (!row.available) {
+      return err(
+        "unavailable",
+        `${date} is booked or blocked in PriceLabs`,
+        { offendingDate: date },
+      );
     }
     const rate = Math.max(row.rate_cents, minNightlyCents);
     if (rate > row.rate_cents) minNightlyFloorApplied = true;
     nightly.push({ date, rateCents: rate });
     if (row.min_stay > maxMinStay) maxMinStay = row.min_stay;
+    // Check-in/out restrictions live in raw_data. Only surface as flags;
+    // the quote still computes either way.
+    const raw = row.raw_data as Record<string, unknown> | null;
+    if (raw) {
+      if (raw.check_in === false) checkInRestricted = true;
+      if (raw.check_out === false) checkOutRestricted = true;
+    }
     if (row.fetched_at > latestFetchedAt) latestFetchedAt = row.fetched_at;
-  }
-
-  if (nights < maxMinStay) {
-    return err("min_stay", `minimum stay for these dates is ${maxMinStay} nights`, {
-      required: maxMinStay,
-    });
   }
 
   const subtotalCents = nightly.reduce((s, n) => s + n.rateCents, 0);
@@ -291,6 +301,12 @@ export async function computeQuote(
     pms,
     nightly,
     subtotalCents,
+    constraints: {
+      minStayRequired: Math.max(maxMinStay, 1),
+      minStayMet: nights >= maxMinStay,
+      checkInRestricted,
+      checkOutRestricted,
+    },
     discounts: applied,
     discountTotalCents,
     cleaningCents,

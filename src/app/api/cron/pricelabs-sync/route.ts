@@ -113,16 +113,23 @@ async function run(req: NextRequest): Promise<NextResponse> {
       dateTo,
     });
 
-    const rows = prices.data.map((d) => ({
-      listing_id: listingId,
-      stay_date: d.date,
-      rate_cents: Math.round((d.price ?? 0) * 100),
-      min_stay: d.min_stay ?? 2,
-      unbookable: d.unbookable === 1,
-      demand_desc: d.demand_desc ?? null,
-      currency: prices.currency || "USD",
-      fetched_at: new Date().toISOString(),
-    }));
+    const rows = prices.data.map((d) => {
+      const unbookable = d.unbookable === 1;
+      // user_price === -1 is PriceLabs' signal for "booked on the PMS".
+      const booked = d.user_price === -1;
+      return {
+        listing_id: listingId,
+        stay_date: d.date,
+        rate_cents: Math.round((d.price ?? 0) * 100),
+        min_stay: d.min_stay ?? 2,
+        unbookable,
+        available: !unbookable && !booked,
+        demand_desc: d.demand_desc ?? null,
+        currency: prices.currency || "USD",
+        fetched_at: new Date().toISOString(),
+        raw_data: d,
+      };
+    });
 
     if (rows.length === 0) {
       throw new Error("PriceLabs returned zero price rows");
@@ -137,10 +144,12 @@ async function run(req: NextRequest): Promise<NextResponse> {
 
     const rates = rows.map((r) => r.rate_cents).sort((a, b) => a - b);
     const median = rates[Math.floor(rates.length / 2)] ?? 0;
+    const bookedCount = rows.filter((r) => !r.available).length;
     const summary = {
       listing_id: listingId,
       pms,
       days: rows.length,
+      days_booked_or_blocked: bookedCount,
       min_cents: rates[0] ?? 0,
       max_cents: rates[rates.length - 1] ?? 0,
       median_cents: median,

@@ -137,6 +137,14 @@ export function BookingFunnelSteps({
   // Departure auto-open handle — fired after arrival is picked in Step 1.
   const departureRef = useRef<DateFieldHandle>(null);
 
+  // ID returned by the draft POST (Step 2 entry). Threaded into the Step 3
+  // finalize request so the server updates the same row instead of inserting
+  // a new one. Null until the draft round-trip resolves; null also means
+  // "fall back to legacy one-shot INSERT" on finalize.
+  const inquiryIdRef = useRef<string | null>(null);
+  // Prevents the draft from firing twice if the "checking" effect re-runs.
+  const draftFiredRef = useRef(false);
+
   const needsDates = !arrivalProp || !departureProp;
   const needsEmail = !emailProp;
 
@@ -148,6 +156,12 @@ export function BookingFunnelSteps({
   // Step 2 beat: pulse → resolve → auto-advance to Step 3. Both
   // state changes happen inside setTimeout callbacks to stay off the
   // effect's synchronous path (react-hooks/set-state-in-effect).
+  //
+  // We also fire the DRAFT POST here — the moment we have dates + email
+  // and have landed on the "checking" step, we can prefetch the quote
+  // and park a partial row in Supabase. Runs in parallel with the
+  // animation so the guest never waits on it. Response stored in
+  // inquiryIdRef for the Step 3 finalize call to thread back.
   useEffect(() => {
     if (step !== "checking") return;
     const reduced = prefersReducedMotion();
@@ -155,11 +169,51 @@ export function BookingFunnelSteps({
     const advanceDelay = resolveDelay + REVEAL_HOLD_MS;
     const t1 = window.setTimeout(() => setResolving(true), resolveDelay);
     const t2 = window.setTimeout(() => setStep("form"), advanceDelay);
+
+    const draftEmail = (emailProp || emailInput).trim();
+    if (
+      !draftFiredRef.current &&
+      arrival &&
+      departure &&
+      draftEmail &&
+      inquiryIdRef.current === null
+    ) {
+      draftFiredRef.current = true;
+      const controller = new AbortController();
+      fetch("/api/inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          draft: true,
+          arrival,
+          departure,
+          email: draftEmail,
+          source,
+          attribution,
+        }),
+        signal: controller.signal,
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: { inquiry_id?: string } | null) => {
+          if (data?.inquiry_id) inquiryIdRef.current = data.inquiry_id;
+        })
+        .catch((err: unknown) => {
+          if ((err as { name?: string }).name !== "AbortError") {
+            console.warn("[funnel] draft POST failed", err);
+          }
+        });
+      return () => {
+        window.clearTimeout(t1);
+        window.clearTimeout(t2);
+        controller.abort();
+      };
+    }
+
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
     };
-  }, [step]);
+  }, [step, arrival, departure, emailProp, emailInput, source, attribution]);
 
   const dateRange =
     arrival && departure
@@ -192,6 +246,10 @@ export function BookingFunnelSteps({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          // If the draft POST (fired during Step 2) succeeded, this id
+          // lets the server update that same row instead of inserting a
+          // new one. Absent = legacy one-shot path.
+          inquiry_id: inquiryIdRef.current ?? undefined,
           arrival,
           departure,
           email: effectiveEmail,

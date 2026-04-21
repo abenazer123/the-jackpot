@@ -1,15 +1,27 @@
 /**
- * POST /api/inquiries — booking funnel submission endpoint.
+ * POST /api/inquiries — booking funnel endpoint. Three modes, all handled
+ * here to keep the funnel's network surface to a single URL.
  *
- * Flow:
- *   1. Validate payload (email format, required fields, guests 1..14, dates).
- *   2. Persist to Supabase `inquiries` (authoritative store — the one
- *      we care most about not dropping).
- *   3. Fire `booking_inquiry_submitted` PostHog event with distinct_id =
- *      email + $set traits so the person profile is tied to the lead.
- *   4. Fire host-notification + guest-confirmation emails in parallel,
- *      unawaited — email flakiness doesn't block the API response.
- *   5. Return 200. On validation error 400, on DB error 500.
+ *   1. DRAFT  — body contains `draft: true` + dates + email. Fires from
+ *               BookingFunnelSteps the moment the funnel lands on the
+ *               "checking" beat (Step 2), in parallel with the animation.
+ *               Creates a partial inquiry row, computes a quote with
+ *               guests=max placeholder, returns {inquiry_id, quote}.
+ *               Rate-limited to 1 partial per IP per 10 minutes.
+ *
+ *   2. FINAL  — body contains `inquiry_id` (uuid) + the full Step 3
+ *               payload. Updates the same row to status=submitted,
+ *               recomputes the quote with real guest count, fires
+ *               host+guest emails. If the id doesn't match a partial
+ *               row, falls through to LEGACY for safety.
+ *
+ *   3. LEGACY — no `draft`, no `inquiry_id`. Matches the pre-partial
+ *               behavior: one-shot INSERT + inline quote + emails. This
+ *               is the fallback when the draft POST never happened (e.g.
+ *               draft request was blocked, rate-limited, or failed).
+ *
+ * Supabase is authoritative. Emails fire unawaited — their failures are
+ * logged but don't surface to the guest.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
@@ -36,6 +48,8 @@ const REASON_OPTIONS = new Set([
 ]);
 
 interface IncomingBody {
+  draft?: unknown;
+  inquiry_id?: unknown;
   arrival?: unknown;
   departure?: unknown;
   email?: unknown;
@@ -79,22 +93,71 @@ function parseAttribution(raw: unknown): ParsedAttribution {
   return out;
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Placeholder guest count used when the draft POST fires and we don't
+ * yet know the real value. Finalize recomputes with the true count.
+ */
+const DRAFT_GUESTS_PLACEHOLDER = 14;
+
+/** 10-minute window; 1 draft per IP allowed inside it. */
+const DRAFT_RATE_WINDOW_MS = 10 * 60_000;
+
+// -----------------------------------------------------------------------
+// DRAFT parse — dates + email only.
+
+interface DraftParsed {
+  arrival: string;
+  departure: string;
+  email: string;
+  source?: string;
+  attribution: ParsedAttribution;
+}
+
+function parseDraft(
+  body: IncomingBody,
+): { ok: true; value: DraftParsed } | { ok: false; error: string } {
+  const arrival = typeof body.arrival === "string" ? body.arrival : "";
+  const departure = typeof body.departure === "string" ? body.departure : "";
+  const email = typeof body.email === "string" ? body.email.trim() : "";
+  const source = typeof body.source === "string" ? body.source : undefined;
+
+  if (!ISO_DATE.test(arrival)) return { ok: false, error: "invalid arrival" };
+  if (!ISO_DATE.test(departure))
+    return { ok: false, error: "invalid departure" };
+  if (departure <= arrival)
+    return { ok: false, error: "departure must be after arrival" };
+  if (!EMAIL_RE.test(email)) return { ok: false, error: "invalid email" };
+
+  return {
+    ok: true,
+    value: {
+      arrival,
+      departure,
+      email: email.toLowerCase(),
+      source,
+      attribution: parseAttribution(body.attribution),
+    },
+  };
+}
+
+// -----------------------------------------------------------------------
+// FULL parse — Step 3 payload.
+
 interface ParseResult {
   ok: true;
-  value: InquiryPayload & {
-    source?: string;
-    attribution: ParsedAttribution;
-  };
+  value: InquiryPayload & { source?: string; attribution: ParsedAttribution };
 }
 interface ParseError {
   ok: false;
   error: string;
 }
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function parseBody(body: IncomingBody): ParseResult | ParseError {
+function parseFull(body: IncomingBody): ParseResult | ParseError {
   const arrival = typeof body.arrival === "string" ? body.arrival : "";
   const departure = typeof body.departure === "string" ? body.departure : "";
   const email = typeof body.email === "string" ? body.email.trim() : "";
@@ -103,11 +166,11 @@ function parseBody(body: IncomingBody): ParseResult | ParseError {
   const guests = typeof body.guests === "number" ? body.guests : NaN;
   const reason = typeof body.reason === "string" ? body.reason : "";
   const source = typeof body.source === "string" ? body.source : undefined;
-  const venue =
-    typeof body.venue === "string" ? body.venue.trim() : "";
+  const venue = typeof body.venue === "string" ? body.venue.trim() : "";
 
   if (!ISO_DATE.test(arrival)) return { ok: false, error: "invalid arrival" };
-  if (!ISO_DATE.test(departure)) return { ok: false, error: "invalid departure" };
+  if (!ISO_DATE.test(departure))
+    return { ok: false, error: "invalid departure" };
   if (departure <= arrival)
     return { ok: false, error: "departure must be after arrival" };
   if (!EMAIL_RE.test(email)) return { ok: false, error: "invalid email" };
@@ -143,6 +206,54 @@ function parseBody(body: IncomingBody): ParseResult | ParseError {
   };
 }
 
+// -----------------------------------------------------------------------
+// Helpers
+
+async function computeQuoteSafely(params: {
+  arrival: string;
+  departure: string;
+  guests: number;
+  occasion?: string;
+}): Promise<Quote | null> {
+  try {
+    const r = await computeQuote(params);
+    if (r.ok) return r.quote;
+    console.warn(
+      "[inquiries] quote compute skipped",
+      r.error.code,
+      r.error.message,
+    );
+    return null;
+  } catch (err) {
+    console.error("[inquiries] quote compute threw", err);
+    return null;
+  }
+}
+
+function requestIp(req: NextRequest): string | null {
+  const fwd = req.headers.get("x-forwarded-for") ?? "";
+  return fwd.split(",")[0]?.trim() || null;
+}
+
+async function overDraftRateLimit(ip: string | null): Promise<boolean> {
+  if (!ip) return false;
+  const cutoff = new Date(Date.now() - DRAFT_RATE_WINDOW_MS).toISOString();
+  const { count, error } = await supabaseServer()
+    .from("inquiries")
+    .select("id", { count: "exact", head: true })
+    .eq("ip", ip)
+    .eq("status", "partial")
+    .gt("created_at", cutoff);
+  if (error) {
+    console.warn("[inquiries] rate-limit check failed, allowing", error);
+    return false;
+  }
+  return (count ?? 0) >= 1;
+}
+
+// -----------------------------------------------------------------------
+// Route
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   let body: IncomingBody;
   try {
@@ -151,47 +262,138 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
-  const parsed = parseBody(body);
+  const ip = requestIp(req);
+  const userAgent = req.headers.get("user-agent") ?? null;
+
+  // -------- DRAFT branch ------------------------------------------------
+  if (body.draft === true) {
+    const parsed = parseDraft(body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+    const p = parsed.value;
+
+    if (await overDraftRateLimit(ip)) {
+      return NextResponse.json(
+        { error: "too many drafts from this IP" },
+        { status: 429 },
+      );
+    }
+
+    const quote = await computeQuoteSafely({
+      arrival: p.arrival,
+      departure: p.departure,
+      guests: DRAFT_GUESTS_PLACEHOLDER,
+    });
+
+    const { data, error } = await supabaseServer()
+      .from("inquiries")
+      .insert({
+        status: "partial",
+        arrival: p.arrival,
+        departure: p.departure,
+        email: p.email,
+        source: p.source ?? null,
+        utm_source: p.attribution.utm_source ?? null,
+        utm_medium: p.attribution.utm_medium ?? null,
+        utm_campaign: p.attribution.utm_campaign ?? null,
+        utm_term: p.attribution.utm_term ?? null,
+        utm_content: p.attribution.utm_content ?? null,
+        gclid: p.attribution.gclid ?? null,
+        fbclid: p.attribution.fbclid ?? null,
+        msclkid: p.attribution.msclkid ?? null,
+        referrer: p.attribution.referrer ?? null,
+        landing_path: p.attribution.landing_path ?? null,
+        current_path: p.attribution.current_path ?? null,
+        user_agent: userAgent,
+        ip,
+        quote_snapshot: quote,
+        quote_total_cents: quote?.totalCents ?? null,
+      })
+      .select("id")
+      .single();
+
+    if (error || !data) {
+      console.error("[inquiries/draft] insert failed", error);
+      return NextResponse.json(
+        { error: "could not save draft" },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({ ok: true, inquiry_id: data.id, quote });
+  }
+
+  // -------- FINALIZE branch (has inquiry_id) ---------------------------
+  const inquiryId =
+    typeof body.inquiry_id === "string" && UUID_RE.test(body.inquiry_id)
+      ? body.inquiry_id
+      : null;
+
+  const parsed = parseFull(body);
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
   const p = parsed.value;
 
-  const userAgent = req.headers.get("user-agent") ?? null;
-  const fwd = req.headers.get("x-forwarded-for") ?? "";
-  const ip = fwd.split(",")[0]?.trim() || null;
+  const quote = await computeQuoteSafely({
+    arrival: p.arrival,
+    departure: p.departure,
+    guests: p.guests,
+    occasion: p.reason,
+  });
 
-  // 1a. Compute the quote up front so it lands in the same row as the
-  //     lead. If pricing tables aren't ready (cache empty, config gap,
-  //     out-of-window stay) we still save the inquiry — just with null
-  //     quote fields. Quote failures never block a lead.
-  let quote: Quote | null = null;
-  try {
-    const result = await computeQuote({
-      arrival: p.arrival,
-      departure: p.departure,
-      guests: p.guests,
-      occasion: p.reason,
-    });
-    if (result.ok) {
-      quote = result.quote;
-    } else {
+  let finalizedId: string | null = null;
+
+  if (inquiryId) {
+    // Update the existing partial row in place.
+    const { data, error } = await supabaseServer()
+      .from("inquiries")
+      .update({
+        status: "submitted",
+        // Dates/email may have been edited between Step 1 and Step 3.
+        arrival: p.arrival,
+        departure: p.departure,
+        email: p.email,
+        name: p.name,
+        phone: p.phone,
+        guests: p.guests,
+        reason: p.reason,
+        venue: p.venue ?? null,
+        // Re-apply attribution in case the draft missed any keys.
+        utm_source: p.attribution.utm_source ?? null,
+        utm_medium: p.attribution.utm_medium ?? null,
+        utm_campaign: p.attribution.utm_campaign ?? null,
+        utm_term: p.attribution.utm_term ?? null,
+        utm_content: p.attribution.utm_content ?? null,
+        gclid: p.attribution.gclid ?? null,
+        fbclid: p.attribution.fbclid ?? null,
+        msclkid: p.attribution.msclkid ?? null,
+        referrer: p.attribution.referrer ?? null,
+        landing_path: p.attribution.landing_path ?? null,
+        current_path: p.attribution.current_path ?? null,
+        quote_snapshot: quote,
+        quote_total_cents: quote?.totalCents ?? null,
+      })
+      .eq("id", inquiryId)
+      .eq("status", "partial")
+      .select("id")
+      .single();
+    if (!error && data) finalizedId = data.id as string;
+    else if (error) {
       console.warn(
-        "[inquiries] quote compute skipped",
-        result.error.code,
-        result.error.message,
+        "[inquiries/finalize] update miss, falling through to legacy",
+        { inquiryId, error: error.message },
       );
     }
-  } catch (err) {
-    console.error("[inquiries] quote compute threw", err);
   }
 
-  // 1b. Persist — if this fails, we fail the request. The UI can show
-  //     an error and the user can retry.
-  try {
-    const { error } = await supabaseServer()
+  // -------- LEGACY branch (no id, or finalize missed) ------------------
+  if (!finalizedId) {
+    const { data, error } = await supabaseServer()
       .from("inquiries")
       .insert({
+        status: "submitted",
         arrival: p.arrival,
         departure: p.departure,
         email: p.email,
@@ -216,20 +418,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         ip,
         quote_snapshot: quote,
         quote_total_cents: quote?.totalCents ?? null,
-      });
-    if (error) throw error;
-  } catch (err) {
-    console.error("[inquiries] supabase insert failed", err);
-    return NextResponse.json(
-      { error: "could not save inquiry" },
-      { status: 500 },
-    );
+      })
+      .select("id")
+      .single();
+    if (error || !data) {
+      console.error("[inquiries/legacy] insert failed", error);
+      return NextResponse.json(
+        { error: "could not save inquiry" },
+        { status: 500 },
+      );
+    }
+    finalizedId = data.id as string;
   }
 
-  // 2. Analytics (server-side, authoritative). Awaited so we flush before
-  //    the serverless function exits. Attribution fields are explicit event
-  //    properties (not just person-profile traits) so PostHog insights can
-  //    group by utm_* without relying on $initial_utm_* autocapture.
+  // Analytics (server-side, authoritative). Awaited so we flush before
+  // the serverless function exits.
   await serverCapture({
     distinctId: p.email,
     event: "booking_inquiry_submitted",
@@ -247,8 +450,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     },
   });
 
-  // 3. Emails — fire and log, don't block the response or surface a
-  //    partial-failure to the user. The Supabase row is authoritative.
+  // Emails — fire and log, don't block the response.
   Promise.allSettled([
     sendHostNotification(p),
     sendGuestConfirmation(p),
@@ -263,5 +465,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
   });
 
-  return NextResponse.json({ ok: true, quote });
+  return NextResponse.json({ ok: true, inquiry_id: finalizedId, quote });
 }

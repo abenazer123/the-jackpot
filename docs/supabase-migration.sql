@@ -143,3 +143,77 @@ alter table public.discounts enable row level security;
 alter table public.inquiries
   add column if not exists quote_snapshot    jsonb,
   add column if not exists quote_total_cents int;
+
+-- =============================================================
+-- Funnel partial-save (added 2026-04-20)
+-- =============================================================
+-- The funnel now POSTs twice: a `draft` the moment dates+email are
+-- captured (Step 1 → Step 2 entry), then a `finalize` on full submit.
+-- Drafts become visible partial-abandon leads for Abe; finalize flips
+-- the same row to `submitted` and fires emails.
+
+-- Backfill existing rows as submitted before adding NOT NULL.
+alter table public.inquiries
+  add column if not exists status text;
+update public.inquiries set status = 'submitted' where status is null;
+alter table public.inquiries
+  alter column status set not null,
+  alter column status set default 'partial';
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'inquiries_status_check'
+  ) then
+    alter table public.inquiries
+      add constraint inquiries_status_check
+      check (status in ('partial','submitted'));
+  end if;
+end$$;
+
+-- Relax NOT NULLs that aren't known until Step 3.
+alter table public.inquiries
+  alter column name drop not null,
+  alter column phone drop not null,
+  alter column guests drop not null,
+  alter column reason drop not null;
+
+-- Conditional completeness: submitted rows must be fully populated.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'inquiries_submitted_complete'
+  ) then
+    alter table public.inquiries
+      add constraint inquiries_submitted_complete
+      check (
+        status = 'partial'
+        or (name is not null and phone is not null
+            and guests is not null and reason is not null)
+      );
+  end if;
+end$$;
+
+-- Indexes for abandon visibility + rate-limit lookups.
+create index if not exists inquiries_status_created_idx
+  on public.inquiries (status, created_at desc);
+create index if not exists inquiries_partial_ip_idx
+  on public.inquiries (ip, created_at desc)
+  where status = 'partial';
+
+-- =============================================================
+-- Richer PriceLabs capture (added 2026-04-20)
+-- =============================================================
+-- raw_data preserves the full per-date PriceLabs payload (weekly/monthly
+-- discount multipliers, extra_person_fee, check_in/check_out flags,
+-- demand color, booking status + same-time-last-year, ADR — all the
+-- things we don't yet use but may want without another migration).
+-- `available` is the authoritative booking flag: false when Airbnb shows
+-- the date as booked (PriceLabs sets user_price=-1) OR when PriceLabs
+-- flagged it unbookable due to min-stay / check-in / check-out rules.
+alter table public.listing_prices
+  add column if not exists raw_data  jsonb,
+  add column if not exists available boolean not null default true;
+
+create index if not exists listing_prices_available_idx
+  on public.listing_prices (listing_id, stay_date)
+  where available = false;
