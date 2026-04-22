@@ -32,6 +32,10 @@ interface CalendarProps {
    *  element when the trigger is inside one so the calendar joins the
    *  browser's top layer instead of rendering beneath the backdrop. */
   portalTarget?: HTMLElement | null;
+  /** When picking the departure date, pass the arrival here so the cell
+   *  is visibly highlighted (outlined gold) — gives the user a visual
+   *  anchor for the stay range without forcing a full range-picker UX. */
+  rangeStart?: string;
 }
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -66,16 +70,19 @@ export function Calendar({
   triggerRect,
   placement,
   portalTarget,
+  rangeStart,
 }: CalendarProps) {
-  const initial = value
-    ? (() => {
-        const [y, m] = value.split("-").map(Number);
-        return { year: y, month: m - 1 };
-      })()
-    : (() => {
-        const now = new Date();
-        return { year: now.getFullYear(), month: now.getMonth() };
-      })();
+  // Initial month: prefer the current selection, then the floor (`min`)
+  // — typically arrival+2 nights when this is the departure picker —
+  // falling back to today only when neither is set. Without the `min`
+  // fallback, picking an arrival 6 months out and auto-opening the
+  // departure picker showed today's month with everything disabled,
+  // forcing the user to chevron forward N times to reach a valid day.
+  const initial = (() => {
+    const seedIso = value || min || todayIso();
+    const [y, m] = seedIso.split("-").map(Number);
+    return { year: y, month: m - 1 };
+  })();
 
   const [view, setView] = useState(initial);
 
@@ -172,12 +179,15 @@ export function Calendar({
             (() => {
               const disabled = !!min && cell.iso < min;
               const selected = value === cell.iso;
+              const isRangeStart =
+                !!rangeStart && cell.iso === rangeStart && !selected;
               const isToday = cell.iso === today;
               const classes = [
                 styles.day,
                 selected ? styles.daySelected : "",
                 disabled ? styles.dayDisabled : "",
-                isToday && !selected ? styles.dayToday : "",
+                isRangeStart ? styles.dayRangeStart : "",
+                isToday && !selected && !isRangeStart ? styles.dayToday : "",
               ]
                 .filter(Boolean)
                 .join(" ");

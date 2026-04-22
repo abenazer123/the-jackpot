@@ -29,6 +29,10 @@ interface DateFieldProps {
   onChange: (iso: string) => void;
   min?: string;
   placeholder?: string;
+  /** Forwarded to Calendar — highlights the arrival cell when this is
+   *  the departure picker, giving the user a visual anchor for their
+   *  stay range. */
+  rangeStart?: string;
 }
 
 export interface DateFieldHandle {
@@ -49,7 +53,14 @@ function formatDisplay(iso: string): string {
 
 export const DateField = forwardRef<DateFieldHandle, DateFieldProps>(
   function DateField(
-    { label, value, onChange, min, placeholder = "Select a date" },
+    {
+      label,
+      value,
+      onChange,
+      min,
+      placeholder = "Select a date",
+      rangeStart,
+    },
     ref,
   ) {
     const [open, setOpen] = useState(false);
@@ -139,6 +150,7 @@ export const DateField = forwardRef<DateFieldHandle, DateFieldProps>(
             placement={placement}
             triggerRect={triggerRect}
             portalTarget={portalTarget}
+            rangeStart={rangeStart}
             onSelect={(iso) => {
               onChange(iso);
               setOpen(false);

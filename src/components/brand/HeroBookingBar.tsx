@@ -86,6 +86,7 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
             value={departure}
             onChange={setDeparture}
             min={minDeparture}
+            rangeStart={arrival}
           />
         </div>
 

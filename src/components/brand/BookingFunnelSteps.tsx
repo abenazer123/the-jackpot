@@ -316,6 +316,7 @@ export function BookingFunnelSteps({
                   value={departure}
                   onChange={setDeparture}
                   min={minDeparture}
+                  rangeStart={arrival}
                 />
               </div>
             ) : null}

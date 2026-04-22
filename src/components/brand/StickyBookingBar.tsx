@@ -62,11 +62,13 @@ function CompactDatePicker({
   value,
   onChange,
   min,
+  rangeStart,
 }: {
   label: string;
   value: string;
   onChange: (iso: string) => void;
   min?: string;
+  rangeStart?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [placement, setPlacement] = useState<"top" | "bottom">("bottom");
@@ -140,6 +142,7 @@ function CompactDatePicker({
           min={min}
           placement={placement}
           triggerRect={triggerRect}
+          rangeStart={rangeStart}
           onSelect={(iso) => {
             onChange(iso);
             setOpen(false);
@@ -303,6 +306,7 @@ export function StickyBookingBar() {
               value={departure}
               onChange={setDeparture}
               min={minDeparture}
+              rangeStart={arrival}
             />
             <button
               type="button"

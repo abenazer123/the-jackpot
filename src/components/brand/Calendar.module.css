@@ -189,6 +189,17 @@
   color: #fff;
 }
 
+/* Range start — when picking departure, the arrival is highlighted with
+   an outlined gold treatment so the user sees the start of their stay
+   without thinking it's selectable as departure. */
+.dayRangeStart,
+.dayRangeStart:hover {
+  background: rgba(212, 169, 48, 0.12);
+  color: var(--jp-gold-deep);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--jp-gold);
+}
+
 .dayDisabled,
 .dayDisabled:hover {
   color: rgba(122, 96, 48, 0.3);
