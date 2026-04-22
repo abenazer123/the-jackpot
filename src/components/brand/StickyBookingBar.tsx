@@ -28,6 +28,7 @@ import { BookingPricingModal } from "./BookingPricingModal";
 import { Calendar, todayIso } from "./Calendar";
 import { HostPresence } from "./HostPresence";
 import { capture } from "./PostHogProvider";
+import { readDraft, writeDraft } from "@/lib/funnel-draft";
 import { Starburst } from "./Starburst";
 import styles from "./StickyBookingBar.module.css";
 
@@ -158,9 +159,24 @@ export function StickyBookingBar() {
   const [inquiryVisible, setInquiryVisible] = useState(false);
   const [arrival, setArrival] = useState("");
   const [departure, setDeparture] = useState("");
+  const [draftEmail, setDraftEmail] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [modalKey, setModalKey] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Hydrate from the shared funnel-draft on mount so a guest who entered
+  // dates + email in the hero earlier doesn't see an empty peek card.
+  // Deferred via 0ms setTimeout to stay off the effect's synchronous
+  // path (react-hooks/set-state-in-effect).
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const d = readDraft();
+      if (d.arrival) setArrival(d.arrival);
+      if (d.departure) setDeparture(d.departure);
+      if (d.email) setDraftEmail(d.email);
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, []);
 
   // Track the viewport breakpoint so the funnel opens inside the right
   // container: BookingPricingModal on desktop, BookingBottomSheet on mobile.
@@ -214,6 +230,14 @@ export function StickyBookingBar() {
     capture("booking_cta_clicked", {
       surface: isMobile ? "peek_mobile" : "sticky_desktop",
     });
+    // Re-read the draft at click-time so if the user typed their email
+    // into the hero AFTER the sticky bar mounted, the sheet still sees
+    // that email. Equivalent for arrival/departure when the sticky
+    // bar is shown without the date pickers (mobile peek path).
+    const d = readDraft();
+    if (d.arrival && !arrival) setArrival(d.arrival);
+    if (d.departure && !departure) setDeparture(d.departure);
+    if (d.email && d.email !== draftEmail) setDraftEmail(d.email);
     setModalKey((k) => k + 1);
     setModalOpen(true);
   };
@@ -298,13 +322,19 @@ export function StickyBookingBar() {
             <CompactDatePicker
               label="Arrival"
               value={arrival}
-              onChange={setArrival}
+              onChange={(iso) => {
+                setArrival(iso);
+                writeDraft({ arrival: iso });
+              }}
               min={today}
             />
             <CompactDatePicker
               label="Departure"
               value={departure}
-              onChange={setDeparture}
+              onChange={(iso) => {
+                setDeparture(iso);
+                writeDraft({ departure: iso });
+              }}
               min={minDeparture}
               rangeStart={arrival}
             />
@@ -359,7 +389,7 @@ export function StickyBookingBar() {
           onClose={() => setModalOpen(false)}
           arrival={arrival}
           departure={departure}
-          email=""
+          email={draftEmail}
           source="peek_mobile"
         />
       ) : (
@@ -369,7 +399,7 @@ export function StickyBookingBar() {
           onClose={() => setModalOpen(false)}
           arrival={arrival}
           departure={departure}
-          email=""
+          email={draftEmail}
           source="sticky_desktop"
         />
       )}

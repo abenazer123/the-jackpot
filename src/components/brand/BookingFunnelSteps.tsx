@@ -33,6 +33,7 @@ import { useOccasion } from "./OccasionProvider";
 import { capture, identify } from "./PostHogProvider";
 import { Starburst } from "./Starburst";
 import { useUtm } from "./UtmProvider";
+import { clearDraft, readDraft, writeDraft } from "@/lib/funnel-draft";
 import styles from "./BookingFunnelSteps.module.css";
 
 /** Which surface triggered the funnel — forwarded to analytics + the API
@@ -153,6 +154,31 @@ export function BookingFunnelSteps({
     capture("booking_funnel_step_viewed", { step, source });
   }, [step, source]);
 
+  // Rehydrate from the shared funnel-draft on mount. Parent-provided
+  // props take precedence; anything the parent didn't pre-fill gets
+  // pulled from the draft. Runs once per mount — the parent bumps `key`
+  // to force a fresh mount per modal open. Deferred via 0ms setTimeout
+  // to stay off the effect's synchronous path
+  // (react-hooks/set-state-in-effect; matches UtmProvider).
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const d = readDraft();
+      if (!arrival && d.arrival) setArrival(d.arrival);
+      if (!departure && d.departure) setDeparture(d.departure);
+      if (!emailInput && d.email) setEmailInput(d.email);
+      if (d.name) setName(d.name);
+      if (d.phone) setPhone(d.phone);
+      if (typeof d.guests === "number" && d.guests >= 1 && d.guests <= 14) {
+        setGuests(d.guests);
+      }
+      if (d.reason && (REASON_OPTIONS as readonly string[]).includes(d.reason)) {
+        setReason(d.reason as Reason);
+      }
+    }, 0);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Step 2 beat: pulse → resolve → auto-advance to Step 3. Both
   // state changes happen inside setTimeout callbacks to stay off the
   // effect's synchronous path (react-hooks/set-state-in-effect).
@@ -267,6 +293,7 @@ export function BookingFunnelSteps({
         const detail = await res.text().catch(() => "");
         throw new Error(detail || `HTTP ${res.status}`);
       }
+      clearDraft();
       setStep("success");
     } catch (err) {
       console.error("inquiry submit failed", err);
@@ -303,6 +330,7 @@ export function BookingFunnelSteps({
                   value={arrival}
                   onChange={(iso) => {
                     setArrival(iso);
+                    writeDraft({ arrival: iso });
                     window.setTimeout(
                       () => departureRef.current?.open(),
                       150,
@@ -314,7 +342,10 @@ export function BookingFunnelSteps({
                   ref={departureRef}
                   label="Departure"
                   value={departure}
-                  onChange={setDeparture}
+                  onChange={(iso) => {
+                    setDeparture(iso);
+                    writeDraft({ departure: iso });
+                  }}
                   min={minDeparture}
                   rangeStart={arrival}
                 />
@@ -328,7 +359,11 @@ export function BookingFunnelSteps({
                   type="email"
                   className={styles.input}
                   value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setEmailInput(v);
+                    writeDraft({ email: v.trim() });
+                  }}
                   placeholder="you@example.com"
                   autoComplete="email"
                   inputMode="email"
@@ -404,7 +439,11 @@ export function BookingFunnelSteps({
                   type="text"
                   className={styles.input}
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setName(v);
+                    writeDraft({ name: v });
+                  }}
                   placeholder="Full name"
                   autoComplete="name"
                   required
@@ -416,7 +455,11 @@ export function BookingFunnelSteps({
                   type="tel"
                   className={styles.input}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setPhone(v);
+                    writeDraft({ phone: v });
+                  }}
                   placeholder="(555) 123-4567"
                   autoComplete="tel"
                   inputMode="tel"
@@ -431,7 +474,11 @@ export function BookingFunnelSteps({
                 <select
                   className={styles.select}
                   value={guests}
-                  onChange={(e) => setGuests(Number(e.target.value))}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    setGuests(n);
+                    writeDraft({ guests: n });
+                  }}
                 >
                   {Array.from({ length: 14 }, (_, i) => i + 1).map((n) => (
                     <option key={n} value={n}>
@@ -468,7 +515,10 @@ export function BookingFunnelSteps({
                     role="radio"
                     aria-checked={reason === opt}
                     className={`${styles.chip} ${reason === opt ? styles.chipActive : ""}`}
-                    onClick={() => setReason(opt)}
+                    onClick={() => {
+                      setReason(opt);
+                      writeDraft({ reason: opt });
+                    }}
                   >
                     {opt}
                   </button>

@@ -9,13 +9,21 @@
 
 "use client";
 
-import { useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 
 import { BookingPricingModal } from "./BookingPricingModal";
 import { todayIso } from "./Calendar";
 import { DateField, type DateFieldHandle } from "./DateField";
 import { HostPresence } from "./HostPresence";
 import { capture } from "./PostHogProvider";
+import { readDraft, writeDraft } from "@/lib/funnel-draft";
 import styles from "./HeroBookingBar.module.css";
 
 interface HeroBookingBarProps {
@@ -42,6 +50,22 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
   // internal state (form fields, success flag) starts fresh.
   const [modalKey, setModalKey] = useState(0);
   const departureRef = useRef<DateFieldHandle>(null);
+
+  // Hydrate from the shared funnel-draft on mount. If a guest half-filled
+  // the hero earlier (or on the mobile peek, or the sticky top bar) we
+  // pre-fill their work instead of asking them to start over. See
+  // src/lib/funnel-draft.ts for the storage model. Deferred via a 0ms
+  // setTimeout to stay off the effect's synchronous path (matches the
+  // pattern used in UtmProvider — react-hooks/set-state-in-effect).
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const d = readDraft();
+      if (d.arrival) setArrival(d.arrival);
+      if (d.departure) setDeparture(d.departure);
+      if (d.email) setEmail(d.email);
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, []);
 
   // No past dates anywhere. Departure must be at least MIN_NIGHTS after
   // arrival (when chosen); otherwise it also floors at today so the guest
@@ -73,6 +97,7 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
             value={arrival}
             onChange={(iso) => {
               setArrival(iso);
+              writeDraft({ arrival: iso });
               // Auto-open Departure so the user doesn't have to hunt for
               // the second field. Small delay lets the Arrival popover
               // close gracefully before the Departure one pops.
@@ -84,7 +109,10 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
             ref={departureRef}
             label="Departure"
             value={departure}
-            onChange={setDeparture}
+            onChange={(iso) => {
+              setDeparture(iso);
+              writeDraft({ departure: iso });
+            }}
             min={minDeparture}
             rangeStart={arrival}
           />
@@ -96,7 +124,11 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
             type="email"
             className={styles.input}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setEmail(v);
+              writeDraft({ email: v.trim() });
+            }}
             placeholder="you@example.com"
             autoComplete="email"
             inputMode="email"
