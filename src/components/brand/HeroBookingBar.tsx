@@ -49,6 +49,10 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
   // Bumped each time the modal opens so the child remounts and all its
   // internal state (form fields, success flag) starts fresh.
   const [modalKey, setModalKey] = useState(0);
+  // True when this visit started with a draft already in localStorage
+  // (returning guest). Flips the submit CTA from "Check availability"
+  // to "Continue where you left off" as a soft welcome-back signal.
+  const [resumed, setResumed] = useState(false);
   const departureRef = useRef<DateFieldHandle>(null);
 
   // Hydrate from the shared funnel-draft on mount. If a guest half-filled
@@ -63,6 +67,8 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
       if (d.arrival) setArrival(d.arrival);
       if (d.departure) setDeparture(d.departure);
       if (d.email) setEmail(d.email);
+      // If all three are prefilled, treat this as a resumed session.
+      if (d.arrival && d.departure && d.email) setResumed(true);
     }, 0);
     return () => window.clearTimeout(t);
   }, []);
@@ -142,7 +148,11 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
             className={styles.submit}
             disabled={!arrival || !departure || !email.trim()}
           >
-            <span className={styles.submitText}>Check availability</span>
+            <span className={styles.submitText}>
+              {resumed
+                ? "Continue where you left off \u2192"
+                : "Check availability"}
+            </span>
           </button>
           <HostPresence variant="compact" tone="light" />
           {trailing}
