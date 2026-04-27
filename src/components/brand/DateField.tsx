@@ -69,6 +69,11 @@ export const DateField = forwardRef<DateFieldHandle, DateFieldProps>(
     const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
     const rootRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    // Timestamp through which scroll-dismiss should be ignored. Set in
+    // openCalendar() right before our own programmatic scrollBy fires —
+    // otherwise the scroll event from that call wakes the dismiss
+    // listener and closes the calendar a frame after we open it.
+    const ignoreScrollUntil = useRef(0);
 
     useEffect(() => {
       if (!open) return;
@@ -82,16 +87,20 @@ export const DateField = forwardRef<DateFieldHandle, DateFieldProps>(
       const handleKey = (e: KeyboardEvent) => {
         if (e.key === "Escape") setOpen(false);
       };
-      const handleDismiss = () => setOpen(false);
+      const handleScrollDismiss = () => {
+        if (Date.now() < ignoreScrollUntil.current) return;
+        setOpen(false);
+      };
+      const handleResize = () => setOpen(false);
       document.addEventListener("mousedown", handleMouseDown);
       document.addEventListener("keydown", handleKey);
-      window.addEventListener("scroll", handleDismiss, true);
-      window.addEventListener("resize", handleDismiss);
+      window.addEventListener("scroll", handleScrollDismiss, true);
+      window.addEventListener("resize", handleResize);
       return () => {
         document.removeEventListener("mousedown", handleMouseDown);
         document.removeEventListener("keydown", handleKey);
-        window.removeEventListener("scroll", handleDismiss, true);
-        window.removeEventListener("resize", handleDismiss);
+        window.removeEventListener("scroll", handleScrollDismiss, true);
+        window.removeEventListener("resize", handleResize);
       };
     }, [open]);
 
@@ -99,20 +108,60 @@ export const DateField = forwardRef<DateFieldHandle, DateFieldProps>(
     // handler and the imperative open() exposed via ref.
     const openCalendar = () => {
       const trigger = triggerRef.current;
-      if (trigger) {
-        const rect = trigger.getBoundingClientRect();
-        const CAL_HEIGHT = 340;
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const spaceAbove = rect.top;
-        setTriggerRect(rect);
-        setPlacement(
-          spaceBelow < CAL_HEIGHT && spaceAbove > spaceBelow ? "top" : "bottom",
-        );
-        // If the trigger is inside a <dialog> (booking modal), portal the
-        // calendar into the dialog so it joins the browser's top layer —
-        // otherwise it renders under the modal backdrop.
-        setPortalTarget(trigger.closest("dialog"));
+      if (!trigger) {
+        setOpen(true);
+        return;
       }
+
+      const isMobile =
+        typeof window !== "undefined" &&
+        window.matchMedia("(max-width: 900px)").matches;
+
+      // On mobile, center the trigger in the viewport BEFORE measuring,
+      // so the calendar's anchored position reflects the post-scroll
+      // trigger location. We use direct scrollBy math instead of
+      // scrollIntoView because `scrollIntoView({ behavior: "instant" })`
+      // has cross-browser quirks (Chrome bug 1257212, iOS Safari
+      // smooth-scroll fallback) where the page sometimes animates and
+      // getBoundingClientRect returns the pre-scroll position. The
+      // legacy 2-arg `window.scrollBy(x, y)` form is always synchronous
+      // and instant, so the next `getBoundingClientRect()` call sees
+      // the new scroll position.
+      if (isMobile) {
+        const dialogAncestor = trigger.closest("dialog");
+        const r0 = trigger.getBoundingClientRect();
+        const triggerCenter = r0.top + r0.height / 2;
+        const viewportCenter = window.innerHeight / 2;
+        const delta = triggerCenter - viewportCenter;
+        if (Math.abs(delta) > 1) {
+          // Suppress scroll-dismiss for the next ~400ms so the scroll
+          // event from our own programmatic scroll doesn't immediately
+          // close the calendar we're about to open. Lingers slightly
+          // beyond the synchronous scroll to cover composited /
+          // overscroll-bounce events that fire on the next few frames.
+          ignoreScrollUntil.current = Date.now() + 400;
+          if (dialogAncestor) {
+            // Dialog is its own scroll context — scroll the dialog's
+            // open <dialog> element instead of window.
+            dialogAncestor.scrollTop += delta;
+          } else {
+            window.scrollBy(0, delta);
+          }
+        }
+      }
+
+      const rect = trigger.getBoundingClientRect();
+      const CAL_HEIGHT = 340;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      setTriggerRect(rect);
+      setPlacement(
+        spaceBelow < CAL_HEIGHT && spaceAbove > spaceBelow ? "top" : "bottom",
+      );
+      // If the trigger is inside a <dialog> (booking modal), portal the
+      // calendar into the dialog so it joins the browser's top layer —
+      // otherwise it renders under the modal backdrop.
+      setPortalTarget(trigger.closest("dialog"));
       setOpen(true);
     };
 

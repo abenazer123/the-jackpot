@@ -18,6 +18,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { BookingBottomSheet } from "./BookingBottomSheet";
 import { BookingPricingModal } from "./BookingPricingModal";
 import { todayIso } from "./Calendar";
 import { DateField, type DateFieldHandle } from "./DateField";
@@ -53,7 +54,20 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
   // (returning guest). Flips the submit CTA from "Check availability"
   // to "Continue where you left off" as a soft welcome-back signal.
   const [resumed, setResumed] = useState(false);
+  // Mobile gets a bottom-sheet experience (slides up from the bottom of
+  // the viewport); desktop gets the centered modal. Mirrors the
+  // breakpoint switch in StickyBookingBar so both entry points behave
+  // identically per device.
+  const [isMobile, setIsMobile] = useState(false);
   const departureRef = useRef<DateFieldHandle>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => setIsMobile(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   // Hydrate from the shared funnel-draft on mount. If a guest half-filled
   // the hero earlier (or on the mobile peek, or the sticky top bar) we
@@ -104,6 +118,16 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
             onChange={(iso) => {
               setArrival(iso);
               writeDraft({ arrival: iso });
+              // Clear stale departure if the prior pick is now before
+              // the new minimum. Without this, the auto-opened picker
+              // would seed off the old (invalid) departure value and
+              // open on the wrong month — the "click click click click"
+              // chevron-spam to reach the actual stay window.
+              const minNewDep = addDaysIso(iso, MIN_NIGHTS);
+              if (departure && departure < minNewDep) {
+                setDeparture("");
+                writeDraft({ departure: "" });
+              }
               // Auto-open Departure so the user doesn't have to hunt for
               // the second field. Small delay lets the Arrival popover
               // close gracefully before the Departure one pops.
@@ -159,15 +183,27 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
         </div>
       </form>
 
-      <BookingPricingModal
-        key={modalKey}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        arrival={arrival}
-        departure={departure}
-        email={email}
-        source="hero"
-      />
+      {isMobile ? (
+        <BookingBottomSheet
+          key={modalKey}
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          arrival={arrival}
+          departure={departure}
+          email={email}
+          source="hero"
+        />
+      ) : (
+        <BookingPricingModal
+          key={modalKey}
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          arrival={arrival}
+          departure={departure}
+          email={email}
+          source="hero"
+        />
+      )}
     </>
   );
 }

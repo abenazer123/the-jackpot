@@ -178,10 +178,23 @@
   font-style: italic;
   font-size: 22px;
   line-height: 1.2;
-  color: var(--jp-gold);
+  /* Sage-deep is the brand's warm-leaning green — reads as a "yes,
+     available" affirmation without breaking the no-cool-colors rule.
+     Paired with the celebrate keyframe so the reveal feels earned. */
+  color: var(--jp-sage-deep);
   text-align: center;
   margin: 0;
-  animation: stepEnter 400ms ease-out both;
+  animation: availableCelebrate 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Brief pop-in for the "Your dates are available" reveal. Slight
+   overshoot scale at 60% so it lands with a tiny celebratory pulse,
+   then settles to 1.0. cubic-bezier(0.34, 1.56, 0.64, 1) is the
+   standard "ease-out-back" — small bounce, no rubber-band. */
+@keyframes availableCelebrate {
+  0%   { opacity: 0; transform: scale(0.92) translateY(6px); }
+  55%  { opacity: 1; transform: scale(1.06) translateY(-1px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .revealRange {
@@ -192,6 +205,196 @@
   text-align: center;
   margin: 0;
   animation: stepEnter 500ms ease-out both;
+}
+
+/* Beats 1-4 cross-fade stack. Each beat renders as a sibling layer
+   inside .beatStack; only the active layer is opaque + interactive.
+   The 200ms opacity overlap gives the sequence a breathing quality
+   instead of a slideshow hard-swap. The container's min-height holds
+   the tallest beat (the teaser card) so the layout doesn't jump. */
+.beatStack {
+  position: relative;
+  width: 100%;
+  min-height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.beatLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms ease;
+}
+
+.beatActive {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Inactive layers stay quiet — no keyframes, no transforms. The parent
+   layer's opacity transition handles the cross-fade between beats. */
+.beatLayer .checkingText,
+.beatLayer .insightCard,
+.beatLayer .teaserCard,
+.beatLayer .revealText,
+.beatLayer .revealRange {
+  animation: none;
+}
+
+/* Active layer re-enables the per-element entrance animations so the
+   visible beat *arrives* (translateY + opacity) instead of just fading
+   in flat. Re-applying animation-name on class change restarts the
+   animation each time a layer becomes active. */
+.beatActive .checkingText {
+  animation: stepEnter 350ms ease-out both;
+}
+.beatActive .insightCard,
+.beatActive .teaserCard {
+  animation: beatEnter 380ms ease-out both;
+}
+.beatActive .revealText {
+  animation: availableCelebrate 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.beatActive .revealRange {
+  animation: stepEnter 500ms ease-out both;
+}
+
+/* Beat 1 — pulse status line */
+.checkingText {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--jp-text-secondary);
+  text-align: center;
+  margin: 0;
+  letter-spacing: 0.2px;
+  animation: stepEnter 350ms ease-out both;
+}
+
+/* Beat 2 — insight card. Pull-quote treatment, not a status pill: the
+   visitor reads this for ~800ms so it earns Cormorant italic display
+   type, not Outfit body. No background or border — the type itself
+   carries the moment. */
+.insightCard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  max-width: 360px;
+  animation: beatEnter 380ms ease-out both;
+}
+
+.insightText {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 19px;
+  line-height: 1.3;
+  color: var(--jp-text-primary);
+  margin: 0;
+  text-align: center;
+  letter-spacing: -0.1px;
+}
+
+/* Beat 3 — empty-frame teaser */
+.teaserCard {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 18px 16px;
+  background: var(--jp-linen);
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+  animation: beatEnter 380ms ease-out both;
+}
+
+.teaserLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: var(--jp-gold-deep);
+  margin: 0 0 10px;
+  text-align: center;
+}
+
+.teaserRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.teaserRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.teaserRowLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--jp-text-secondary);
+}
+
+.teaserRowValue {
+  position: relative;
+  min-width: 80px;
+  text-align: right;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--jp-text-primary);
+}
+
+.teaserHairline {
+  display: inline-block;
+  width: 70px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--jp-gold) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-position: 100% 0;
+  animation: shimmer 1500ms linear infinite;
+  vertical-align: middle;
+  margin-bottom: 4px;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes beatEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ============================================
@@ -329,9 +532,12 @@
   border-radius: var(--jp-radius-full);
   background: var(--jp-gradient);
   color: var(--jp-text-on-color);
-  font-family: var(--jp-font-display);
+  /* Body font (Outfit) at button weight — same family as the hero
+     "Check availability" CTA. Cormorant Garamond at 600 reads as an
+     italic display flourish, which fights the affordance of a button. */
+  font-family: var(--jp-font-body);
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   letter-spacing: 0.4px;
   cursor: pointer;
   transition: filter var(--jp-transition), box-shadow var(--jp-transition), transform var(--jp-transition);
@@ -371,7 +577,7 @@
   align-items: center;
   text-align: center;
   padding: 16px 0 0;
-  gap: 14px;
+  gap: 8px;
   animation: stepEnter 400ms ease-out both;
 }
 
@@ -392,9 +598,13 @@
   font-style: italic;
   font-size: 22px;
   line-height: 1.2;
-  color: var(--jp-text-primary);
+  /* Same celebratory treatment as the beat-4 reveal — sage-deep green
+     to signal "available" + the same pop-in keyframe. Lands as a
+     callback to the moment they just experienced in checking. */
+  color: var(--jp-sage-deep);
   letter-spacing: -0.3px;
   margin: 0;
+  animation: availableCelebrate 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .successBody {
@@ -435,6 +645,777 @@
 }
 
 /* ============================================
+   QUOTE REVEAL CARD (success step)
+   ============================================ */
+
+.quoteWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  max-width: 420px;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.quoteCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 20px;
+  /* Subtle gold tint vs. the surrounding sheet so the card reads as
+     "the price lives here" without shouting. Slightly warmer than the
+     linen background. */
+  background: var(--jp-gold-10);
+  border: 1px solid var(--jp-gold-25);
+  border-radius: var(--jp-radius-md);
+  gap: 0;
+}
+
+/* Hero dollar amount — per-person/night by default, total when
+   totalLeads. Tightened letter-spacing so the digits feel deliberate
+   at large size. */
+.quoteCard .quoteHero {
+  font-size: clamp(48px, 14vw, 62px);
+  letter-spacing: -1.5px;
+}
+
+.quoteHero {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: 56px;
+  line-height: 1;
+  color: var(--jp-text-primary);
+  letter-spacing: -1px;
+}
+
+/* Dollar-sign treatment for the hero + total. Italic Cormorant `$` at
+   56px is visually heavy and competes with the digits. Render the `$`
+   at ~60% size, top-aligned to the digit cap-height so the numerals
+   dominate and the symbol reads as a quiet prefix. */
+.quoteCurrency {
+  font-size: 0.6em;
+  vertical-align: 0.45em;
+  margin-right: 0.04em;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.quoteHeroSub {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--jp-text-primary);
+  margin-top: 4px;
+}
+
+.quoteHeroMeta {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 12px;
+  color: var(--jp-text-secondary);
+  margin-top: 2px;
+}
+
+.quoteSecondaryDivider {
+  width: 60px;
+  height: 1px;
+  background: var(--jp-border-default);
+  margin: 16px 0 14px;
+}
+
+.quoteSecondary {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: 36px;
+  line-height: 1.05;
+  color: var(--jp-text-primary);
+  letter-spacing: -0.5px;
+}
+
+.quoteSubMeta {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 12px;
+  color: var(--jp-text-secondary);
+  margin-top: 4px;
+}
+
+/* Savings line lives INSIDE the quote card now (below the total) as
+   the third beat of the price narrative: per-person → total → silver
+   lining. Quieter treatment than a standalone pill so it reads as part
+   of the same thought, not a separate badge. */
+.savingsLine {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--jp-gold-deep);
+  margin-top: 12px;
+  letter-spacing: 0.2px;
+}
+
+/* Hotel-room comparison anchor. Quieter than .savingsLine so the two
+   don't compete — the savings line is the headline win, this is the
+   reference point a coordinator texts to the group chat. Only renders
+   when it flatters the quote (hotel math > our total). */
+.hotelAnchor {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--jp-text-tertiary);
+  margin-top: 4px;
+  letter-spacing: 0.1px;
+}
+
+/* Inline italic margin-note treatment, not a card. Reads as a helpful
+   aside from Abe rather than a system alert. The button is a text link
+   inline with the prompt, not a separate CTA block. */
+.altNudge {
+  font-family: var(--jp-font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--jp-text-secondary);
+  text-align: center;
+  margin: 4px 0;
+  padding: 0 8px;
+}
+
+.altNudgeText {
+  display: inline;
+  margin: 0;
+}
+
+.altNudgeButton {
+  display: inline;
+  padding: 0;
+  margin-left: 4px;
+  font-family: inherit;
+  font-style: italic;
+  font-weight: 500;
+  font-size: inherit;
+  color: var(--jp-gold-deep);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color var(--jp-transition);
+}
+
+.altNudgeButton:hover {
+  border-bottom-color: var(--jp-gold);
+}
+
+.altNudgeConfirm {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--jp-text-secondary);
+  text-align: center;
+  margin: 4px 0;
+}
+
+.ctaStack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Sub-line under the primary CTA. Carries two signals: (a) holding
+   the dates is free RIGHT NOW (not a categorical "free"), and (b)
+   Abe replies personally within the hour. Sized up from the previous
+   13px to 14px so it reads as part of the commitment, not a
+   footnote. */
+.ctaSubhead {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--jp-text-secondary);
+  text-align: center;
+  max-width: 36ch;
+  margin: 6px auto 0;
+}
+
+.depositButton {
+  width: 100%;
+  padding: 12px 16px;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--jp-text-primary);
+  background: transparent;
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+  cursor: pointer;
+  transition:
+    border-color var(--jp-transition),
+    background var(--jp-transition);
+}
+
+.depositButton:hover:not(:disabled) {
+  border-color: var(--jp-gold);
+  background: var(--jp-linen);
+}
+
+.depositButton:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+/* Custom controlled expander (replaces native <details>) so we can
+   smooth-slide on open/close and run them as an accordion. The summary
+   is now a real <button> for accessibility; the panel below uses a
+   max-height transition driven by JS-measured scrollHeight. */
+.expander {
+  border-top: 1px solid var(--jp-border-default);
+  padding: 10px 0;
+}
+
+.expanderSummary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  padding: 4px 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--jp-text-primary);
+}
+
+.expanderSummary:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.expanderSummaryText {
+  flex: 1 1 auto;
+}
+
+.expanderCaret {
+  flex: 0 0 auto;
+  color: var(--jp-gold);
+  font-size: 12px;
+  line-height: 1;
+  transition: transform var(--jp-transition);
+  display: inline-block;
+}
+
+.expanderOpen .expanderCaret {
+  transform: rotate(90deg);
+}
+
+/* Sliding panel. max-height is set inline via React; the transition
+   below produces the actual slide. overflow:hidden clips children
+   while collapsed so they don't leak above the panel. */
+.expanderPanel {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 320ms ease;
+}
+
+.expanderInner {
+  padding-top: 4px;
+}
+
+/* Make-an-offer expander gets italic Cormorant on the summary line so
+   it visually differentiates from the other (functional) expanders.
+   Signals "this one is personal." */
+.expanderPersonal .expanderSummary {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--jp-text-primary);
+  letter-spacing: -0.1px;
+}
+
+/* Tabs inside the consolidated "details" expander. Light underline
+   treatment — we're inside an already-nested drawer so the tabs need
+   to read as secondary navigation, not as top-level controls. */
+.tabs {
+  display: flex;
+  gap: 16px;
+  border-bottom: 1px solid var(--jp-border-default);
+  margin: 4px 0 10px;
+}
+
+.tab {
+  background: transparent;
+  border: 0;
+  padding: 6px 0;
+  cursor: pointer;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  color: var(--jp-text-secondary);
+  position: relative;
+  transition: color 160ms ease;
+}
+
+.tab:hover {
+  color: var(--jp-text-primary);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.tabActive {
+  color: var(--jp-text-primary);
+}
+
+.tabActive::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--jp-gold);
+  border-radius: 2px;
+}
+
+/* Soft fade between tab panels — keyed remount triggers this on every
+   tab switch so the content swap matches the polish of the surrounding
+   slide animation. */
+.tabPanel {
+  animation: tabFadeIn 140ms ease-out both;
+}
+
+@keyframes tabFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.breakdownList {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-primary);
+}
+
+.breakdownList li {
+  display: flex;
+  justify-content: space-between;
+}
+
+.breakdownLine {
+  border-top: 1px dashed var(--jp-border-default);
+  padding-top: 6px;
+  margin-top: 4px;
+}
+
+.breakdownTotal {
+  border-top: 1px solid var(--jp-text-primary);
+  padding-top: 8px;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+.valueStack {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 13px;
+  color: var(--jp-text-primary);
+}
+
+.valueStack li::before {
+  content: "✓ ";
+  color: var(--jp-gold-deep);
+  font-weight: 600;
+}
+
+.appealForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.appealIntro {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--jp-text-secondary);
+  margin: 0;
+}
+
+.appealInput {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: var(--jp-font-body);
+  font-size: 14px;
+  color: var(--jp-text-primary);
+  background: var(--jp-linen);
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color var(--jp-transition);
+}
+
+.appealInput:focus {
+  outline: none;
+  border-color: var(--jp-gold);
+}
+
+.appealConfirm {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--jp-text-secondary);
+  margin: 12px 0 0;
+  text-align: center;
+}
+
+/* ============================================
+   SUCCESS SCREEN — three-path reveal (redesign)
+   ============================================ */
+
+/* On the success screen the primary CTA goes SOLID gold instead of
+   the gradient used on Step 3's "Send my pricing guide". The gradient
+   was the loudest element in an otherwise editorial composition;
+   solid gold keeps it prominent without shouting. */
+.ctaStack .submit {
+  background: var(--jp-gold-deep);
+}
+
+.ctaStack .submit:hover:not(:disabled) {
+  background: var(--jp-gold);
+  filter: none;
+  box-shadow: 0 8px 18px rgba(196, 144, 37, 0.28);
+}
+
+.ctaStack .submit:disabled,
+.ctaStack .submit:disabled:hover {
+  background: var(--jp-gold-25);
+  color: var(--jp-text-secondary);
+  filter: none;
+  opacity: 1;
+}
+
+/* Block 5 — Path 2: "View & share trip portal" outlined pill button.
+   Single-row, secondary visual weight (vs. the gold primary above).
+   The value-prop subhead lives outside the button — see .shareSubhead. */
+.shareButton {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 24px;
+  margin-top: 18px;
+  background: transparent;
+  /* Olive at higher opacity (and 1.5px) so the outline reads as a real
+     affordance — the default --jp-border-default token is too subtle
+     for a primary path button. */
+  border: 1.5px solid rgba(122, 96, 48, 0.45);
+  border-radius: var(--jp-radius-full);
+  cursor: pointer;
+  transition: border-color var(--jp-transition), background var(--jp-transition);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--jp-text-primary);
+  letter-spacing: 0.2px;
+  text-align: center;
+}
+
+.shareButton:hover:not(:disabled) {
+  border-color: var(--jp-gold);
+  background: var(--jp-gold-10);
+}
+
+.shareButton:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
+}
+
+.shareButton:disabled {
+  opacity: 0.85;
+  cursor: default;
+}
+
+/* Italic Cormorant value-prop tagline that sits below the share
+   button. Mirrors the pattern of `.ctaSubhead` under the primary CTA —
+   a quiet line of context that explains why the visitor would tap. */
+.shareSubhead {
+  margin: 6px auto 0;
+  max-width: 36ch;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--jp-text-secondary);
+  text-align: center;
+}
+
+/* Block 5 — Path 3: appeal. Italic Cormorant copy is plain text
+   (a personal note from Abe), with a separate "Tell me what works"
+   pill below it that owns the affordance. Splitting copy from
+   trigger keeps the note quiet and makes the action unmistakable. */
+.appealSection {
+  border-top: 1px solid var(--jp-border-subtle);
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+.appealText {
+  margin: 0 0 12px 0;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--jp-text-secondary);
+}
+
+/* On-brand gold pill — auto-width so the affordance reads as a
+   secondary action, not a primary CTA. The arrow is a literal →
+   to match the typographic feel of the rest of the funnel. */
+.appealTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--jp-gold-deep);
+  color: var(--jp-text-on-color);
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  padding: 10px 18px;
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: filter 150ms ease, transform 80ms ease;
+}
+
+.appealTrigger:hover {
+  filter: brightness(1.05);
+}
+
+.appealTrigger:active {
+  transform: translateY(1px);
+}
+
+.appealTrigger:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 3px;
+}
+
+.appealSection > .appealEyebrow {
+  margin-top: 16px;
+}
+
+.appealEyebrow {
+  display: block;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin-bottom: 10px;
+}
+
+/* Two stacked stretch-level radio rows with subtle row separators. */
+.stretchOptions {
+  display: flex;
+  flex-direction: column;
+}
+
+.stretchRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--jp-border-subtle);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--jp-text-primary);
+}
+
+.stretchRow:last-child {
+  border-bottom: 0;
+}
+
+.stretchRow:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.stretchRadio {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(122, 96, 48, 0.2);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.stretchRowActive .stretchRadio {
+  border-color: var(--jp-gold-deep);
+  background: var(--jp-gold-deep);
+}
+
+.stretchRowActive .stretchRadio::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.stretchLabel {
+  flex: 1 1 auto;
+}
+
+.appealFollowUp {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: appealFadeIn 200ms ease-out both;
+}
+
+@keyframes appealFadeIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.appealSendLink {
+  align-self: flex-start;
+  padding: 8px 0 0;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--jp-gold-deep);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: color var(--jp-transition);
+}
+
+.appealSendLink:hover:not(:disabled) {
+  color: var(--jp-gold-bright);
+}
+
+.appealSendLink:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.appealSendLink:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Block 6 — "The details" accordion. Eyebrow + 3 expandable rows.
+   Wide gap above intentional — it visually separates the
+   "conversation" zone (appeal + split-pay note) from the
+   "reference data" zone below. */
+.detailsSection {
+  margin-top: 32px;
+  padding-top: 14px;
+  border-top: 1px solid var(--jp-border-subtle);
+}
+
+.detailsEyebrow {
+  display: block;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: var(--jp-gold-deep);
+  margin-bottom: 6px;
+  opacity: 0.8;
+}
+
+.detailRow {
+  /* Rows sit close together — separator is whitespace, not borders. */
+}
+
+.detailRowHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.detailRowHeader:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.detailRowLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--jp-text-primary);
+}
+
+.detailRowCaret {
+  color: var(--jp-gold);
+  font-size: 11px;
+  transition: transform var(--jp-transition);
+}
+
+.detailRowOpen .detailRowCaret {
+  transform: rotate(90deg);
+}
+
+/* ============================================
    REDUCED MOTION
    ============================================ */
 
@@ -443,7 +1424,9 @@
   .revealText,
   .revealRange,
   .success,
-  .successMark {
+  .successMark,
+  .appealFollowUp,
+  .tabPanel {
     animation: none;
   }
   .pulsing {
@@ -455,6 +1438,13 @@
   .submit,
   .submit:active {
     transform: none;
+  }
+  .stretchRadio,
+  .detailRowCaret {
+    transition: none;
+  }
+  .appealTrigger {
+    transition: none;
   }
 }
 

@@ -86,14 +86,16 @@ export function BookingPricingModal({
             </svg>
           </button>
 
-          <BookingFunnelSteps
-            arrival={arrival}
-            departure={departure}
-            email={email}
-            initialStep={pickInitialStep(arrival, departure, email)}
-            source={source}
-            onClose={onClose}
-          />
+          {open ? (
+            <BookingFunnelSteps
+              arrival={arrival}
+              departure={departure}
+              email={email}
+              initialStep={pickInitialStep(arrival, departure, email)}
+              source={source}
+              onClose={onClose}
+            />
+          ) : null}
         </div>
       </div>
     </dialog>

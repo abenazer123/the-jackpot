@@ -28,6 +28,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { sendGuestConfirmation } from "@/lib/email/guestConfirmation";
 import { sendHostNotification } from "@/lib/email/hostNotification";
+import { sendHostPathSignal } from "@/lib/email/hostPathSignal";
 import type { InquiryPayload } from "@/lib/email/types";
 import { serverCapture } from "@/lib/posthog-server";
 import { computeQuote } from "@/lib/pricing/computeQuote";
@@ -49,6 +50,10 @@ const REASON_OPTIONS = new Set([
 
 interface IncomingBody {
   draft?: unknown;
+  /** Set by the success-screen CTAs — patches reveal fields on the
+   *  existing row instead of going through finalize/legacy (which would
+   *  duplicate the row + re-fire host/guest emails). */
+  flag_update?: unknown;
   inquiry_id?: unknown;
   arrival?: unknown;
   departure?: unknown;
@@ -60,6 +65,60 @@ interface IncomingBody {
   source?: unknown;
   venue?: unknown;
   attribution?: unknown;
+  // Reveal-screen interactions (Quote Reveal redesign)
+  appeal_text?: unknown;
+  appeal_stretch_level?: unknown;
+  alt_dates_requested?: unknown;
+  share_requested?: unknown;
+  split_pay_requested?: unknown;
+  primary_cta_path?: unknown;
+  // Legacy Step 4 fields (no longer written by the client; preserved
+  // here so a stale browser session doesn't error on submit).
+  budget_bucket?: unknown;
+  budget_other_text?: unknown;
+  split_intent?: unknown;
+  split_count?: unknown;
+  deposit_link_requested?: unknown;
+}
+
+const STRETCH_LEVELS = new Set(["close", "far"]);
+const PRIMARY_CTA_PATHS = new Set(["interested", "share", "appeal"]);
+
+interface RevealFields {
+  appeal_text: string | null;
+  appeal_stretch_level: string | null;
+  alt_dates_requested: boolean;
+  share_requested: boolean;
+  split_pay_requested: boolean;
+  primary_cta_path: string | null;
+}
+
+/** Parse the success-screen interaction fields. All nullable /
+ *  default-false; the partial PATCH paths only update fields that are
+ *  set, so callers can send subset of these. */
+function parseRevealFields(body: IncomingBody): RevealFields {
+  const appeal =
+    typeof body.appeal_text === "string"
+      ? body.appeal_text.trim().slice(0, 2000) || null
+      : null;
+  const stretch =
+    typeof body.appeal_stretch_level === "string" &&
+    STRETCH_LEVELS.has(body.appeal_stretch_level)
+      ? body.appeal_stretch_level
+      : null;
+  const path =
+    typeof body.primary_cta_path === "string" &&
+    PRIMARY_CTA_PATHS.has(body.primary_cta_path)
+      ? body.primary_cta_path
+      : null;
+  return {
+    appeal_text: appeal,
+    appeal_stretch_level: stretch,
+    alt_dates_requested: body.alt_dates_requested === true,
+    share_requested: body.share_requested === true,
+    split_pay_requested: body.split_pay_requested === true,
+    primary_cta_path: path,
+  };
 }
 
 const ATTRIBUTION_KEYS = [
@@ -321,7 +380,133 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    return NextResponse.json({ ok: true, inquiry_id: data.id, quote });
+    return NextResponse.json({
+      ok: true,
+      inquiry_id: data.id,
+      quote,
+    });
+  }
+
+  // -------- FLAG-UPDATE branch (success-screen CTA fired) --------------
+  // Client sends `flag_update: true` + inquiry_id + the reveal/path
+  // fields it wants to patch. We do not re-run finalize, do not re-send
+  // the first-touch host/guest emails, and do not insert a new row.
+  // For "interested" and "appeal" paths we fire a lightweight signal
+  // email so Abe knows to follow up.
+  if (body.flag_update === true) {
+    const flagInquiryId =
+      typeof body.inquiry_id === "string" && UUID_RE.test(body.inquiry_id)
+        ? body.inquiry_id
+        : null;
+    if (!flagInquiryId) {
+      return NextResponse.json(
+        { error: "flag_update requires inquiry_id" },
+        { status: 400 },
+      );
+    }
+
+    const reveal = parseRevealFields(body);
+
+    // Build a sparse patch — only set the fields that this CTA event
+    // actually carries. Skipping nulls/false avoids overwriting prior
+    // CTA flags when a later CTA fires on the same row.
+    const patch: Record<string, unknown> = {};
+    if (reveal.primary_cta_path !== null)
+      patch.primary_cta_path = reveal.primary_cta_path;
+    if (reveal.share_requested) patch.share_requested = true;
+    if (reveal.split_pay_requested) patch.split_pay_requested = true;
+    if (reveal.alt_dates_requested) patch.alt_dates_requested = true;
+    if (reveal.appeal_text !== null) patch.appeal_text = reveal.appeal_text;
+    if (reveal.appeal_stretch_level !== null)
+      patch.appeal_stretch_level = reveal.appeal_stretch_level;
+
+    if (Object.keys(patch).length === 0) {
+      return NextResponse.json({ ok: true, inquiry_id: flagInquiryId });
+    }
+
+    // Pull the row so the path-signal email has full context (name,
+    // phone, dates, total). Single round-trip.
+    const { data: row, error: readError } = await supabaseServer()
+      .from("inquiries")
+      .select(
+        "id, status, arrival, departure, email, name, phone, guests, reason, source, venue, quote_total_cents",
+      )
+      .eq("id", flagInquiryId)
+      .single();
+
+    if (readError || !row) {
+      console.error("[inquiries/flag] row not found", flagInquiryId, readError);
+      return NextResponse.json(
+        { error: "inquiry not found" },
+        { status: 404 },
+      );
+    }
+
+    const { error: updateError } = await supabaseServer()
+      .from("inquiries")
+      .update(patch)
+      .eq("id", flagInquiryId);
+
+    if (updateError) {
+      console.error("[inquiries/flag] update failed", updateError);
+      return NextResponse.json(
+        { error: "could not save flag" },
+        { status: 500 },
+      );
+    }
+
+    // PostHog server event for the path tap.
+    if (reveal.primary_cta_path) {
+      await serverCapture({
+        distinctId: (row.email as string) || flagInquiryId,
+        event: "quote_reveal_path_tapped",
+        properties: {
+          path: reveal.primary_cta_path,
+          stretch_level: reveal.appeal_stretch_level,
+          share_requested: reveal.share_requested,
+          inquiry_id: flagInquiryId,
+        },
+      });
+    }
+
+    // Path-specific host signal email — fire-and-forget. Only for
+    // "interested" and "appeal"; "share" gets the trip-portal flow
+    // (Phase 2) instead.
+    const path = reveal.primary_cta_path;
+    if (
+      (path === "interested" || path === "appeal") &&
+      typeof row.name === "string" &&
+      row.name &&
+      typeof row.phone === "string" &&
+      row.phone
+    ) {
+      const a = new Date((row.arrival as string) + "T00:00:00");
+      const d = new Date((row.departure as string) + "T00:00:00");
+      const nights = Math.max(
+        1,
+        Math.round((d.getTime() - a.getTime()) / 86_400_000),
+      );
+      sendHostPathSignal({
+        path,
+        arrival: row.arrival as string,
+        departure: row.departure as string,
+        nights,
+        email: row.email as string,
+        name: row.name as string,
+        phone: row.phone as string,
+        guests: (row.guests as number) ?? 0,
+        reason: (row.reason as string) ?? "",
+        source: (row.source as string | null) ?? undefined,
+        venue: (row.venue as string | null) ?? undefined,
+        totalCents: (row.quote_total_cents as number | null) ?? null,
+        stretchLevel: reveal.appeal_stretch_level as "close" | "far" | null,
+        appealText: reveal.appeal_text,
+      }).catch((err) => {
+        console.error("[inquiries/flag] path signal email failed", err);
+      });
+    }
+
+    return NextResponse.json({ ok: true, inquiry_id: flagInquiryId });
   }
 
   // -------- FINALIZE branch (has inquiry_id) ---------------------------
@@ -335,6 +520,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
   const p = parsed.value;
+  const reveal = parseRevealFields(body);
 
   const quote = await computeQuoteSafely({
     arrival: p.arrival,
@@ -374,6 +560,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         current_path: p.attribution.current_path ?? null,
         quote_snapshot: quote,
         quote_total_cents: quote?.totalCents ?? null,
+        // Reveal-screen interactions
+        appeal_text: reveal.appeal_text,
+        appeal_stretch_level: reveal.appeal_stretch_level,
+        alt_dates_requested: reveal.alt_dates_requested,
+        share_requested: reveal.share_requested,
+        split_pay_requested: reveal.split_pay_requested,
+        primary_cta_path: reveal.primary_cta_path,
       })
       .eq("id", inquiryId)
       .eq("status", "partial")
@@ -418,6 +611,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         ip,
         quote_snapshot: quote,
         quote_total_cents: quote?.totalCents ?? null,
+        // Reveal-screen interactions
+        appeal_text: reveal.appeal_text,
+        appeal_stretch_level: reveal.appeal_stretch_level,
+        alt_dates_requested: reveal.alt_dates_requested,
+        share_requested: reveal.share_requested,
+        split_pay_requested: reveal.split_pay_requested,
+        primary_cta_path: reveal.primary_cta_path,
       })
       .select("id")
       .single();

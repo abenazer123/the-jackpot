@@ -85,6 +85,12 @@ export function Calendar({
   })();
 
   const [view, setView] = useState(initial);
+  // Range-hover shading — when picking departure (rangeStart is set),
+  // we tint the cells between rangeStart and whatever day the cursor is
+  // over so the visitor sees their stay length forming in real time.
+  // Only valid when hoverIso > rangeStart; hovering earlier cells does
+  // nothing since they can't be a valid departure.
+  const [hoverIso, setHoverIso] = useState<string | null>(null);
 
   // SSR guard — Calendar only ever mounts from a user click in a "use client"
   // tree, so document.body is always defined in practice. This keeps the
@@ -182,11 +188,31 @@ export function Calendar({
               const isRangeStart =
                 !!rangeStart && cell.iso === rangeStart && !selected;
               const isToday = cell.iso === today;
+              // Hover-range shading: cells strictly between rangeStart
+              // and hoverIso (exclusive of both) get a soft gold tint.
+              // Only fires for non-disabled cells and only when the
+              // hovered target sits after rangeStart.
+              const inHoverRange =
+                !!rangeStart &&
+                !!hoverIso &&
+                hoverIso > rangeStart &&
+                cell.iso > rangeStart &&
+                cell.iso < hoverIso &&
+                !disabled;
+              const isHoverEnd =
+                !!rangeStart &&
+                !!hoverIso &&
+                hoverIso > rangeStart &&
+                cell.iso === hoverIso &&
+                !disabled &&
+                !selected;
               const classes = [
                 styles.day,
                 selected ? styles.daySelected : "",
                 disabled ? styles.dayDisabled : "",
                 isRangeStart ? styles.dayRangeStart : "",
+                inHoverRange ? styles.dayInRange : "",
+                isHoverEnd ? styles.dayRangeEnd : "",
                 isToday && !selected && !isRangeStart ? styles.dayToday : "",
               ]
                 .filter(Boolean)
@@ -198,6 +224,12 @@ export function Calendar({
                   className={classes}
                   disabled={disabled}
                   onClick={() => onSelect(cell.iso)}
+                  onMouseEnter={() => {
+                    if (rangeStart && !disabled) setHoverIso(cell.iso);
+                  }}
+                  onMouseLeave={() => {
+                    if (rangeStart) setHoverIso(null);
+                  }}
                   aria-label={cell.iso}
                   aria-pressed={selected}
                 >

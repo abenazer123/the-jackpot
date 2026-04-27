@@ -27,7 +27,11 @@
 .dialog[open] {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  /* Full-screen on mobile so the funnel feels like a destination,
+     not a card peeking up from the bottom. The visitor is here to
+     pick a price; we want their attention to land on the screen and
+     stay there. */
+  justify-content: stretch;
 }
 
 .dialog::backdrop {
@@ -36,15 +40,15 @@
   -webkit-backdrop-filter: blur(6px);
 }
 
-/* Sheet card — pinned to the bottom edge, rounded top corners only. */
+/* Sheet card — full-viewport on mobile. Slides up from the bottom on
+   open (the entrance still reads as a "sheet" cue) but lands at full
+   height, no drag-handle, no rounded top corners. */
 .sheet {
   position: relative;
   width: 100%;
-  max-height: 90vh;
-  padding: 12px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  height: 100%;
+  padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 0px));
   background: var(--jp-bg-primary);
-  border-radius: var(--jp-radius-lg) var(--jp-radius-lg) 0 0;
-  box-shadow: 0 -8px 28px rgba(20, 12, 0, 0.22);
   overflow-y: auto;
   overscroll-behavior: contain;
   box-sizing: border-box;
@@ -56,14 +60,12 @@
   to   { transform: translateY(0); }
 }
 
-/* Visual handle bar at the top — a native-feeling cue. Not interactive. */
+/* Drag handle hidden in full-screen mode — the affordance was a
+   bottom-sheet cue that no longer applies. Kept in DOM (parent still
+   renders it) so we can flip back later if we revisit the sheet
+   pattern. */
 .handle {
-  display: block;
-  width: 36px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(122, 96, 48, 0.22);
-  margin: 0 auto 12px;
+  display: none;
 }
 
 .close {

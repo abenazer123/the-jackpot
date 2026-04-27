@@ -7,9 +7,9 @@
  * swappable based on viewport — shared focus trap, ESC, body scroll lock,
  * and warm backdrop all come for free from the native dialog primitive.
  *
- * Dismissal: close button (top-right), backdrop tap, or native ESC.
- * No swipe-to-dismiss — intentionally kept simple to match the desktop
- * modal's dismissal model.
+ * Dismissal: native back gesture / ESC (no in-sheet close button —
+ * full-screen treatment removes the corner X to keep the experience
+ * immersive). Tapping a CTA path closes via onClose after a beat.
  */
 
 "use client";
@@ -77,27 +77,16 @@ export function BookingBottomSheet({
       aria-label="Booking inquiry"
     >
       <div className={styles.sheet}>
-        <span className={styles.handle} aria-hidden="true" />
-
-        <button
-          type="button"
-          onClick={onClose}
-          className={styles.close}
-          aria-label="Close booking form"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
-
-        <BookingFunnelSteps
-          arrival={arrival}
-          departure={departure}
-          email={email}
-          initialStep={pickInitialStep(arrival, departure, email)}
-          source={source}
-          onClose={onClose}
-        />
+        {open ? (
+          <BookingFunnelSteps
+            arrival={arrival}
+            departure={departure}
+            email={email}
+            initialStep={pickInitialStep(arrival, departure, email)}
+            source={source}
+            onClose={onClose}
+          />
+        ) : null}
       </div>
     </dialog>
   );
