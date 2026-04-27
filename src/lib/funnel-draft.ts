@@ -26,6 +26,11 @@ export interface FunnelDraft {
   phone?: string;
   guests?: number;
   reason?: string;
+  /** Set after the finalize POST resolves. Lets `/book` route the
+   *  visitor straight back to their quote on a return visit. */
+  inquiryId?: string;
+  /** Same — public token used in /book/quote/[token] and /trip/[token]. */
+  shareToken?: string;
 }
 
 interface StoredDraft extends FunnelDraft {

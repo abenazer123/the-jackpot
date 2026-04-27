@@ -22,9 +22,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { BookingBottomSheet } from "./BookingBottomSheet";
-import { BookingPricingModal } from "./BookingPricingModal";
 import { Calendar, todayIso } from "./Calendar";
 import { HostPresence } from "./HostPresence";
 import { capture } from "./PostHogProvider";
@@ -155,14 +154,12 @@ function CompactDatePicker({
 }
 
 export function StickyBookingBar() {
+  const router = useRouter();
   const [pastHero, setPastHero] = useState(false);
   const [inquiryVisible, setInquiryVisible] = useState(false);
   const [arrival, setArrival] = useState("");
   const [departure, setDeparture] = useState("");
   const [draftEmail, setDraftEmail] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalKey, setModalKey] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
 
   // Hydrate from the shared funnel-draft on mount so a guest who entered
   // dates + email in the hero earlier doesn't see an empty peek card.
@@ -176,16 +173,6 @@ export function StickyBookingBar() {
       if (d.email) setDraftEmail(d.email);
     }, 0);
     return () => window.clearTimeout(t);
-  }, []);
-
-  // Track the viewport breakpoint so the funnel opens inside the right
-  // container: BookingPricingModal on desktop, BookingBottomSheet on mobile.
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const apply = () => setIsMobile(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
   }, []);
 
 
@@ -227,32 +214,42 @@ export function StickyBookingBar() {
   );
 
   const handleOpen = () => {
+    const isMobile =
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 767px)").matches;
     capture("booking_cta_clicked", {
       surface: isMobile ? "peek_mobile" : "sticky_desktop",
     });
     // Re-read the draft at click-time so if the user typed their email
-    // into the hero AFTER the sticky bar mounted, the sheet still sees
-    // that email. Equivalent for arrival/departure when the sticky
-    // bar is shown without the date pickers (mobile peek path).
+    // into the hero AFTER the sticky bar mounted, the route lands with
+    // the latest values.
     const d = readDraft();
+    const a = d.arrival || arrival;
+    const dep = d.departure || departure;
+    const em = d.email || draftEmail;
+    // Sync local state for any subsequent peek visibility decisions.
     if (d.arrival && !arrival) setArrival(d.arrival);
     if (d.departure && !departure) setDeparture(d.departure);
     if (d.email && d.email !== draftEmail) setDraftEmail(d.email);
-    setModalKey((k) => k + 1);
-    setModalOpen(true);
+    // If the entry didn't capture everything, route through Step 1
+    // (collect) to gather the missing field; otherwise jump straight
+    // to the checking animation.
+    if (a && dep && em) router.push("/book/checking");
+    else router.push("/book/availability");
   };
 
   // Let other sections (e.g. OccasionSelector CTA) open the booking
   // funnel by dispatching a "open-booking" custom event on window.
-  // Uses stable setState calls directly so the effect has no deps.
   useEffect(() => {
     const handler = () => {
-      setModalKey((k) => k + 1);
-      setModalOpen(true);
+      const d = readDraft();
+      if (d.arrival && d.departure && d.email)
+        router.push("/book/checking");
+      else router.push("/book/availability");
     };
     window.addEventListener("open-booking", handler);
     return () => window.removeEventListener("open-booking", handler);
-  }, []);
+  }, [router]);
 
   // Peek swipe-up: track pointer, fire the sheet when the user drags the
   // peek card up by SWIPE_THRESHOLD px. The ref guards the follow-up click
@@ -381,28 +378,6 @@ export function StickyBookingBar() {
           </span>
         </span>
       </button>
-
-      {isMobile ? (
-        <BookingBottomSheet
-          key={modalKey}
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          arrival={arrival}
-          departure={departure}
-          email={draftEmail}
-          source="peek_mobile"
-        />
-      ) : (
-        <BookingPricingModal
-          key={modalKey}
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          arrival={arrival}
-          departure={departure}
-          email={draftEmail}
-          source="sticky_desktop"
-        />
-      )}
     </>
   );
 }

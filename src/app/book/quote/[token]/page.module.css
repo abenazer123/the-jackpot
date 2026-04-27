@@ -1,0 +1,40 @@
+/*
+ * /book/quote/[token] — page-level wrapper around <QuoteReveal />.
+ * Mirrors the success-step header copy from BookingFunnelSteps so
+ * the visual continuity reads as the same screen, just on a route.
+ */
+
+.wrap {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.heading {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(28px, 4vw, 36px);
+  line-height: 1.15;
+  color: var(--jp-sage-deep, #6a8a55);
+  margin: 0 0 8px;
+  text-align: center;
+  letter-spacing: -0.3px;
+}
+
+.body {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--jp-text-secondary);
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+.email {
+  color: var(--jp-text-primary);
+  font-weight: 500;
+}

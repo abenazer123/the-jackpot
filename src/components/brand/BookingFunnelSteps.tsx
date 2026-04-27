@@ -90,6 +90,16 @@ interface BookingFunnelStepsProps {
   source?: BookingSource;
   /** Called when the user chooses "Keep exploring" in the success state. */
   onClose: () => void;
+  /** Optional — when provided, internal step transitions (e.g. checking →
+   *  form) call this BEFORE updating local state. Routed entry points use
+   *  this to navigate via router.push so the URL tracks the funnel step;
+   *  the modal entry points leave it unset so transitions stay local. */
+  onStepChange?: (step: FunnelStep) => void;
+  /** Optional — called after the finalize POST resolves on a "form"
+   *  submit, with the inquiry id + share token. Routed entry points
+   *  navigate to /book/quote/[token]; modal entry points fall back to
+   *  the internal "success" step. */
+  onSubmitSuccess?: (inquiryId: string, shareToken: string) => void;
 }
 
 const MIN_NIGHTS = 2;
@@ -145,6 +155,8 @@ export function BookingFunnelSteps({
   initialStep,
   source,
   onClose,
+  onStepChange,
+  onSubmitSuccess,
 }: BookingFunnelStepsProps) {
   const [step, setStep] = useState<FunnelStep>(initialStep);
   const [resolving, setResolving] = useState(false);
@@ -277,7 +289,10 @@ export function BookingFunnelSteps({
       setBeat("resolve");
       setResolving(true);
     }, t.resolve);
-    const tAdvance = window.setTimeout(() => setStep("form"), t.advance);
+    const tAdvance = window.setTimeout(() => {
+      if (onStepChange) onStepChange("form");
+      else setStep("form");
+    }, t.advance);
 
     const draftEmail = (emailProp || emailInput).trim();
     let abortController: AbortController | null = null;
@@ -354,7 +369,8 @@ export function BookingFunnelSteps({
     e.preventDefault();
     if (needsDates && (!arrival || !departure)) return;
     if (needsEmail && !emailInput.trim()) return;
-    setStep("checking");
+    if (onStepChange) onStepChange("checking");
+    else setStep("checking");
   };
 
   /** Posts to the finalize endpoint with the assembled payload, parses
@@ -387,6 +403,7 @@ export function BookingFunnelSteps({
     const data = (await res.json().catch(() => null)) as {
       ok?: boolean;
       inquiry_id?: string;
+      share_token?: string | null;
       quote?: QuoteResponse | null;
     } | null;
     if (data?.quote) setQuote(data.quote);
@@ -397,6 +414,18 @@ export function BookingFunnelSteps({
     // collect → form).
     if (data?.inquiry_id && !inquiryIdRef.current) {
       inquiryIdRef.current = data.inquiry_id;
+    }
+    // Persist id + token in the draft so the routed entry points
+    // (`/book` smart redirect) can resume to the quote on a return
+    // visit. Routed callers also use this to navigate.
+    if (data?.inquiry_id) {
+      writeDraft({
+        inquiryId: data.inquiry_id,
+        shareToken: data.share_token ?? undefined,
+      });
+    }
+    if (data?.inquiry_id && data?.share_token && onSubmitSuccess) {
+      onSubmitSuccess(data.inquiry_id, data.share_token);
     }
     return true;
   };
@@ -410,8 +439,14 @@ export function BookingFunnelSteps({
     setSubmitting(true);
     try {
       await submitFinalize();
-      clearDraft();
-      setStep("success");
+      // Routed callers navigated to /book/quote/[token] inside
+      // submitFinalize via onSubmitSuccess. Modal callers fall back
+      // to the internal "success" step + clear the draft (modal
+      // closes; nothing to resume).
+      if (!onSubmitSuccess) {
+        clearDraft();
+        setStep("success");
+      }
     } catch (err) {
       console.error("inquiry submit failed", err);
       setSubmitError(
@@ -696,10 +731,10 @@ export function BookingFunnelSteps({
         <div className={styles.step} key="form">
           <div className={styles.intro}>
             <h2 className={styles.heading}>
-              A few details for your pricing guide
+              One more thing before the estimate.
             </h2>
             <p className={styles.subHeadline}>
-              So we can make it accurate and personal.
+              I&rsquo;ll tailor it to your group.
             </p>
           </div>
 
@@ -805,7 +840,7 @@ export function BookingFunnelSteps({
               className={styles.submit}
               disabled={!name.trim() || !phone.trim() || !reason || submitting}
             >
-              {submitting ? "Sending\u2026" : "Send my pricing guide"}
+              {submitting ? "Pulling your numbers\u2026" : "Show me the estimate"}
             </button>
 
             {submitError ? (
@@ -813,10 +848,6 @@ export function BookingFunnelSteps({
                 {submitError}
               </p>
             ) : null}
-
-            <p className={styles.consent}>
-              By submitting, you agree to receive your pricing guide via email.
-            </p>
           </form>
         </div>
       ) : null}

@@ -33,6 +33,7 @@ import type { InquiryPayload } from "@/lib/email/types";
 import { serverCapture } from "@/lib/posthog-server";
 import { computeQuote } from "@/lib/pricing/computeQuote";
 import type { Quote } from "@/lib/pricing/types";
+import { generateShareToken } from "@/lib/share/generateShareToken";
 import { supabaseServer } from "@/lib/supabase-server";
 
 export const runtime = "nodejs"; // posthog-node + supabase-js need Node
@@ -529,7 +530,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     occasion: p.reason,
   });
 
+  // Public-facing token used in /book/quote/[token] and /trip/[token].
+  // Generated fresh per finalize — if the finalize update misses (row
+  // already in submitted state, or doesn't exist), the legacy INSERT
+  // path will use this same value, so the client always gets a token
+  // back regardless of which branch resolved the request.
+  const shareToken = generateShareToken();
   let finalizedId: string | null = null;
+  let finalizedShareToken: string | null = null;
 
   if (inquiryId) {
     // Update the existing partial row in place.
@@ -560,6 +568,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         current_path: p.attribution.current_path ?? null,
         quote_snapshot: quote,
         quote_total_cents: quote?.totalCents ?? null,
+        share_token: shareToken,
         // Reveal-screen interactions
         appeal_text: reveal.appeal_text,
         appeal_stretch_level: reveal.appeal_stretch_level,
@@ -570,10 +579,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       })
       .eq("id", inquiryId)
       .eq("status", "partial")
-      .select("id")
+      .select("id, share_token")
       .single();
-    if (!error && data) finalizedId = data.id as string;
-    else if (error) {
+    if (!error && data) {
+      finalizedId = data.id as string;
+      finalizedShareToken = (data.share_token as string | null) ?? null;
+    } else if (error) {
       console.warn(
         "[inquiries/finalize] update miss, falling through to legacy",
         { inquiryId, error: error.message },
@@ -611,6 +622,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         ip,
         quote_snapshot: quote,
         quote_total_cents: quote?.totalCents ?? null,
+        share_token: shareToken,
         // Reveal-screen interactions
         appeal_text: reveal.appeal_text,
         appeal_stretch_level: reveal.appeal_stretch_level,
@@ -619,7 +631,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         split_pay_requested: reveal.split_pay_requested,
         primary_cta_path: reveal.primary_cta_path,
       })
-      .select("id")
+      .select("id, share_token")
       .single();
     if (error || !data) {
       console.error("[inquiries/legacy] insert failed", error);
@@ -629,6 +641,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
     finalizedId = data.id as string;
+    finalizedShareToken = (data.share_token as string | null) ?? null;
   }
 
   // Analytics (server-side, authoritative). Awaited so we flush before
@@ -665,5 +678,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
   });
 
-  return NextResponse.json({ ok: true, inquiry_id: finalizedId, quote });
+  return NextResponse.json({
+    ok: true,
+    inquiry_id: finalizedId,
+    share_token: finalizedShareToken,
+    quote,
+  });
 }

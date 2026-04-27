@@ -1,0 +1,65 @@
+/*
+ * /book/* shared shell. Brand background, lightweight header
+ * (Wordmark links home), content area centered with safe-area
+ * padding. No animation here — pages own their own entry
+ * transitions.
+ */
+
+.shell {
+  min-height: 100dvh;
+  background: var(--jp-bg-primary);
+  color: var(--jp-text-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  border-bottom: 1px solid var(--jp-border-subtle);
+}
+
+.brandLink {
+  text-decoration: none;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Compact wordmark — single-line "Jackpot" in display Cormorant.
+   Sized to keep the header to roughly half the height of the
+   three-line lock-up we used to render. */
+.wordmark {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  color: var(--jp-gold-deep);
+  line-height: 1;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 20px calc(40px + env(safe-area-inset-bottom, 0px));
+  /* Center content vertically when shorter than viewport, top-anchor
+     when taller — same pattern we use inside the funnel sheet. */
+  justify-content: center;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .header {
+    padding: 10px 40px;
+  }
+  .main {
+    padding: 40px 40px calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+  .wordmark {
+    font-size: 20px;
+  }
+}

@@ -17,9 +17,8 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 
-import { BookingBottomSheet } from "./BookingBottomSheet";
-import { BookingPricingModal } from "./BookingPricingModal";
 import { todayIso } from "./Calendar";
 import { DateField, type DateFieldHandle } from "./DateField";
 import { HostPresence } from "./HostPresence";
@@ -43,31 +42,15 @@ function addDaysIso(iso: string, days: number): string {
 }
 
 export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
+  const router = useRouter();
   const [arrival, setArrival] = useState("");
   const [departure, setDeparture] = useState("");
   const [email, setEmail] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
-  // Bumped each time the modal opens so the child remounts and all its
-  // internal state (form fields, success flag) starts fresh.
-  const [modalKey, setModalKey] = useState(0);
   // True when this visit started with a draft already in localStorage
   // (returning guest). Flips the submit CTA from "Check availability"
   // to "Continue where you left off" as a soft welcome-back signal.
   const [resumed, setResumed] = useState(false);
-  // Mobile gets a bottom-sheet experience (slides up from the bottom of
-  // the viewport); desktop gets the centered modal. Mirrors the
-  // breakpoint switch in StickyBookingBar so both entry points behave
-  // identically per device.
-  const [isMobile, setIsMobile] = useState(false);
   const departureRef = useRef<DateFieldHandle>(null);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const apply = () => setIsMobile(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
 
   // Hydrate from the shared funnel-draft on mount. If a guest half-filled
   // the hero earlier (or on the mobile peek, or the sticky top bar) we
@@ -100,8 +83,11 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
     e.preventDefault();
     if (!arrival || !departure || !email.trim()) return;
     capture("booking_cta_clicked", { surface: "hero" });
-    setModalKey((k) => k + 1);
-    setModalOpen(true);
+    // Make sure the next page reads the latest values from the
+    // draft (in case the user typed something just before submit
+    // and the onChange writeDrafts haven't all flushed).
+    writeDraft({ arrival, departure, email: email.trim() });
+    router.push("/book/checking");
   };
 
   return (
@@ -182,28 +168,6 @@ export function HeroBookingBar({ trailing }: HeroBookingBarProps) {
           {trailing}
         </div>
       </form>
-
-      {isMobile ? (
-        <BookingBottomSheet
-          key={modalKey}
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          arrival={arrival}
-          departure={departure}
-          email={email}
-          source="hero"
-        />
-      ) : (
-        <BookingPricingModal
-          key={modalKey}
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          arrival={arrival}
-          departure={departure}
-          email={email}
-          source="hero"
-        />
-      )}
     </>
   );
 }
