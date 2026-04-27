@@ -15,9 +15,9 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { capture } from "@/components/brand/PostHogProvider";
-import { SharePreviewSheet } from "@/components/brand/SharePreviewSheet";
 import { eventForDates } from "@/lib/chicagoEvents";
 import type { Quote } from "@/lib/pricing/types";
 import styles from "../BookingFunnelSteps.module.css";
@@ -97,6 +97,7 @@ export function QuoteReveal({
   shareToken,
   readOnly = false,
 }: QuoteRevealProps) {
+  const router = useRouter();
   const splitN = quote.guests;
   const totalCents = quote.totalCents;
   const perPersonTotal = Math.round(totalCents / splitN);
@@ -125,7 +126,6 @@ export function QuoteReveal({
   const [altDatesSent, setAltDatesSent] = useState(false);
   const [interestSent, setInterestSent] = useState(false);
   const [shareRequested, setShareRequested] = useState(false);
-  const [shareSheetOpen, setShareSheetOpen] = useState(false);
   const [appealOpen, setAppealOpen] = useState(false);
   const [appealText, setAppealText] = useState("");
   const [appealStretchLevel, setAppealStretchLevel] = useState<
@@ -154,20 +154,26 @@ export function QuoteReveal({
   };
 
   const handleShareRequest = () => {
-    setShareSheetOpen(true);
-    if (shareRequested) return;
-    setShareRequested(true);
-    capture("share_cta_clicked", {
-      path: "share",
-      source: inquiry.source,
-      total_cents: totalCents,
-      guests: quote.guests,
-      nights: quote.nights,
-    });
-    void flagInquiry(inquiry.id, {
-      share_requested: true,
-      primary_cta_path: "share",
-    });
+    if (!shareToken) return;
+    if (!shareRequested) {
+      setShareRequested(true);
+      capture("share_cta_clicked", {
+        path: "share",
+        source: inquiry.source,
+        total_cents: totalCents,
+        guests: quote.guests,
+        nights: quote.nights,
+      });
+      void flagInquiry(inquiry.id, {
+        share_requested: true,
+        primary_cta_path: "share",
+      });
+    }
+    // Navigate to the public trip page so the booker sees exactly
+    // what her group will see. The page renders a ShareDock
+    // (Copy link / Share via…) for browsers carrying the owner
+    // cookie, which is set on finalize.
+    router.push(`/trip/${shareToken}`);
   };
 
   const handleAppealSubmit = async () => {
@@ -440,40 +446,6 @@ export function QuoteReveal({
           </div>
         ) : null}
       </div>
-
-      {!readOnly && shareToken ? (
-        <SharePreviewSheet
-          open={shareSheetOpen}
-          onClose={() => setShareSheetOpen(false)}
-          shareUrl={shareUrlFor(shareToken)}
-          firstName={firstNameOf(inquiry.name)}
-          dateRange={shareDateRange(quote)}
-        />
-      ) : null}
     </div>
   );
-}
-
-function shareUrlFor(token: string): string {
-  const origin =
-    (typeof window !== "undefined" && window.location.origin) ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "http://localhost:3000";
-  return `${origin.replace(/\/$/, "")}/trip/${token}`;
-}
-
-function firstNameOf(name: string): string {
-  const first = name.trim().split(/\s+/)[0];
-  return first || name;
-}
-
-function shareDateRange(quote: Quote): string {
-  const fmtIso = (iso: string) => {
-    const [y, m, d] = iso.split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
-  };
-  return `${fmtIso(quote.arrival)} \u2013 ${fmtIso(quote.departure)}`;
 }

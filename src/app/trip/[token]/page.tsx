@@ -14,9 +14,11 @@
  * email + CTAs land in Push 2 / Push 3.
  */
 
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { PhotoGrid } from "@/components/brand/trip/PhotoGrid";
+import { ShareDock } from "@/components/brand/trip/ShareDock";
 import { SleepingList } from "@/components/brand/trip/SleepingList";
 import { TripHero } from "@/components/brand/trip/TripHero";
 import { ViewTracker } from "@/components/brand/trip/ViewTracker";
@@ -65,6 +67,13 @@ function isExpired(sharedAt: string): boolean {
 export default async function TripPage({ params }: TripPageProps) {
   const { token } = await params;
   if (!TOKEN_RE.test(token)) notFound();
+
+  // The booker's browser carries a per-token owner cookie (set on
+  // finalize). When present we render the ShareDock instead of the
+  // view tracker — owner views shouldn't inflate `share_views`.
+  const cookieStore = await cookies();
+  const isOwner =
+    cookieStore.get(`jp_owner_${token}`)?.value === "1";
 
   const { data, error } = await supabaseServer()
     .from("inquiries")
@@ -141,8 +150,8 @@ export default async function TripPage({ params }: TripPageProps) {
     quote != null && quote.savedVsAirbnbCents > 0;
 
   return (
-    <main className={styles.page}>
-      <ViewTracker token={token} />
+    <main className={styles.page} data-with-dock={isOwner ? "true" : "false"}>
+      {isOwner ? null : <ViewTracker token={token} />}
       <div className={styles.photoStrip}>
         <HeroPhotoCarousel photos={BRAND_PHOTOS} intervalMs={60000} />
       </div>
@@ -199,6 +208,22 @@ export default async function TripPage({ params }: TripPageProps) {
           </a>
         </p>
       </div>
+
+      {isOwner ? (
+        <ShareDock
+          shareUrl={shareUrlFor(token)}
+          dateRange={dateRange}
+          firstName={firstNameOf(name)}
+          quoteUrl={`/book/quote/${token}`}
+        />
+      ) : null}
     </main>
   );
+}
+
+function shareUrlFor(token: string): string {
+  const origin = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+  ).replace(/\/$/, "");
+  return `${origin}/trip/${token}`;
 }

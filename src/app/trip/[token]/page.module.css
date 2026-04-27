@@ -13,6 +13,13 @@
   flex-direction: column;
 }
 
+/* When the booker is viewing her own trip page, the ShareDock is
+   pinned to the bottom — pad the content so the contact line at
+   the end isn't hidden behind it. */
+.page[data-with-dock="true"] .content {
+  padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+}
+
 /* Photo strip — full-bleed on mobile, capped on desktop. The
    underlying HeroPhotoCarousel renders full-area within this
    container. */

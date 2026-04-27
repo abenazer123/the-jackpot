@@ -744,10 +744,28 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
   });
 
-  return NextResponse.json({
+  const finalizeResponse = NextResponse.json({
     ok: true,
     inquiry_id: finalizedId,
     share_token: finalizedShareToken,
     quote,
   });
+  // Mark this browser as the "owner" of the inquiry so the trip
+  // portal can render a share dock (Copy link / native Share) when
+  // the booker visits her own /trip/[token]. 60-day TTL — matches
+  // the public share-link lifetime so the dock disappears when the
+  // link expires.
+  if (finalizedShareToken) {
+    finalizeResponse.cookies.set(
+      `jp_owner_${finalizedShareToken}`,
+      "1",
+      {
+        maxAge: 60 * 86_400,
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+      },
+    );
+  }
+  return finalizeResponse;
 }
