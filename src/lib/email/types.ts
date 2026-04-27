@@ -11,6 +11,10 @@ export interface InquiryPayload {
   source?: string;
   /** Wedding venue — only populated when occasion === "wedding". */
   venue?: string;
+  /** Public trip portal URL (`/trip/[share-token]`). Set when the
+   *  finalize POST resolves; emails link to this so the coordinator
+   *  has the share artifact at her fingertips three days later. */
+  tripUrl?: string;
   /** Attribution snapshot from UtmProvider — populated when UTMs were
    *  present at first landing (localStorage persists 30 days). */
   attribution?: {

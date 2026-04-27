@@ -1,0 +1,202 @@
+/**
+ * /trip/[token] — public trip portal.
+ *
+ * Server-fetches an inquiry by share_token. The page is the
+ * coordinator's "pitch to her group chat" — read-only summary of
+ * the stay (dates, per-person price, photos, sleeping arrangements,
+ * location). No PII (no phone, full email, attribution data).
+ *
+ * 60-day expiry: rows older than `shared_at + 60d` (or never
+ * shared yet but we'll set shared_at on first view) render the
+ * graceful "trip has moved on" not-found page.
+ *
+ * Phase 2 Push 1: read-only render. View counter + share-fired
+ * email + CTAs land in Push 2 / Push 3.
+ */
+
+import { notFound } from "next/navigation";
+
+import { PhotoGrid } from "@/components/brand/trip/PhotoGrid";
+import { SleepingList } from "@/components/brand/trip/SleepingList";
+import { TripHero } from "@/components/brand/trip/TripHero";
+import { HeroPhotoCarousel } from "@/components/sections/HeroPhotoCarousel";
+import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
+import type { Quote } from "@/lib/pricing/types";
+import { LOCATION } from "@/lib/property/location";
+import { BRAND_PHOTOS } from "@/lib/property/photos";
+import { supabaseServer } from "@/lib/supabase-server";
+
+import styles from "./page.module.css";
+
+interface TripPageProps {
+  params: Promise<{ token: string }>;
+}
+
+const TOKEN_RE = /^[0-9A-Za-z_-]{22}$/;
+const EXPIRY_MS = 60 * 86_400_000;
+
+function isoToLong(iso: string): string {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function fmt(cents: number): string {
+  return `$${Math.round(cents / 100).toLocaleString("en-US")}`;
+}
+
+function firstNameOf(name: string): string {
+  const first = name.trim().split(/\s+/)[0];
+  return first || name;
+}
+
+/** Pulled out of the render body so the React-Compiler purity
+ *  linter is happy with `Date.now()` (impure-during-render). */
+function isExpired(sharedAt: string): boolean {
+  const sharedMs = new Date(sharedAt).getTime();
+  const nowMs = Date.now();
+  return nowMs - sharedMs > EXPIRY_MS;
+}
+
+export default async function TripPage({ params }: TripPageProps) {
+  const { token } = await params;
+  if (!TOKEN_RE.test(token)) notFound();
+
+  const { data, error } = await supabaseServer()
+    .from("inquiries")
+    .select(
+      "name, arrival, departure, guests, reason, quote_snapshot, shared_at",
+    )
+    .eq("share_token", token)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[trip] fetch failed", error);
+    notFound();
+  }
+  if (!data) notFound();
+
+  // 60-day expiry. shared_at is null until the first share-CTA tap
+  // or first view (set in Push 2). Pre-shared inquiries don't expire
+  // because there's no "shared" anchor yet — they're treated as
+  // freshly-minted.
+  const sharedAt = data.shared_at as string | null;
+  if (sharedAt && isExpired(sharedAt)) notFound();
+
+  let quote = (data.quote_snapshot ?? null) as Quote | null;
+  const arrival = data.arrival as string;
+  const departure = data.departure as string;
+  const guests = (data.guests as number) ?? 0;
+  const occasion = ((data.reason as string) ?? "").toLowerCase() || "group";
+  const name = (data.name as string) ?? "";
+
+  // Old rows (or rows finalized when the cache was cold) may have
+  // a null quote_snapshot. Re-compute on the fly using the live
+  // PriceLabs fallback and persist back to the row so subsequent
+  // loads are cached.
+  if (!quote && arrival && departure && guests > 0) {
+    const result = await computeQuoteLive({
+      arrival,
+      departure,
+      guests,
+      occasion: (data.reason as string) ?? undefined,
+    });
+    if (result.ok) {
+      quote = result.quote;
+      void supabaseServer()
+        .from("inquiries")
+        .update({
+          quote_snapshot: result.quote,
+          quote_total_cents: result.quote.totalCents,
+        })
+        .eq("share_token", token)
+        .then(({ error: updErr }) => {
+          if (updErr) {
+            console.warn(
+              "[trip] backfill quote_snapshot persist failed",
+              updErr,
+            );
+          }
+        });
+    }
+  }
+
+  const nights = (() => {
+    const a = new Date(arrival + "T00:00:00");
+    const d = new Date(departure + "T00:00:00");
+    return Math.max(1, Math.round((d.getTime() - a.getTime()) / 86_400_000));
+  })();
+
+  const dateRange = `${isoToLong(arrival)} \u2013 ${isoToLong(departure)}`;
+  const totalCents = quote?.totalCents ?? 0;
+  const perPersonCents =
+    quote && guests > 0
+      ? Math.round(quote.totalCents / guests / Math.max(1, nights))
+      : 0;
+  const showSavings =
+    quote != null && quote.savedVsAirbnbCents > 0;
+
+  return (
+    <main className={styles.page}>
+      <div className={styles.photoStrip}>
+        <HeroPhotoCarousel photos={BRAND_PHOTOS} intervalMs={60000} />
+      </div>
+
+      <div className={styles.content}>
+        <TripHero
+          firstName={firstNameOf(name)}
+          dateRange={dateRange}
+          occasion={occasion}
+        />
+
+        {quote ? (
+          <section className={styles.summary}>
+            <div className={styles.perPerson}>
+              {fmt(perPersonCents)}
+              <span className={styles.perPersonLabel}>per person/night</span>
+            </div>
+            <div className={styles.summaryMeta}>
+              {nights} night{nights === 1 ? "" : "s"} &middot; {guests}{" "}
+              {guests === 1 ? "guest" : "guests"}
+            </div>
+            <div className={styles.totalRow}>
+              <span className={styles.totalLabel}>Total for the group</span>
+              <span className={styles.totalValue}>{fmt(totalCents)}</span>
+            </div>
+            {showSavings ? (
+              <div className={styles.savings}>
+                Booking direct saves the group {fmt(quote.savedVsAirbnbCents)}{" "}
+                vs Airbnb.
+              </div>
+            ) : null}
+          </section>
+        ) : (
+          <p className={styles.noQuote}>
+            Pricing coming shortly &mdash; Abe is finalizing the numbers
+            for these dates.
+          </p>
+        )}
+
+        <SleepingList />
+
+        <PhotoGrid />
+
+        <section className={styles.location}>
+          <span className={styles.eyebrow}>Where it is</span>
+          <p className={styles.locationLine}>{LOCATION.neighborhood}</p>
+          <p className={styles.locationSub}>{LOCATION.travelTimes}</p>
+        </section>
+
+        <p className={styles.contact}>
+          Questions? Abe is the host &mdash;{" "}
+          <a href="mailto:abe@thejackpotchi.com" className={styles.contactLink}>
+            abe@thejackpotchi.com
+          </a>
+        </p>
+      </div>
+    </main>
+  );
+}

@@ -1,0 +1,59 @@
+.section {
+  width: 100%;
+  margin-top: 28px;
+}
+
+.eyebrow {
+  display: block;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin-bottom: 12px;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--jp-border-subtle);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.label {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--jp-text-primary);
+  flex: 0 0 auto;
+}
+
+.beds {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--jp-text-secondary);
+  text-align: right;
+  flex: 1 1 auto;
+}
+
+.note {
+  color: var(--jp-text-tertiary);
+  font-style: italic;
+}

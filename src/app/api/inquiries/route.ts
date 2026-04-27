@@ -31,7 +31,7 @@ import { sendHostNotification } from "@/lib/email/hostNotification";
 import { sendHostPathSignal } from "@/lib/email/hostPathSignal";
 import type { InquiryPayload } from "@/lib/email/types";
 import { serverCapture } from "@/lib/posthog-server";
-import { computeQuote } from "@/lib/pricing/computeQuote";
+import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
 import type { Quote } from "@/lib/pricing/types";
 import { generateShareToken } from "@/lib/share/generateShareToken";
 import { supabaseServer } from "@/lib/supabase-server";
@@ -276,7 +276,7 @@ async function computeQuoteSafely(params: {
   occasion?: string;
 }): Promise<Quote | null> {
   try {
-    const r = await computeQuote(params);
+    const r = await computeQuoteLive(params);
     if (r.ok) return r.quote;
     console.warn(
       "[inquiries] quote compute skipped",
@@ -663,10 +663,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     },
   });
 
+  // Build the trip portal URL so the guest confirmation email can
+  // link to it. NEXT_PUBLIC_SITE_URL is the canonical origin in
+  // prod; localhost fallback for dev.
+  const origin = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+  ).replace(/\/$/, "");
+  const tripUrl = finalizedShareToken
+    ? `${origin}/trip/${finalizedShareToken}`
+    : undefined;
+  const emailPayload = { ...p, tripUrl };
+
   // Emails — fire and log, don't block the response.
   Promise.allSettled([
-    sendHostNotification(p),
-    sendGuestConfirmation(p),
+    sendHostNotification(emailPayload),
+    sendGuestConfirmation(emailPayload),
   ]).then((results) => {
     results.forEach((r, i) => {
       if (r.status === "rejected") {

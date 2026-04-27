@@ -22,9 +22,15 @@ function renderHtml(p: InquiryPayload): string {
         </td></tr>
         <tr><td style="padding:12px 36px 0;text-align:center;">
           <p style="margin:0;font-family:'Outfit',Helvetica,Arial,sans-serif;font-weight:300;font-size:15px;line-height:1.6;color:#7a6030;">
-            We got your request. Your personalized pricing guide lands in your inbox within minutes &mdash; Abe replies himself.
+            We got your request. Here&rsquo;s your trip page &mdash; share it with your group whenever you&rsquo;re ready. Abe will be in touch personally.
           </p>
         </td></tr>
+        ${p.tripUrl
+          ? `
+        <tr><td style="padding:24px 36px 0;text-align:center;">
+          <a href="${p.tripUrl}" style="display:inline-block;padding:13px 26px;background:#c49025;color:#ffffff;font-family:'Outfit',Helvetica,Arial,sans-serif;font-weight:600;font-size:14px;letter-spacing:0.4px;text-decoration:none;border-radius:999px;">View your trip page &rarr;</a>
+        </td></tr>`
+          : ""}
         <tr><td style="padding:28px 36px 0;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf6ef;border-radius:12px;padding:20px 22px;">
             <tr><td style="font-family:'Outfit',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:#a08840;padding-bottom:4px;">Dates</td></tr>
@@ -51,7 +57,7 @@ function renderHtml(p: InquiryPayload): string {
         </td></tr>
       </table>
       <div style="max-width:520px;margin:16px auto 0;font-family:'Outfit',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:1.2px;color:#b09860;text-align:center;">
-        You&rsquo;re receiving this because you requested a pricing guide at thejackpotchi.com.
+        You&rsquo;re receiving this because you submitted an inquiry at thejackpotchi.com.
       </div>
     </td></tr>
   </table>

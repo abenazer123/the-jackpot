@@ -17,6 +17,7 @@
 import React, { useState } from "react";
 
 import { capture } from "@/components/brand/PostHogProvider";
+import { SharePreviewSheet } from "@/components/brand/SharePreviewSheet";
 import { eventForDates } from "@/lib/chicagoEvents";
 import type { Quote } from "@/lib/pricing/types";
 import styles from "../BookingFunnelSteps.module.css";
@@ -35,6 +36,9 @@ export interface QuoteRevealInquiry {
 interface QuoteRevealProps {
   inquiry: QuoteRevealInquiry;
   quote: Quote;
+  /** Public token for `/trip/[shareToken]`. Required when `readOnly`
+   *  is false — drives the share preview sheet's URL. */
+  shareToken?: string;
   /** Read-only — render quote card + details accordion only. No CTAs.
    *  Used by the public trip portal. */
   readOnly?: boolean;
@@ -87,7 +91,12 @@ async function flagInquiry(
   }
 }
 
-export function QuoteReveal({ inquiry, quote, readOnly = false }: QuoteRevealProps) {
+export function QuoteReveal({
+  inquiry,
+  quote,
+  shareToken,
+  readOnly = false,
+}: QuoteRevealProps) {
   const splitN = quote.guests;
   const totalCents = quote.totalCents;
   const perPersonTotal = Math.round(totalCents / splitN);
@@ -116,6 +125,7 @@ export function QuoteReveal({ inquiry, quote, readOnly = false }: QuoteRevealPro
   const [altDatesSent, setAltDatesSent] = useState(false);
   const [interestSent, setInterestSent] = useState(false);
   const [shareRequested, setShareRequested] = useState(false);
+  const [shareSheetOpen, setShareSheetOpen] = useState(false);
   const [appealOpen, setAppealOpen] = useState(false);
   const [appealText, setAppealText] = useState("");
   const [appealStretchLevel, setAppealStretchLevel] = useState<
@@ -144,6 +154,7 @@ export function QuoteReveal({ inquiry, quote, readOnly = false }: QuoteRevealPro
   };
 
   const handleShareRequest = () => {
+    setShareSheetOpen(true);
     if (shareRequested) return;
     setShareRequested(true);
     capture("share_cta_clicked", {
@@ -255,11 +266,8 @@ export function QuoteReveal({ inquiry, quote, readOnly = false }: QuoteRevealPro
             type="button"
             className={styles.shareButton}
             onClick={handleShareRequest}
-            disabled={shareRequested}
           >
-            {shareRequested
-              ? "Got it \u2014 Abe will send your trip portal shortly"
-              : "Share with my group"}
+            Share with my group
           </button>
           {!shareRequested ? (
             <p className={styles.shareSubhead}>
@@ -432,6 +440,40 @@ export function QuoteReveal({ inquiry, quote, readOnly = false }: QuoteRevealPro
           </div>
         ) : null}
       </div>
+
+      {!readOnly && shareToken ? (
+        <SharePreviewSheet
+          open={shareSheetOpen}
+          onClose={() => setShareSheetOpen(false)}
+          shareUrl={shareUrlFor(shareToken)}
+          firstName={firstNameOf(inquiry.name)}
+          dateRange={shareDateRange(quote)}
+        />
+      ) : null}
     </div>
   );
+}
+
+function shareUrlFor(token: string): string {
+  const origin =
+    (typeof window !== "undefined" && window.location.origin) ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "http://localhost:3000";
+  return `${origin.replace(/\/$/, "")}/trip/${token}`;
+}
+
+function firstNameOf(name: string): string {
+  const first = name.trim().split(/\s+/)[0];
+  return first || name;
+}
+
+function shareDateRange(quote: Quote): string {
+  const fmtIso = (iso: string) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
+  return `${fmtIso(quote.arrival)} \u2013 ${fmtIso(quote.departure)}`;
 }

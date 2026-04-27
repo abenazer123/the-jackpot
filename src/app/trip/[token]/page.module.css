@@ -1,0 +1,181 @@
+/*
+ * /trip/[token] — public read-only trip portal.
+ * No layout chrome wraps this — it's a top-level surface owning
+ * its own background + content rhythm. The shared root layout
+ * provides the providers; this page provides the look.
+ */
+
+.page {
+  min-height: 100dvh;
+  background: var(--jp-bg-primary);
+  color: var(--jp-text-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Photo strip — full-bleed on mobile, capped on desktop. The
+   underlying HeroPhotoCarousel renders full-area within this
+   container. */
+.photoStrip {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  max-height: 70vh;
+  overflow: hidden;
+  background: var(--jp-bg-secondary, #f3ead4);
+}
+
+.content {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 4px 24px calc(60px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* ----- Stay summary ----- */
+.summary {
+  margin-top: 28px;
+  padding: 24px 22px;
+  background: var(--jp-bg-secondary, #f3ead4);
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-lg);
+  text-align: center;
+}
+
+.perPerson {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(38px, 8vw, 52px);
+  line-height: 1;
+  color: var(--jp-text-primary);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.perPersonLabel {
+  font-family: var(--jp-font-body);
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  color: var(--jp-text-secondary);
+  text-transform: lowercase;
+}
+
+.summaryMeta {
+  margin-top: 4px;
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-secondary);
+}
+
+.totalRow {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--jp-border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--jp-font-body);
+  font-size: 14px;
+}
+
+.totalLabel {
+  color: var(--jp-text-secondary);
+}
+
+.totalValue {
+  color: var(--jp-text-primary);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.savings {
+  margin-top: 10px;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--jp-gold-deep);
+  line-height: 1.4;
+}
+
+.noQuote {
+  margin-top: 28px;
+  padding: 18px 20px;
+  border: 1px dashed var(--jp-border-subtle);
+  border-radius: var(--jp-radius-md);
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 14px;
+  text-align: center;
+  color: var(--jp-text-secondary);
+}
+
+/* ----- Location ----- */
+.location {
+  margin-top: 28px;
+  text-align: center;
+}
+
+.eyebrow {
+  display: block;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin-bottom: 8px;
+}
+
+.locationLine {
+  margin: 0;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--jp-text-primary);
+}
+
+.locationSub {
+  margin: 4px 0 0;
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-secondary);
+}
+
+/* ----- Contact safety-valve ----- */
+.contact {
+  margin: 36px auto 0;
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  color: var(--jp-text-secondary);
+  text-align: center;
+  letter-spacing: 0.2px;
+}
+
+.contactLink {
+  color: var(--jp-gold-deep);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.contactLink:hover {
+  text-decoration: underline;
+}
+
+@media (min-width: 768px) {
+  .photoStrip {
+    aspect-ratio: 16 / 9;
+    max-height: 540px;
+  }
+  .content {
+    padding: 12px 32px calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+}

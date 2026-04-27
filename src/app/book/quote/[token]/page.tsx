@@ -13,6 +13,7 @@
 import { notFound } from "next/navigation";
 
 import { QuoteReveal } from "@/components/brand/funnel/QuoteReveal";
+import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
 import type { Quote } from "@/lib/pricing/types";
 import { supabaseServer } from "@/lib/supabase-server";
 
@@ -51,12 +52,34 @@ export default async function QuotePage({ params }: QuotePageProps) {
   }
   if (!data) notFound();
 
-  const quote = (data.quote_snapshot ?? null) as Quote | null;
+  let quote = (data.quote_snapshot ?? null) as Quote | null;
   const guests = (data.guests as number) ?? 0;
   const arrival = data.arrival as string;
   const departure = data.departure as string;
   const name = (data.name as string) ?? "";
   const email = (data.email as string) ?? "";
+
+  // Re-compute on the fly for rows that were finalized before the
+  // cache had data for these dates. Persist back so subsequent
+  // loads are cached.
+  if (!quote && arrival && departure && guests > 0) {
+    const result = await computeQuoteLive({ arrival, departure, guests });
+    if (result.ok) {
+      quote = result.quote;
+      void supabaseServer()
+        .from("inquiries")
+        .update({
+          quote_snapshot: result.quote,
+          quote_total_cents: result.quote.totalCents,
+        })
+        .eq("share_token", token)
+        .then(({ error: updErr }) => {
+          if (updErr) {
+            console.warn("[quote] backfill persist failed", updErr);
+          }
+        });
+    }
+  }
 
   // Re-derive nights for the heading line.
   const nights = (() => {
@@ -87,6 +110,7 @@ export default async function QuotePage({ params }: QuotePageProps) {
             },
           }}
           quote={quote}
+          shareToken={token}
         />
       ) : (
         <p className={styles.body}>
