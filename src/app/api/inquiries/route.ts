@@ -29,6 +29,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { sendGuestConfirmation } from "@/lib/email/guestConfirmation";
 import { sendHostNotification } from "@/lib/email/hostNotification";
 import { sendHostPathSignal } from "@/lib/email/hostPathSignal";
+import { sendHostShareNotice } from "@/lib/email/hostShareNotice";
 import type { InquiryPayload } from "@/lib/email/types";
 import { serverCapture } from "@/lib/posthog-server";
 import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
@@ -421,16 +422,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (reveal.appeal_stretch_level !== null)
       patch.appeal_stretch_level = reveal.appeal_stretch_level;
 
-    if (Object.keys(patch).length === 0) {
-      return NextResponse.json({ ok: true, inquiry_id: flagInquiryId });
-    }
-
     // Pull the row so the path-signal email has full context (name,
     // phone, dates, total). Single round-trip.
     const { data: row, error: readError } = await supabaseServer()
       .from("inquiries")
       .select(
-        "id, status, arrival, departure, email, name, phone, guests, reason, source, venue, quote_total_cents",
+        "id, status, arrival, departure, email, name, phone, guests, reason, source, venue, quote_total_cents, share_token, share_views, shared_at, share_email_sent_at",
       )
       .eq("id", flagInquiryId)
       .single();
@@ -441,6 +438,24 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         { error: "inquiry not found" },
         { status: 404 },
       );
+    }
+
+    // For the share path: anchor the 60-day expiry on first share
+    // and gate the host signal email so it only fires once per
+    // inquiry (preview-sheet re-opens are no-ops).
+    const sharePathFiring =
+      reveal.primary_cta_path === "share" || reveal.share_requested;
+    const shouldSendShareNotice =
+      sharePathFiring && !row.share_email_sent_at;
+    if (sharePathFiring && !row.shared_at) {
+      patch.shared_at = new Date().toISOString();
+    }
+    if (shouldSendShareNotice) {
+      patch.share_email_sent_at = new Date().toISOString();
+    }
+
+    if (Object.keys(patch).length === 0) {
+      return NextResponse.json({ ok: true, inquiry_id: flagInquiryId });
     }
 
     const { error: updateError } = await supabaseServer()
@@ -471,8 +486,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // Path-specific host signal email — fire-and-forget. Only for
-    // "interested" and "appeal"; "share" gets the trip-portal flow
-    // (Phase 2) instead.
+    // "interested" and "appeal"; "share" gets its own dedicated
+    // notice (sendHostShareNotice) below.
     const path = reveal.primary_cta_path;
     if (
       (path === "interested" || path === "appeal") &&
@@ -504,6 +519,46 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         appealText: reveal.appeal_text,
       }).catch((err) => {
         console.error("[inquiries/flag] path signal email failed", err);
+      });
+    }
+
+    // Share-fired host notice — gated on share_email_sent_at so
+    // re-opening the preview sheet doesn't re-fire. We set the
+    // gate above (in the patch) before this email goes out;
+    // failures are logged but don't undo the gate (design
+    // decision: better to miss one email than spam Abe twice).
+    if (
+      shouldSendShareNotice &&
+      typeof row.share_token === "string" &&
+      row.share_token &&
+      typeof row.name === "string" &&
+      row.name
+    ) {
+      const a = new Date((row.arrival as string) + "T00:00:00");
+      const d = new Date((row.departure as string) + "T00:00:00");
+      const nights = Math.max(
+        1,
+        Math.round((d.getTime() - a.getTime()) / 86_400_000),
+      );
+      const origin = (
+        process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+      ).replace(/\/$/, "");
+      sendHostShareNotice({
+        tripUrl: `${origin}/trip/${row.share_token}`,
+        viewCount: (row.share_views as number | null) ?? 0,
+        arrival: row.arrival as string,
+        departure: row.departure as string,
+        nights,
+        email: row.email as string,
+        name: row.name as string,
+        phone: (row.phone as string) ?? "",
+        guests: (row.guests as number) ?? 0,
+        reason: (row.reason as string) ?? "",
+        source: (row.source as string | null) ?? undefined,
+        venue: (row.venue as string | null) ?? undefined,
+        totalCents: (row.quote_total_cents as number | null) ?? null,
+      }).catch((err) => {
+        console.error("[inquiries/flag] share notice email failed", err);
       });
     }
 

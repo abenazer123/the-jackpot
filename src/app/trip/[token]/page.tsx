@@ -19,6 +19,7 @@ import { notFound } from "next/navigation";
 import { PhotoGrid } from "@/components/brand/trip/PhotoGrid";
 import { SleepingList } from "@/components/brand/trip/SleepingList";
 import { TripHero } from "@/components/brand/trip/TripHero";
+import { ViewTracker } from "@/components/brand/trip/ViewTracker";
 import { HeroPhotoCarousel } from "@/components/sections/HeroPhotoCarousel";
 import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
 import type { Quote } from "@/lib/pricing/types";
@@ -141,6 +142,7 @@ export default async function TripPage({ params }: TripPageProps) {
 
   return (
     <main className={styles.page}>
+      <ViewTracker token={token} />
       <div className={styles.photoStrip}>
         <HeroPhotoCarousel photos={BRAND_PHOTOS} intervalMs={60000} />
       </div>
