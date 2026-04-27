@@ -1,0 +1,185 @@
+/*
+ * TripLocation — single-column variant of the landing page's
+ * LocationSection, sized for the 560px-max trip-page content
+ * column. Same visual rhythm + content; just stacked.
+ */
+
+.section {
+  width: 100%;
+  margin-top: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* ===== Header ===== */
+.header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.mark {
+  opacity: 0.9;
+}
+
+.headline {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(28px, 5vw, 38px);
+  line-height: 1.1;
+  letter-spacing: -0.4px;
+  color: var(--jp-olive, var(--jp-text-primary));
+  margin: 0;
+}
+
+.paragraph {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--jp-text-primary);
+  margin: 0;
+}
+
+.namedSpots {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  color: rgba(122, 96, 48, 0.65);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ===== Distance pills ===== */
+.distanceList {
+  list-style: none;
+  padding: 0;
+  margin: 28px 0 24px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px 28px;
+}
+
+.distance {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.distanceTime {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.1;
+  color: var(--jp-text-primary);
+  letter-spacing: -0.2px;
+}
+
+.distanceLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: rgba(122, 96, 48, 0.62);
+}
+
+/* ===== Map ===== */
+.mapWrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 4px;
+}
+
+/* ===== Occasion pills ===== */
+.occasionRow {
+  margin: 28px auto 0;
+  padding: 28px 0 4px;
+  text-align: center;
+  border-top: 1px solid rgba(212, 136, 121, 0.18);
+  width: 100%;
+  animation: occasionRowIn 360ms ease-out both;
+}
+
+@keyframes occasionRowIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.occasionEyebrow {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(212, 136, 121, 0.85);
+  letter-spacing: 0.1px;
+  margin: 0 auto 18px;
+  max-width: 460px;
+  padding: 0 8px;
+}
+
+.occasionList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 10px 22px;
+}
+
+.occasionPill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.occasionTime {
+  font-family: var(--jp-font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.1;
+  color: #d48879;
+  letter-spacing: -0.2px;
+}
+
+.occasionLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: rgba(212, 136, 121, 0.65);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.occasionSub {
+  display: block;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 11px;
+  color: rgba(212, 136, 121, 0.6);
+  margin-top: 2px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .occasionRow { animation: none; }
+}

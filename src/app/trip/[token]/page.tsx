@@ -21,11 +21,12 @@ import { PhotoGrid } from "@/components/brand/trip/PhotoGrid";
 import { ShareDock } from "@/components/brand/trip/ShareDock";
 import { SleepingList } from "@/components/brand/trip/SleepingList";
 import { TripHero } from "@/components/brand/trip/TripHero";
+import { TripLocation } from "@/components/brand/trip/TripLocation";
 import { ViewTracker } from "@/components/brand/trip/ViewTracker";
 import { HeroPhotoCarousel } from "@/components/sections/HeroPhotoCarousel";
 import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
 import type { Quote } from "@/lib/pricing/types";
-import { LOCATION } from "@/lib/property/location";
+import { reasonToOccasion } from "@/lib/property/location";
 import { BRAND_PHOTOS } from "@/lib/property/photos";
 import { supabaseServer } from "@/lib/supabase-server";
 
@@ -195,11 +196,9 @@ export default async function TripPage({ params }: TripPageProps) {
 
         <PhotoGrid />
 
-        <section className={styles.location}>
-          <span className={styles.eyebrow}>Where it is</span>
-          <p className={styles.locationLine}>{LOCATION.neighborhood}</p>
-          <p className={styles.locationSub}>{LOCATION.travelTimes}</p>
-        </section>
+        <TripLocation
+          occasion={reasonToOccasion((data.reason as string) ?? null)}
+        />
 
         <p className={styles.contact}>
           Questions? Abe is the host &mdash;{" "}

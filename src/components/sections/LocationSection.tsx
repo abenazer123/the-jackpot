@@ -14,80 +14,19 @@
 
 "use client";
 
-import { useOccasion, type OccasionId } from "@/components/brand/OccasionProvider";
+import { useOccasion } from "@/components/brand/OccasionProvider";
 import { Starburst } from "@/components/brand/Starburst";
+import {
+  DISTANCES,
+  HEADLINE_LINE_1,
+  HEADLINE_LINE_2,
+  NAMED_SPOTS,
+  OCCASION_PILLS,
+  PARAGRAPH,
+} from "@/lib/property/location";
 
 import { ChicagoMapViewer } from "./ChicagoMapViewer";
 import styles from "./LocationSection.module.css";
-
-interface Pill {
-  time: string;
-  label: string;
-  sub?: string;
-}
-
-interface OccasionPillConfig {
-  eyebrow: string;
-  pills: Pill[];
-}
-
-const OCCASION_PILLS: Record<
-  Exclude<OccasionId, "getaway">,
-  OccasionPillConfig
-> = {
-  bachelorette: {
-    eyebrow:
-      "\u2014 what groups on Batch are searching for, within 20 minutes",
-    pills: [
-      { time: "20 min", label: "Boats" },
-      { time: "12 min", label: "Hibachi row" },
-      { time: "15 min", label: "Rooftop bars" },
-      { time: "here", label: "Party bus pickups" },
-      { time: "in-house", label: "Private chef" },
-    ],
-  },
-  wedding: {
-    eyebrow: "\u2014 venues within 22 minutes, plus 40+ others",
-    pills: [
-      { time: "8 min", label: "Artifact Events" },
-      { time: "15 min", label: "Morgan MFG" },
-      { time: "18 min", label: "West Loop", sub: "20+ venues" },
-      { time: "20 min", label: "Lacuna Lofts" },
-      { time: "22 min", label: "Bridgeport Art Center" },
-    ],
-  },
-  family: {
-    eyebrow: "\u2014 classics within 25 minutes",
-    pills: [
-      { time: "18 min", label: "Lincoln Park Zoo" },
-      { time: "22 min", label: "Navy Pier" },
-      { time: "25 min", label: "Field Museum" },
-      { time: "25 min", label: "Shedd Aquarium" },
-    ],
-  },
-  birthday: {
-    eyebrow: "\u2014 dinner and drinks within 20 minutes",
-    pills: [
-      { time: "18 min", label: "West Loop dining", sub: "many spots" },
-      { time: "15 min", label: "River North", sub: "many spots" },
-      { time: "18 min", label: "Fulton Market" },
-      { time: "15 min", label: "Rooftop bars" },
-    ],
-  },
-};
-
-interface Distance {
-  time: string;
-  label: string;
-}
-
-const DISTANCES: readonly Distance[] = [
-  { time: "15 min", label: "to O'Hare" },
-  { time: "16 min", label: "to downtown" },
-  { time: "15 min", label: "to Wrigley Field" },
-  { time: "12 min", label: "to Wicker Park" },
-  { time: "9 min walk", label: "to the Blue Line" },
-];
 
 export function LocationSection() {
   const { occasion } = useOccasion();
@@ -112,22 +51,12 @@ export function LocationSection() {
             />
           </div>
           <h2 className={styles.headline}>
-            Chicago&rsquo;s north side.
+            {HEADLINE_LINE_1}
             <br />
-            Quiet streets, loud weekends.
+            {HEADLINE_LINE_2}
           </h2>
-          <p className={styles.paragraph}>
-            The Jackpot sits in North Park, a tree-lined neighborhood ten
-            minutes from everything and a world away from downtown noise. Three
-            breweries within walking distance. Some of the best Mexican and
-            Filipino food in the city around the corner. And a backyard that
-            makes most groups cancel their dinner reservations.
-          </p>
-          <p className={styles.namedSpots}>
-            Half Acre Beer Garden &middot; Lula Cafe &middot; Old Irving
-            Brewing &middot; Gene&rsquo;s Rooftop Wine Garden &mdash; all
-            within 10 minutes.
-          </p>
+          <p className={styles.paragraph}>{PARAGRAPH}</p>
+          <p className={styles.namedSpots}>{NAMED_SPOTS}</p>
         </header>
 
         <div className={styles.split}>
