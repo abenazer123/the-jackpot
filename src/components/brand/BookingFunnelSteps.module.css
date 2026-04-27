@@ -13,11 +13,24 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  /* Fill the sheet vertically when the parent has a fixed height
+     (mobile full-screen sheet). Resolves to 0 when the parent is
+     content-sized (desktop card), so this is a mobile-only fix in
+     practice. Pairs with `.step { margin: auto 0 }` below to center
+     short steps and let tall ones flow naturally. */
+  min-height: 100%;
 }
 
 /* Step wrapper — each step gets a slide+fade entry so transitions feel
-   intentional. Keyed remounts in the parent drive this animation. */
+   intentional. Keyed remounts in the parent drive this animation.
+   `margin: auto 0` centers the step vertically when the content is
+   shorter than the .root (the common case on a full-screen mobile
+   sheet — Step 3's form, the no-quote success, etc.). When content
+   is taller, auto margins collapse to 0 and the step top-anchors,
+   with the sheet's overflow:auto handling scroll. */
 .step {
+  margin: auto 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   animation: stepEnter 300ms ease-out both;
