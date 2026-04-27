@@ -1113,7 +1113,7 @@ function QuoteReveal({
             aria-expanded={appealOpen}
             onClick={() => setAppealOpen((v) => !v)}
           >
-            Tell me what works <span aria-hidden="true">{"\u2192"}</span>
+            Tell Abe what works <span aria-hidden="true">{"\u2192"}</span>
           </button>
 
           {appealOpen ? (
