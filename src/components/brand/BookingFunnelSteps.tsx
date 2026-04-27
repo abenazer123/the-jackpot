@@ -464,12 +464,7 @@ export function BookingFunnelSteps({
       nights,
     });
     void flagInquiry({ primary_cta_path: "interested" });
-    // Hold long enough for the in-place label flip to register and
-    // for the confirmation copy to actually be read before we close
-    // the modal. 1.5s was too tight — eye fixates ~300ms on the
-    // change, then ~1.5s to read the line, then a beat to feel
-    // acknowledged.
-    window.setTimeout(onClose, 3000);
+    window.setTimeout(onClose, 4000);
   };
 
   const handleShareRequest = () => {
