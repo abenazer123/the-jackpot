@@ -106,17 +106,21 @@ export default async function QuotePage({ params }: QuotePageProps) {
       {tally.total > 0 ? (
         <p className={styles.tally}>
           <span className={styles.tallyEyebrow}>Group says &rarr;</span>{" "}
-          <span className={styles.tallyYes}>{tally.yes} in</span>
+          <span className={styles.tallyYes}>{tally.yes} like it</span>
           {tally.maybe > 0 ? (
             <>
               {" "}&middot;{" "}
-              <span className={styles.tallyMaybe}>{tally.maybe} maybe</span>
+              <span className={styles.tallyMaybe}>
+                {tally.maybe} not sure
+              </span>
             </>
           ) : null}
           {tally.no > 0 ? (
             <>
               {" "}&middot;{" "}
-              <span className={styles.tallyNo}>{tally.no} can&rsquo;t</span>
+              <span className={styles.tallyNo}>
+                {tally.no} sitting out
+              </span>
             </>
           ) : null}
           {tally.reservations > 0 ? (

@@ -38,12 +38,45 @@ interface TalkProps extends CommonProps {
 
 type Vote = "yes" | "maybe" | "no";
 
+interface VoteTally {
+  yes: number;
+  maybe: number;
+  no: number;
+  total: number;
+}
+
+interface VoteCtaProps extends CommonProps {
+  /** Counts at the moment the page rendered. */
+  initialTally: VoteTally;
+  /** This viewer's vote on a previous visit, if any. When set the
+   *  component starts in the post-vote "reveal" state. */
+  initialVote: Vote | null;
+}
+
 // ──────────────────────────────────────────────────────────────
 // Vote
 // ──────────────────────────────────────────────────────────────
-export function TripVoteCta({ token, bookerFirstName }: CommonProps) {
-  const [vote, setVote] = useState<Vote | null>(null);
+const VOTE_LABELS: ReadonlyArray<[Vote, string]> = [
+  ["yes", "I like it"],
+  ["maybe", "Not sure yet"],
+  ["no", "Sit this one out"],
+];
+
+const TALLY_LABELS: Record<Vote, string> = {
+  yes: "like it",
+  maybe: "not sure",
+  no: "sitting out",
+};
+
+export function TripVoteCta({
+  token,
+  bookerFirstName,
+  initialTally,
+  initialVote,
+}: VoteCtaProps) {
+  const [vote, setVote] = useState<Vote | null>(initialVote);
   const [submitting, setSubmitting] = useState<Vote | null>(null);
+  const [tally, setTally] = useState<VoteTally>(initialTally);
 
   const handleVote = useCallback(
     async (next: Vote) => {
@@ -59,6 +92,10 @@ export function TripVoteCta({ token, bookerFirstName }: CommonProps) {
           body: JSON.stringify({ vote: next }),
         });
         if (!res.ok) throw new Error("vote failed");
+        const data = (await res.json().catch(() => null)) as {
+          tally?: VoteTally;
+        } | null;
+        if (data?.tally) setTally(data.tally);
       } catch {
         setVote(previous);
       } finally {
@@ -68,20 +105,28 @@ export function TripVoteCta({ token, bookerFirstName }: CommonProps) {
     [token, vote, submitting],
   );
 
+  // Pre-vote: just the magnitude ("X friends have voted") so the
+  // friend can see social proof without seeing the breakdown.
+  // Post-vote: reveal the per-bucket counts.
+  const preVoteHint =
+    tally.total === 0
+      ? `Be the first \u2014 ${bookerFirstName} sees the tally as votes come in.`
+      : tally.total === 1
+        ? "1 friend has voted so far."
+        : `${tally.total} friends have voted so far.`;
+
   return (
     <section className={styles.block} aria-label="Cast your vote">
       <span className={styles.eyebrow}>Cast your vote</span>
-      <p className={styles.helper}>
-        Quick signal so {bookerFirstName} knows where you land.
-      </p>
+      {vote ? (
+        <p className={styles.helper}>
+          Got it &mdash; {bookerFirstName} can see where you stand.
+        </p>
+      ) : (
+        <p className={styles.helper}>{preVoteHint}</p>
+      )}
       <div className={styles.voteRow} role="radiogroup" aria-label="Your vote">
-        {(
-          [
-            ["yes", "Yes \u2014 I\u2019m in"],
-            ["maybe", "Maybe"],
-            ["no", "Can\u2019t make it"],
-          ] as ReadonlyArray<[Vote, string]>
-        ).map(([id, label]) => (
+        {VOTE_LABELS.map(([id, label]) => (
           <button
             key={id}
             type="button"
@@ -97,9 +142,19 @@ export function TripVoteCta({ token, bookerFirstName }: CommonProps) {
         ))}
       </div>
       {vote ? (
-        <p className={styles.voteConfirm}>
-          Got it &mdash; {bookerFirstName} can see where you stand.
-        </p>
+        <ul className={styles.tally} aria-label="Group tally">
+          {(["yes", "maybe", "no"] as ReadonlyArray<Vote>).map((id) => (
+            <li
+              key={id}
+              className={styles.tallyItem}
+              data-vote={id}
+              data-mine={vote === id ? "true" : "false"}
+            >
+              <span className={styles.tallyCount}>{tally[id]}</span>
+              <span className={styles.tallyLabel}>{TALLY_LABELS[id]}</span>
+            </li>
+          ))}
+        </ul>
       ) : null}
     </section>
   );

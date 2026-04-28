@@ -104,6 +104,65 @@
   color: var(--jp-gold-deep);
 }
 
+/* Per-bucket tally — only shown after the friend has voted. Three
+   columns, each with the count over its label. The friend's own
+   pick gets a slightly heavier weight so they can find their
+   own contribution at a glance. */
+.tally {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.tallyItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border-radius: var(--jp-radius-md);
+  background: var(--jp-bg-secondary, #f3ead4);
+}
+
+.tallyItem[data-mine="true"] {
+  outline: 1.5px solid var(--jp-gold-deep);
+  outline-offset: -1.5px;
+}
+
+.tallyCount {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.tallyItem[data-vote="yes"] .tallyCount {
+  color: #6a8a55;
+}
+
+.tallyItem[data-vote="maybe"] .tallyCount {
+  color: var(--jp-gold-deep);
+}
+
+.tallyItem[data-vote="no"] .tallyCount {
+  color: rgba(122, 96, 48, 0.6);
+}
+
+.tallyLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+  text-align: center;
+}
+
 /* ===== Reserve ===== */
 .reserveTrigger {
   align-self: flex-start;

@@ -65,7 +65,11 @@ export async function POST(
     return NextResponse.json({ error: "trip not found" }, { status: 404 });
   }
 
-  const res = NextResponse.json({ ok: true });
+  // Fresh response we'll return — `ensureViewerId` may set the
+  // viewer cookie on this same response, so we have to allocate
+  // it before the cookie call.
+  const tally = { yes: 0, maybe: 0, no: 0, total: 0 };
+  const res = NextResponse.json({ ok: true, tally });
   const viewerId = ensureViewerId(req, res);
 
   const { error: upsertError } = await sb.from("trip_votes").upsert(
@@ -82,5 +86,22 @@ export async function POST(
     return NextResponse.json({ error: "save failed" }, { status: 500 });
   }
 
-  return res;
+  // Pull the fresh tally + return it so the client can flip to
+  // the post-vote "reveal" state without a second round trip.
+  const { data: voteRows } = await sb
+    .from("trip_votes")
+    .select("vote")
+    .eq("inquiry_id", row.id as string);
+  for (const r of (voteRows ?? []) as Array<{ vote: string }>) {
+    if (r.vote === "yes") tally.yes++;
+    else if (r.vote === "maybe") tally.maybe++;
+    else if (r.vote === "no") tally.no++;
+  }
+  tally.total = tally.yes + tally.maybe + tally.no;
+
+  // Re-build the response body now that we have real numbers,
+  // preserving the cookie headers that ensureViewerId set.
+  const final = NextResponse.json({ ok: true, tally });
+  res.cookies.getAll().forEach((c) => final.cookies.set(c));
+  return final;
 }

@@ -84,7 +84,7 @@ export default async function TripPage({ params }: TripPageProps) {
   const { data, error } = await supabaseServer()
     .from("inquiries")
     .select(
-      "name, arrival, departure, guests, reason, quote_snapshot, shared_at",
+      "id, name, arrival, departure, guests, reason, quote_snapshot, shared_at",
     )
     .eq("share_token", token)
     .maybeSingle();
@@ -94,6 +94,41 @@ export default async function TripPage({ params }: TripPageProps) {
     notFound();
   }
   if (!data) notFound();
+
+  // Vote tally + this viewer's existing vote (if any). The CTA
+  // shows just the total count pre-vote, and reveals the
+  // breakdown only after the friend casts a vote — like a secret
+  // ballot that opens once you participate.
+  const inquiryId = data.id as string;
+  const viewerId = cookieStore.get("jp_viewer")?.value ?? null;
+  const [voteRowsRes, myVoteRes] = await Promise.all([
+    supabaseServer()
+      .from("trip_votes")
+      .select("vote")
+      .eq("inquiry_id", inquiryId),
+    viewerId
+      ? supabaseServer()
+          .from("trip_votes")
+          .select("vote")
+          .eq("inquiry_id", inquiryId)
+          .eq("viewer_id", viewerId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  const initialTally = { yes: 0, maybe: 0, no: 0, total: 0 };
+  for (const r of (voteRowsRes.data ?? []) as Array<{ vote: string }>) {
+    if (r.vote === "yes") initialTally.yes++;
+    else if (r.vote === "maybe") initialTally.maybe++;
+    else if (r.vote === "no") initialTally.no++;
+  }
+  initialTally.total =
+    initialTally.yes + initialTally.maybe + initialTally.no;
+  const initialVote =
+    ((myVoteRes.data as { vote?: string } | null)?.vote ?? null) as
+      | "yes"
+      | "maybe"
+      | "no"
+      | null;
 
   // 60-day expiry. shared_at is null until the first share-CTA tap
   // or first view (set in Push 2). Pre-shared inquiries don't expire
@@ -204,7 +239,12 @@ export default async function TripPage({ params }: TripPageProps) {
         )}
 
         {!isOwner ? (
-          <TripVoteCta token={token} bookerFirstName={firstNameOf(name)} />
+          <TripVoteCta
+            token={token}
+            bookerFirstName={firstNameOf(name)}
+            initialTally={initialTally}
+            initialVote={initialVote}
+          />
         ) : null}
 
         <SleepingList />
