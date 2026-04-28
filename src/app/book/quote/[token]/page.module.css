@@ -38,3 +38,50 @@
   color: var(--jp-text-primary);
   font-weight: 500;
 }
+
+/* Live group-tally pill — shows up under the date line once the
+   coordinator has shared and people have started voting/reserving
+   on the trip page. */
+.tally {
+  margin: -8px 0 24px;
+  padding: 10px 16px;
+  background: var(--jp-bg-secondary, #f3ead4);
+  border-radius: var(--jp-radius-full);
+  display: inline-block;
+  align-self: center;
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--jp-text-secondary);
+  text-align: center;
+}
+
+.tallyEyebrow {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+}
+
+.tallyYes {
+  color: #6a8a55;
+  font-weight: 600;
+}
+
+.tallyMaybe {
+  color: var(--jp-gold-deep);
+  font-weight: 600;
+}
+
+.tallyNo {
+  color: rgba(122, 96, 48, 0.7);
+  font-weight: 500;
+}
+
+.tallyReserved {
+  color: var(--jp-gold-deep);
+  font-weight: 700;
+  font-style: italic;
+}

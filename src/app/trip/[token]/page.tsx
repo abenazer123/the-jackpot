@@ -17,6 +17,7 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
+import { CtaStack } from "@/components/brand/trip/CtaStack";
 import { PhotoGrid } from "@/components/brand/trip/PhotoGrid";
 import { ShareDock } from "@/components/brand/trip/ShareDock";
 import { SleepingList } from "@/components/brand/trip/SleepingList";
@@ -199,6 +200,14 @@ export default async function TripPage({ params }: TripPageProps) {
         <TripLocation
           occasion={reasonToOccasion((data.reason as string) ?? null)}
         />
+
+        {!isOwner ? (
+          <CtaStack
+            token={token}
+            bookerFirstName={firstNameOf(name)}
+            dateRange={dateRange}
+          />
+        ) : null}
 
         <p className={styles.contact}>
           Questions? Abe is the host &mdash;{" "}

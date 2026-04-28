@@ -90,6 +90,11 @@ export default async function QuotePage({ params }: QuotePageProps) {
 
   const dateRange = `${isoToDisplay(arrival)} \u2013 ${isoToDisplay(departure)}`;
 
+  // Pull the live group tally so the coordinator sees how her
+  // friends are reacting on the trip page. Cheap aggregate query
+  // — counts only, no PII / per-viewer breakdown.
+  const tally = await loadTally(data.id as string);
+
   return (
     <div className={styles.wrap}>
       <h1 className={styles.heading}>Here&rsquo;s your weekend.</h1>
@@ -97,6 +102,33 @@ export default async function QuotePage({ params }: QuotePageProps) {
         {dateRange} &middot; {nights} night{nights === 1 ? "" : "s"} &middot;{" "}
         {guests} {guests === 1 ? "guest" : "guests"}
       </p>
+
+      {tally.total > 0 ? (
+        <p className={styles.tally}>
+          <span className={styles.tallyEyebrow}>Group says &rarr;</span>{" "}
+          <span className={styles.tallyYes}>{tally.yes} in</span>
+          {tally.maybe > 0 ? (
+            <>
+              {" "}&middot;{" "}
+              <span className={styles.tallyMaybe}>{tally.maybe} maybe</span>
+            </>
+          ) : null}
+          {tally.no > 0 ? (
+            <>
+              {" "}&middot;{" "}
+              <span className={styles.tallyNo}>{tally.no} can&rsquo;t</span>
+            </>
+          ) : null}
+          {tally.reservations > 0 ? (
+            <>
+              {" "}&middot;{" "}
+              <span className={styles.tallyReserved}>
+                {tally.reservations} reserved
+              </span>
+            </>
+          ) : null}
+        </p>
+      ) : null}
 
       {quote ? (
         <QuoteReveal
@@ -120,4 +152,37 @@ export default async function QuotePage({ params }: QuotePageProps) {
       )}
     </div>
   );
+}
+
+interface Tally {
+  yes: number;
+  maybe: number;
+  no: number;
+  reservations: number;
+  total: number;
+}
+
+async function loadTally(inquiryId: string): Promise<Tally> {
+  const sb = supabaseServer();
+  const [votesRes, reservationsRes] = await Promise.all([
+    sb.from("trip_votes").select("vote").eq("inquiry_id", inquiryId),
+    sb
+      .from("trip_reservations")
+      .select("inquiry_id", { count: "exact", head: true })
+      .eq("inquiry_id", inquiryId),
+  ]);
+  const tally: Tally = {
+    yes: 0,
+    maybe: 0,
+    no: 0,
+    reservations: reservationsRes.count ?? 0,
+    total: 0,
+  };
+  for (const row of (votesRes.data ?? []) as Array<{ vote: string }>) {
+    if (row.vote === "yes") tally.yes++;
+    else if (row.vote === "maybe") tally.maybe++;
+    else if (row.vote === "no") tally.no++;
+  }
+  tally.total = tally.yes + tally.maybe + tally.no + tally.reservations;
+  return tally;
 }

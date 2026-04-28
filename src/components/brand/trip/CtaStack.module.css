@@ -1,0 +1,247 @@
+/*
+ * CtaStack — three sequential blocks (Vote / Reserve / Talk to
+ * Abe) for friends arriving at the trip page. Hairline-separated
+ * to read as a logical step list, not a competing CTA stack.
+ */
+
+.section {
+  width: 100%;
+  margin-top: 36px;
+  display: flex;
+  flex-direction: column;
+}
+
+.block {
+  padding: 24px 0;
+  border-top: 1px solid var(--jp-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.block:last-child {
+  border-bottom: 1px solid var(--jp-border-subtle);
+}
+
+.eyebrow {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+}
+
+.helper {
+  margin: 0;
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--jp-text-secondary);
+}
+
+/* ===== Vote ===== */
+.voteRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.voteButton {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 12px 10px;
+  background: transparent;
+  color: var(--jp-text-primary);
+  border: 1.5px solid rgba(122, 96, 48, 0.3);
+  border-radius: var(--jp-radius-full);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: background var(--jp-transition), border-color var(--jp-transition), color var(--jp-transition);
+  white-space: nowrap;
+}
+
+.voteButton:hover:not(:disabled) {
+  background: var(--jp-gold-10);
+  border-color: var(--jp-gold-deep);
+}
+
+.voteButton:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
+}
+
+.voteButton:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.voteButtonActive[data-vote="yes"] {
+  background: #6a8a55;
+  color: var(--jp-text-on-color);
+  border-color: #6a8a55;
+}
+
+.voteButtonActive[data-vote="maybe"] {
+  background: var(--jp-gold-deep);
+  color: var(--jp-text-on-color);
+  border-color: var(--jp-gold-deep);
+}
+
+.voteButtonActive[data-vote="no"] {
+  background: rgba(122, 96, 48, 0.55);
+  color: var(--jp-text-on-color);
+  border-color: rgba(122, 96, 48, 0.55);
+}
+
+.voteConfirm {
+  margin: 6px 0 0;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--jp-gold-deep);
+}
+
+/* ===== Reserve ===== */
+.reserveTrigger {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 12px 22px;
+  background: var(--jp-gold-deep);
+  color: var(--jp-text-on-color);
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: filter 150ms ease, transform 80ms ease;
+}
+
+.reserveTrigger:hover {
+  filter: brightness(1.05);
+}
+
+.reserveTrigger:active {
+  transform: translateY(1px);
+}
+
+.reserveTrigger:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
+}
+
+.reserveForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px 12px;
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-md);
+  transition: border-color var(--jp-transition);
+}
+
+.field:focus-within {
+  border-color: var(--jp-gold-deep);
+}
+
+.fieldLabel {
+  font-family: var(--jp-font-body);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+}
+
+.input {
+  background: transparent;
+  border: 0;
+  outline: none;
+  font-family: var(--jp-font-body);
+  font-size: 15px;
+  color: var(--jp-text-primary);
+  padding: 2px 0;
+}
+
+.reserveSubmit {
+  align-self: flex-start;
+  padding: 12px 24px;
+  background: var(--jp-gold-deep);
+  color: var(--jp-text-on-color);
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: filter 150ms ease, transform 80ms ease;
+}
+
+.reserveSubmit:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.reserveSubmit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.reserveSubmit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.reserveDone {
+  margin: 0;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #6a8a55;
+}
+
+.error {
+  margin: 0;
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  color: #b04a3a;
+}
+
+/* ===== Talk to Abe ===== */
+.mailto {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 10px 18px;
+  background: transparent;
+  color: var(--jp-gold-deep);
+  border: 1.5px solid var(--jp-gold-deep);
+  border-radius: var(--jp-radius-full);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  text-decoration: none;
+  transition: background var(--jp-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mailto:hover {
+  background: var(--jp-gold-10);
+}
