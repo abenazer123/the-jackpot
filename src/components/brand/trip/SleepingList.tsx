@@ -18,7 +18,10 @@ export function SleepingList() {
         Where everyone sleeps
       </span>
       <p className={styles.intro}>
-        {`${TOTAL_BEDS} individual beds \u2014 here\u2019s the breakdown.`}
+        <span className={styles.introCount}>{TOTAL_BEDS}</span>
+        <span className={styles.introText}>
+          individual beds &mdash; here&rsquo;s the breakdown.
+        </span>
       </p>
       <ul className={styles.list}>
         {SLEEPING_ARRANGEMENTS.map((row) => (

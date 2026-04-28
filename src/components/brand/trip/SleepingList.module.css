@@ -14,15 +14,34 @@
   margin-bottom: 8px;
 }
 
-/* Lead-in line above the per-bedroom list — sets the magnitude
-   ("11 beds") so the group reads the breakdown with context. */
+/* Lead-in line above the per-bedroom list. The number gets the
+   dramatic treatment — big italic gold — so the magnitude lands
+   before the eye reaches the per-bedroom list. */
 .intro {
-  margin: 0 0 14px;
+  margin: 0 0 18px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  line-height: 1.2;
+}
+
+.introCount {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(40px, 9vw, 52px);
+  line-height: 0.9;
+  color: var(--jp-gold-deep);
+  letter-spacing: -1.5px;
+}
+
+.introText {
   font-family: var(--jp-font-display);
   font-style: italic;
   font-weight: 500;
   font-size: 17px;
-  line-height: 1.4;
+  line-height: 1.35;
   color: var(--jp-text-primary);
 }
 
