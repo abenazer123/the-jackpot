@@ -11,7 +11,19 @@
   letter-spacing: 1.8px;
   text-transform: uppercase;
   color: var(--jp-text-tertiary);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+}
+
+/* Lead-in line above the per-bedroom list — sets the magnitude
+   ("11 beds") so the group reads the breakdown with context. */
+.intro {
+  margin: 0 0 14px;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--jp-text-primary);
 }
 
 .list {
@@ -51,9 +63,4 @@
   color: var(--jp-text-secondary);
   text-align: right;
   flex: 1 1 auto;
-}
-
-.note {
-  color: var(--jp-text-tertiary);
-  font-style: italic;
 }

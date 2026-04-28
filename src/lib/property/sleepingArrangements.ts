@@ -14,20 +14,23 @@ export interface SleepingRow {
   label: string;
   /** Bed configuration as a short readable phrase. */
   beds: string;
-  /** Optional secondary line (e.g. floor / location hint). */
-  note?: string;
 }
 
 export const SLEEPING_ARRANGEMENTS: ReadonlyArray<SleepingRow> = [
-  { label: "Bedroom 1", beds: "King", note: "Main floor" },
+  { label: "Bedroom 1", beds: "King" },
   { label: "Bedroom 2", beds: "Queen" },
-  { label: "Bedroom 3", beds: "Two twins" },
-  { label: "Bedroom 4", beds: "Queen" },
-  { label: "Bedroom 5", beds: "Bunks + twin" },
-  { label: "Sofa beds", beds: "Two pull-outs", note: "Living room" },
+  { label: "Bedroom 3", beds: "Queen" },
+  { label: "Bedroom 4", beds: "Full bunk" },
+  { label: "Bedroom 5", beds: "Two twin bunks" },
+  { label: "Living room", beds: "Two pull-outs" },
 ];
 
-/** Total sleep capacity — single source of truth. The hero strip
- *  on the landing page already shows "14 sleeps"; if we ever change
- *  the bed list, both should stay in sync via this constant. */
+/** Total individual beds across the home. Surfaced as a one-line
+ *  intro on the trip page so the group sees the count before
+ *  scanning the breakdown. */
+export const TOTAL_BEDS = 11;
+
+/** Total sleep capacity. The hero strip on the landing page
+ *  shows "14 sleeps"; if we ever change the bed list, both should
+ *  stay in sync via this constant. */
 export const SLEEPS = 14;

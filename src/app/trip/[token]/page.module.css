@@ -124,6 +124,23 @@
   color: var(--jp-text-secondary);
 }
 
+/* Split-pay reassurance — sits right under the quote summary so
+   the price-conscious friend reading top-down sees that nobody
+   has to front the trip and chase the rest of the group for
+   reimbursement. Italic Cormorant for warmth, gold-deep accent
+   so it reads as a benefit, not boilerplate. */
+.splitPay {
+  margin: 12px auto 0;
+  max-width: 36ch;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--jp-gold-deep);
+  text-align: center;
+}
+
 /* ----- Contact safety-valve ----- */
 .contact {
   margin: 36px auto 0;

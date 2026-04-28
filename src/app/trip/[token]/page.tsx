@@ -17,7 +17,11 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
-import { CtaStack } from "@/components/brand/trip/CtaStack";
+import {
+  TripReserveCta,
+  TripTalkCta,
+  TripVoteCta,
+} from "@/components/brand/trip/CtaStack";
 import { PhotoGrid } from "@/components/brand/trip/PhotoGrid";
 import { ShareDock } from "@/components/brand/trip/ShareDock";
 import { SleepingList } from "@/components/brand/trip/SleepingList";
@@ -166,32 +170,42 @@ export default async function TripPage({ params }: TripPageProps) {
         />
 
         {quote ? (
-          <section className={styles.summary}>
-            <div className={styles.perPerson}>
-              {fmt(perPersonCents)}
-              <span className={styles.perPersonLabel}>per person/night</span>
-            </div>
-            <div className={styles.summaryMeta}>
-              {nights} night{nights === 1 ? "" : "s"} &middot; {guests}{" "}
-              {guests === 1 ? "guest" : "guests"}
-            </div>
-            <div className={styles.totalRow}>
-              <span className={styles.totalLabel}>Total for the group</span>
-              <span className={styles.totalValue}>{fmt(totalCents)}</span>
-            </div>
-            {showSavings ? (
-              <div className={styles.savings}>
-                Booking direct saves the group {fmt(quote.savedVsAirbnbCents)}{" "}
-                vs Airbnb.
+          <>
+            <section className={styles.summary}>
+              <div className={styles.perPerson}>
+                {fmt(perPersonCents)}
+                <span className={styles.perPersonLabel}>per person/night</span>
               </div>
-            ) : null}
-          </section>
+              <div className={styles.summaryMeta}>
+                {nights} night{nights === 1 ? "" : "s"} &middot; {guests}{" "}
+                {guests === 1 ? "guest" : "guests"}
+              </div>
+              <div className={styles.totalRow}>
+                <span className={styles.totalLabel}>Total for the group</span>
+                <span className={styles.totalValue}>{fmt(totalCents)}</span>
+              </div>
+              {showSavings ? (
+                <div className={styles.savings}>
+                  Booking direct saves the group{" "}
+                  {fmt(quote.savedVsAirbnbCents)} vs Airbnb.
+                </div>
+              ) : null}
+            </section>
+            <p className={styles.splitPay}>
+              Each guest pays their share directly &mdash; no Venmo
+              round-ups, no chasing friends down for cash.
+            </p>
+          </>
         ) : (
           <p className={styles.noQuote}>
             Pricing coming shortly &mdash; Abe is finalizing the numbers
             for these dates.
           </p>
         )}
+
+        {!isOwner ? (
+          <TripVoteCta token={token} bookerFirstName={firstNameOf(name)} />
+        ) : null}
 
         <SleepingList />
 
@@ -202,19 +216,28 @@ export default async function TripPage({ params }: TripPageProps) {
         />
 
         {!isOwner ? (
-          <CtaStack
-            token={token}
-            bookerFirstName={firstNameOf(name)}
-            dateRange={dateRange}
-          />
-        ) : null}
-
-        <p className={styles.contact}>
-          Questions? Abe is the host &mdash;{" "}
-          <a href="mailto:abe@thejackpotchi.com" className={styles.contactLink}>
-            abe@thejackpotchi.com
-          </a>
-        </p>
+          <>
+            <TripReserveCta
+              token={token}
+              bookerFirstName={firstNameOf(name)}
+            />
+            <TripTalkCta
+              token={token}
+              bookerFirstName={firstNameOf(name)}
+              dateRange={dateRange}
+            />
+          </>
+        ) : (
+          <p className={styles.contact}>
+            Questions? Abe is the host &mdash;{" "}
+            <a
+              href="mailto:abe@thejackpotchi.com"
+              className={styles.contactLink}
+            >
+              abe@thejackpotchi.com
+            </a>
+          </p>
+        )}
       </div>
 
       {isOwner ? (

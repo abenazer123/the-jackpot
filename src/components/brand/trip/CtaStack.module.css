@@ -4,23 +4,20 @@
  * to read as a logical step list, not a competing CTA stack.
  */
 
-.section {
-  width: 100%;
-  margin-top: 36px;
-  display: flex;
-  flex-direction: column;
-}
-
+/* Each CTA block is now a stand-alone section placed at a
+   different point on the trip page (vote near the top, reserve
+   after the location pitch, talk-to-Abe at the bottom). They
+   each carry top + bottom hairlines so the visual rhythm reads
+   as a deliberate "step" rather than a stacked dump. */
 .block {
+  width: 100%;
+  margin-top: 32px;
   padding: 24px 0;
   border-top: 1px solid var(--jp-border-subtle);
+  border-bottom: 1px solid var(--jp-border-subtle);
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.block:last-child {
-  border-bottom: 1px solid var(--jp-border-subtle);
 }
 
 .eyebrow {
