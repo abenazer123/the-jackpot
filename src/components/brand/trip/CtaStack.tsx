@@ -141,7 +141,7 @@ export function TripVoteCta({
           </button>
         ))}
       </div>
-      {vote ? (
+      {tally.total > 0 ? (
         <ul className={styles.tally} aria-label="Group tally">
           {(["yes", "maybe", "no"] as ReadonlyArray<Vote>).map((id) => (
             <li
@@ -290,7 +290,7 @@ export function TripTalkCta({ bookerFirstName, dateRange }: TalkProps) {
     <section className={styles.block} aria-label="Talk to Abe">
       <span className={styles.eyebrow}>Have a question?</span>
       <p className={styles.helper}>
-        Specific concern (parking, accessibility, allergies)? Abe is the host.
+        Specific concern (parking, accessibility...)? Abe is the host.
       </p>
       <a className={styles.mailto} href={mailtoHref}>
         Talk to Abe <span aria-hidden="true">{"\u2192"}</span>
