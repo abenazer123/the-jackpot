@@ -65,17 +65,17 @@
   color: var(--jp-text-tertiary);
 }
 
+.tallyLove {
+  color: var(--jp-gold-deep);
+  font-weight: 700;
+}
+
 .tallyYes {
   color: #6a8a55;
   font-weight: 600;
 }
 
 .tallyMaybe {
-  color: var(--jp-gold-deep);
-  font-weight: 600;
-}
-
-.tallyNo {
   color: rgba(122, 96, 48, 0.7);
   font-weight: 500;
 }

@@ -15,7 +15,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 export const runtime = "nodejs";
 
 const TOKEN_RE = /^[0-9A-Za-z_-]{22}$/;
-const VOTE_RE = /^(yes|maybe|no)$/;
+const VOTE_RE = /^(yes|love|maybe)$/;
 
 interface RouteContext {
   params: Promise<{ token: string }>;
@@ -42,7 +42,7 @@ export async function POST(
   }
   const vote =
     typeof body.vote === "string" && VOTE_RE.test(body.vote)
-      ? (body.vote as "yes" | "maybe" | "no")
+      ? (body.vote as "yes" | "love" | "maybe")
       : null;
   if (!vote) {
     return NextResponse.json({ error: "invalid vote" }, { status: 400 });
@@ -68,7 +68,7 @@ export async function POST(
   // Fresh response we'll return — `ensureViewerId` may set the
   // viewer cookie on this same response, so we have to allocate
   // it before the cookie call.
-  const tally = { yes: 0, maybe: 0, no: 0, total: 0 };
+  const tally = { yes: 0, love: 0, maybe: 0, total: 0 };
   const res = NextResponse.json({ ok: true, tally });
   const viewerId = ensureViewerId(req, res);
 
@@ -94,10 +94,12 @@ export async function POST(
     .eq("inquiry_id", row.id as string);
   for (const r of (voteRows ?? []) as Array<{ vote: string }>) {
     if (r.vote === "yes") tally.yes++;
+    else if (r.vote === "love") tally.love++;
     else if (r.vote === "maybe") tally.maybe++;
-    else if (r.vote === "no") tally.no++;
+    // legacy "no" votes intentionally not counted in the new
+    // 3-bucket tally — that option no longer exists in the UI.
   }
-  tally.total = tally.yes + tally.maybe + tally.no;
+  tally.total = tally.yes + tally.love + tally.maybe;
 
   // Re-build the response body now that we have real numbers,
   // preserving the cookie headers that ensureViewerId set.

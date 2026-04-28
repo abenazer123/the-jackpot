@@ -115,20 +115,22 @@ export default async function TripPage({ params }: TripPageProps) {
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
   ]);
-  const initialTally = { yes: 0, maybe: 0, no: 0, total: 0 };
+  const initialTally = { yes: 0, love: 0, maybe: 0, total: 0 };
   for (const r of (voteRowsRes.data ?? []) as Array<{ vote: string }>) {
     if (r.vote === "yes") initialTally.yes++;
+    else if (r.vote === "love") initialTally.love++;
     else if (r.vote === "maybe") initialTally.maybe++;
-    else if (r.vote === "no") initialTally.no++;
+    // legacy "no" — quietly drop from the tally; the option no
+    // longer exists.
   }
   initialTally.total =
-    initialTally.yes + initialTally.maybe + initialTally.no;
+    initialTally.yes + initialTally.love + initialTally.maybe;
+  const myStoredVote =
+    (myVoteRes.data as { vote?: string } | null)?.vote ?? null;
   const initialVote =
-    ((myVoteRes.data as { vote?: string } | null)?.vote ?? null) as
-      | "yes"
-      | "maybe"
-      | "no"
-      | null;
+    myStoredVote === "yes" || myStoredVote === "love" || myStoredVote === "maybe"
+      ? (myStoredVote as "yes" | "love" | "maybe")
+      : null;
 
   // 60-day expiry. shared_at is null until the first share-CTA tap
   // or first view (set in Push 2). Pre-shared inquiries don't expire

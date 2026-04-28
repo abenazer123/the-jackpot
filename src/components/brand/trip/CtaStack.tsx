@@ -36,12 +36,12 @@ interface TalkProps extends CommonProps {
   dateRange: string;
 }
 
-type Vote = "yes" | "maybe" | "no";
+type Vote = "yes" | "love" | "maybe";
 
 interface VoteTally {
   yes: number;
+  love: number;
   maybe: number;
-  no: number;
   total: number;
 }
 
@@ -56,16 +56,20 @@ interface VoteCtaProps extends CommonProps {
 // ──────────────────────────────────────────────────────────────
 // Vote
 // ──────────────────────────────────────────────────────────────
+// Order matters — left-to-right reads as a ladder of conviction
+// with the high-signal "This is it" anchored in the middle. The
+// middle button gets a richer gold treatment so it visually wins
+// the eye, mirroring its status as the strongest commitment.
 const VOTE_LABELS: ReadonlyArray<[Vote, string]> = [
   ["yes", "I like it"],
+  ["love", "This is it"],
   ["maybe", "Not sure yet"],
-  ["no", "Sit this one out"],
 ];
 
 const TALLY_LABELS: Record<Vote, string> = {
   yes: "like it",
+  love: "love it",
   maybe: "not sure",
-  no: "sitting out",
 };
 
 export function TripVoteCta({
@@ -143,7 +147,7 @@ export function TripVoteCta({
       </div>
       {tally.total > 0 ? (
         <ul className={styles.tally} aria-label="Group tally">
-          {(["yes", "maybe", "no"] as ReadonlyArray<Vote>).map((id) => (
+          {(["yes", "love", "maybe"] as ReadonlyArray<Vote>).map((id) => (
             <li
               key={id}
               className={styles.tallyItem}

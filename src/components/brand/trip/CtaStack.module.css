@@ -58,7 +58,7 @@
   font-size: 13px;
   letter-spacing: 0.2px;
   cursor: pointer;
-  transition: background var(--jp-transition), border-color var(--jp-transition), color var(--jp-transition);
+  transition: background var(--jp-transition), border-color var(--jp-transition), color var(--jp-transition), filter var(--jp-transition), transform 80ms ease;
   white-space: nowrap;
 }
 
@@ -77,19 +77,46 @@
   cursor: default;
 }
 
+/* "This is it" — the high-signal middle button. Solid gradient
+   gold so it visually outweighs the two outlined neighbors.
+   Slightly heavier vertical scale + a soft gold glow so it
+   reads as the primary action without being a different shape. */
+.voteButton[data-vote="love"] {
+  flex: 1.15 1 0;
+  background: linear-gradient(135deg, #e8b923, #ff9050);
+  color: #ffffff;
+  border-color: transparent;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 14px 12px;
+  box-shadow: 0 6px 18px rgba(200, 110, 30, 0.28);
+}
+
+.voteButton[data-vote="love"]:hover:not(:disabled) {
+  filter: brightness(1.05) saturate(1.04);
+  background: linear-gradient(135deg, #e8b923, #ff9050);
+  border-color: transparent;
+  transform: translateY(-1px);
+}
+
+.voteButton[data-vote="love"]:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Active states (after the friend has voted) */
 .voteButtonActive[data-vote="yes"] {
   background: #6a8a55;
   color: var(--jp-text-on-color);
   border-color: #6a8a55;
 }
 
-.voteButtonActive[data-vote="maybe"] {
-  background: var(--jp-gold-deep);
-  color: var(--jp-text-on-color);
-  border-color: var(--jp-gold-deep);
+.voteButtonActive[data-vote="love"] {
+  /* Already gold — bump shadow + retain gradient on active so the
+     friend's pick stays visually anchored. */
+  box-shadow: 0 8px 24px rgba(200, 110, 30, 0.45);
 }
 
-.voteButtonActive[data-vote="no"] {
+.voteButtonActive[data-vote="maybe"] {
   background: rgba(122, 96, 48, 0.55);
   color: var(--jp-text-on-color);
   border-color: rgba(122, 96, 48, 0.55);
@@ -145,12 +172,13 @@
   color: #6a8a55;
 }
 
-.tallyItem[data-vote="maybe"] .tallyCount {
+.tallyItem[data-vote="love"] .tallyCount {
   color: var(--jp-gold-deep);
+  font-size: 28px;
 }
 
-.tallyItem[data-vote="no"] .tallyCount {
-  color: rgba(122, 96, 48, 0.6);
+.tallyItem[data-vote="maybe"] .tallyCount {
+  color: rgba(122, 96, 48, 0.7);
 }
 
 .tallyLabel {

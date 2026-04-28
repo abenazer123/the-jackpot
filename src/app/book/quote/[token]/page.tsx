@@ -105,21 +105,26 @@ export default async function QuotePage({ params }: QuotePageProps) {
 
       {tally.total > 0 ? (
         <p className={styles.tally}>
-          <span className={styles.tallyEyebrow}>Group says &rarr;</span>{" "}
-          <span className={styles.tallyYes}>{tally.yes} like it</span>
+          <span className={styles.tallyEyebrow}>Group says &rarr;</span>
+          {tally.love > 0 ? (
+            <>
+              {" "}
+              <span className={styles.tallyLove}>
+                {tally.love} love it
+              </span>
+            </>
+          ) : null}
+          {tally.yes > 0 ? (
+            <>
+              {tally.love > 0 ? " · " : " "}
+              <span className={styles.tallyYes}>{tally.yes} like it</span>
+            </>
+          ) : null}
           {tally.maybe > 0 ? (
             <>
               {" "}&middot;{" "}
               <span className={styles.tallyMaybe}>
                 {tally.maybe} not sure
-              </span>
-            </>
-          ) : null}
-          {tally.no > 0 ? (
-            <>
-              {" "}&middot;{" "}
-              <span className={styles.tallyNo}>
-                {tally.no} sitting out
               </span>
             </>
           ) : null}
@@ -160,8 +165,8 @@ export default async function QuotePage({ params }: QuotePageProps) {
 
 interface Tally {
   yes: number;
+  love: number;
   maybe: number;
-  no: number;
   reservations: number;
   total: number;
 }
@@ -177,16 +182,17 @@ async function loadTally(inquiryId: string): Promise<Tally> {
   ]);
   const tally: Tally = {
     yes: 0,
+    love: 0,
     maybe: 0,
-    no: 0,
     reservations: reservationsRes.count ?? 0,
     total: 0,
   };
   for (const row of (votesRes.data ?? []) as Array<{ vote: string }>) {
     if (row.vote === "yes") tally.yes++;
+    else if (row.vote === "love") tally.love++;
     else if (row.vote === "maybe") tally.maybe++;
-    else if (row.vote === "no") tally.no++;
+    // legacy "no" votes — silently dropped from the new tally.
   }
-  tally.total = tally.yes + tally.maybe + tally.no + tally.reservations;
+  tally.total = tally.yes + tally.love + tally.maybe + tally.reservations;
   return tally;
 }
