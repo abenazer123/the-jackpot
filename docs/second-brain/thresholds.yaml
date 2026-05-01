@@ -1,0 +1,450 @@
+# Threshold Database — The Jackpot Revenue Management Agent
+# Version: 1.0
+# Last Updated: 2026-04-30
+# 
+# This file is read by the agent at the start of every run.
+# All thresholds carry an "override_status" field:
+#   - "default"          = original Claude-derived value, not yet operator-reviewed
+#   - "operator_approved" = explicitly approved by operator
+#   - "operator_override" = operator changed the value
+#   - "active_test"      = currently A/B testing or calibrating
+#
+# When operator updates a value, also update last_updated and notes.
+
+meta:
+  version: 1.0
+  property: "The Jackpot"
+  property_id: "stravon_jackpot_001"
+  last_updated: "2026-04-30"
+  master_kb_version: 1.0
+
+# ============================================================
+# T-1: Compression detection thresholds (2-of-3 test)
+# Master KB §5.4, §6.4
+# ============================================================
+T-1:
+  description: "Multi-signal compression detection"
+  override_status: "default"
+  last_updated: "2026-04-30"
+  notes: "Pending operator review. Tighten by 20% during known event windows per Chicago calibration."
+  
+  signal_1_market_occupancy:
+    sd_multiplier: 1.0          # SDs above trailing 3-yr mean
+    pp_fallback: 15             # percentage points if SD unavailable
+  
+  signal_2_comp_set_drop:
+    threshold_pct: 0.30         # 30% availability drop in 7 days
+    window_days: 7
+  
+  signal_3_pickup_acceleration:
+    multiplier: 1.5             # 1.5x trailing 14-day baseline
+    baseline_days: 14
+  
+  event_window_tightening:
+    enabled: true
+    tightening_factor: 0.80     # multiply thresholds by 0.80 during known event windows
+
+# ============================================================
+# T-2: Price adjustment magnitude function
+# Master KB §7.3
+# ============================================================
+T-2:
+  description: "Composite magnitude function: base × signal × lead_time"
+  override_status: "default"
+  last_updated: "2026-04-30"
+  notes: "Resulting band: 7%–19.5%. Pending operator review."
+  
+  base_step: 0.10
+  
+  signal_multipliers:
+    1: 1.0
+    2: 1.3
+    3: 1.5  # full compression
+  
+  lead_time_multipliers:
+    Far-Out: 0.7              # T-minus > 90 days
+    Planning-Window: 0.7      # 31-90 days
+    Active-Demand: 1.0        # 15-30 days
+    Close-In: 1.3             # 0-14 days
+
+# ============================================================
+# T-3: Event price multiplier cap
+# Master KB §8.1
+# ============================================================
+T-3:
+  description: "Maximum allowed event multiplier vs. base price"
+  override_status: "default"
+  last_updated: "2026-04-30"
+  notes: "Generic cap. Lolla-specific override in T-13."
+  default_cap: 2.5
+  exceptions:
+    Lollapalooza: 3.0          # see T-13
+
+# ============================================================
+# T-4: Cancellation rate operational priors (until property data overrides)
+# Master KB §11
+# ============================================================
+T-4:
+  description: "Industry priors for cancellation rates by policy tier"
+  override_status: "active"
+  last_updated: "2026-04-30"
+  notes: "Replace with realized property data after 12 months of cancellation history (target: Nov 2026)."
+  
+  by_policy:
+    flexible: { rate_low: 0.15, rate_high: 0.20 }
+    moderate: { rate_low: 0.08, rate_high: 0.12 }
+    firm:     { rate_low: 0.05, rate_high: 0.08 }
+    strict:   { rate_low: 0.03, rate_high: 0.05 }
+  
+  notes_2: "These are blended priors. For The Jackpot specifically, large group bookings tend toward higher cancel rates — adjust upward 2-3pp once data confirms."
+
+# ============================================================
+# T-5: Cancellation policy pricing differentials
+# Master KB §8.3
+# ============================================================
+T-5:
+  description: "Price differential vs. base for each cancellation tier"
+  override_status: "default"
+  last_updated: "2026-04-30"
+  notes: "Pending operator review. Avoid Super Strict due to Airbnb's +2% fee penalty."
+  
+  refundable: { adjustment_low: 0.05, adjustment_high: 0.08 }     # +5% to +8%
+  moderate:   { adjustment_low: 0.0,  adjustment_high: 0.0 }      # base
+  firm:       { adjustment_low: -0.07, adjustment_high: -0.03 }   # -3% to -7%
+  strict:     { adjustment_low: -0.15, adjustment_high: -0.10 }   # -10% to -15%
+  
+  default_for_dates:
+    standard: "moderate"
+    peak_event_dates: "firm"
+
+# ============================================================
+# T-6: Orphan night decision rule
+# Master KB §8.4
+# ============================================================
+T-6:
+  description: "When to allow short stays in calendar gaps"
+  override_status: "default"
+  last_updated: "2026-04-30"
+  notes: "The Jackpot adjustment: weekday orphans owner-filled, less aggressive discounting."
+  
+  rules:
+    - lead_time_min: 14
+      lead_time_max: 999
+      action: "hold_los_restriction"
+      reason: "Wait for longer demand"
+    - lead_time_min: 7
+      lead_time_max: 14
+      action: "allow_2_night"
+      premium_low: 0.15
+      premium_high: 0.20
+    - lead_time_min: 3
+      lead_time_max: 7
+      action: "allow_1_to_2_night"
+      premium_low: 0.05
+      premium_high: 0.10
+    - lead_time_min: 0
+      lead_time_max: 3
+      action: "allow_1_night_no_premium"
+      premium_low: 0
+      premium_high: 0
+      floor: "variable_cost"
+  
+  jackpot_adjustment:
+    weekday_orphan_floor: "T-11_value"  # don't deep-discount weekday gaps; owner self-fills
+
+# ============================================================
+# T-7: 1-night premium by lead time
+# Master KB §8.3
+# ============================================================
+T-7:
+  description: "Markup applied to 1-night bookings by lead time"
+  override_status: "default"
+  last_updated: "2026-04-30"
+  
+  by_lead_time:
+    14_plus_days: { premium_low: 0.20, premium_high: 0.30 }
+    7_to_14_days: { premium_low: 0.10, premium_high: 0.20 }
+    3_to_7_days:  { premium_low: 0.0,  premium_high: 0.10 }
+    0_to_3_days:  { premium_low: 0.0,  premium_high: 0.0 }
+
+# ============================================================
+# T-8: 75-55-35 framework gap thresholds
+# Master KB §7.2
+# ============================================================
+T-8:
+  description: "Occupancy gap thresholds for raise/hold/drop classification"
+  override_status: "default"
+  last_updated: "2026-04-30"
+  notes: "Pending operator review. May tighten after sufficient property history accumulates."
+  
+  target_occupancy_by_regime:
+    Close-In: 0.75              # 0-7 days
+    Active-Demand-1: 0.55       # 8-14 days
+    Active-Demand-2: 0.35       # 15-30 days
+    Planning-Window: 0.10       # 31-90 days
+    Far-Out: 0.05               # 91+ days
+  
+  gap_action_table:
+    - gap_min: 0.30
+      action: "drop_aggressive"
+      magnitude_low: 0.10
+      magnitude_high: 0.15
+    - gap_min: 0.15
+      gap_max: 0.30
+      action: "drop_mild"
+      magnitude_low: 0.05
+      magnitude_high: 0.10
+    - gap_min: -0.10
+      gap_max: 0.15
+      action: "hold"
+      magnitude_low: 0
+      magnitude_high: 0
+    - gap_min: -0.25
+      gap_max: -0.10
+      action: "raise_mild"
+      magnitude_low: 0.05
+      magnitude_high: 0.10
+    - gap_max: -0.25
+      action: "raise_aggressive"
+      magnitude_low: 0.10
+      magnitude_high: 0.15
+
+# ============================================================
+# T-9: Forward demand formula (structural — formula correct)
+# Master KB §6.2
+# ============================================================
+T-9:
+  description: "Forward occupancy forecast formula"
+  override_status: "structural"
+  last_updated: "2026-04-30"
+  notes: "Formula is correct. Numerical inputs come from PriceLabs market data per lead-time bucket."
+  
+  formula: "forecast = current_occupancy + fill_rate_remaining × (1 - current_occupancy)"
+  fill_rate_remaining_source: "pricelabs_get_market_data"
+
+# ============================================================
+# T-10: Optimal occupancy target range
+# Master KB §11
+# ============================================================
+T-10:
+  description: "Year-end blended occupancy target range"
+  override_status: "default"
+  last_updated: "2026-04-30"
+  notes: "Revised down for upscale 14-guest profile with weekday self-fill pattern."
+  
+  target_range_low: 0.55
+  target_range_high: 0.70
+  jackpot_specific_rationale: "Weekend-yield primary, weekday-yield secondary (owner self-fills); accepts vacancy"
+
+# ============================================================
+# T-11: Weekday minimum price floor
+# Master KB §8.1, §9.1
+# ============================================================
+T-11:
+  description: "Absolute weekday floor price"
+  override_status: "default"
+  last_updated: "2026-04-30"
+  notes: "Pending operator confirmation. Summer test recommended."
+  
+  weekday_floor_default: 450    # midpoint of $400-500 range
+  weekday_floor_summer_test: null  # if operator wants to test lower floor in summer
+  
+  rationale: "Above variable cost ($540), prevents low-rate algorithm contamination of weekend rank, accepts weekday vacancy given owner self-fill pattern."
+
+# ============================================================
+# T-12: Weekend minimum price floor (seasonal)
+# Master KB §8.1, §9.1
+# ============================================================
+T-12:
+  description: "Weekend price floor by season"
+  override_status: "default"
+  last_updated: "2026-04-30"
+  notes: "Anchored to realized seasonal weekend ADR data through Apr 2026."
+  
+  by_season:
+    winter: 625                 # Dec-Feb realized
+    spring_shoulder: 800        # Mar-May
+    fall_shoulder: 700          # Sep-Nov
+    peak_summer: 1200           # Jun-Aug
+
+# ============================================================
+# T-13: Lollapalooza weekend pricing override
+# Master KB §9.4
+# ============================================================
+T-13:
+  description: "Special multiplier cap for Lollapalooza weekend"
+  override_status: "default"
+  last_updated: "2026-04-30"
+  
+  multiplier_cap: 3.0
+  los_minimum: 4
+  cancellation_tier: "firm"
+  multiplier_target_low: 2.5
+  multiplier_target_high: 3.0
+  
+  applies_to_dates: ["2026-07-30", "2026-07-31", "2026-08-01", "2026-08-02"]
+  notes: "Highest-magnitude annual event. Realized 2025 forward booking at $2,173 mid-July is floor not ceiling."
+
+# ============================================================
+# T-14: Hot tub maintenance impact on availability
+# Master KB §9.2
+# ============================================================
+T-14:
+  description: "Hot tub uptime as revenue protection priority"
+  override_status: "default"
+  last_updated: "2026-04-30"
+  notes: "Pending operator confirmation on realistic frequency."
+  
+  maintenance_priority: "high"
+  schedule_in: "lowest_demand_weekday_gaps"
+  weekend_downtime_revenue_impact: "high"
+  
+  amenity_premium_by_season:
+    winter: { low: 50, high: 80 }
+    shoulder: { low: 30, high: 60 }
+    summer: { low: 20, high: 40 }
+
+# ============================================================
+# T-15: Vrbo summer channel markdown (active test)
+# Master KB §8.2, §9.3
+# ============================================================
+T-15:
+  description: "Channel-specific markdown for Vrbo May-Aug 2026"
+  override_status: "active_test"
+  last_updated: "2026-04-30"
+  test_started: "2026-04-30"
+  test_evaluation_date: "2026-05-14"
+  
+  current_value: 0.08          # 8% markdown vs Airbnb gross
+  applies_to_channel: "vrbo"
+  applies_to_months: [5, 6, 7, 8]
+  
+  evaluation_criteria:
+    if_pickup_recovers_within_14d: "hold_at_current"
+    if_no_pickup_recovery: "widen_to_low"
+    widen_to_low: 0.10
+    widen_to_high: 0.12
+  
+  rationale: "Zero forward Vrbo bookings May-Jul despite strong off-season Vrbo performance. Test channel-specific markdown to recover audience price expectations."
+
+# ============================================================
+# Confidence Tier State
+# Master KB §8.5
+# ============================================================
+confidence_state:
+  current_tier: "C2"
+  last_promoted: "2026-04-30"  # initial designation; will update on promotion
+  
+  tier_descriptions:
+    C0: "Cold-Start: no history; conservative defaults; flag for human"
+    C1: "Comp-Anchored: comp set known; ±10% market median; flag changes >15%"
+    C2: "History-Informed: 3+ months own history; act within ±15% of base autonomously"
+    C3: "Pacing-Calibrated: history + pacing benchmarks; full dynamic pricing within anchors"
+    C4: "Elasticity-Mapped: per-segment elasticity coefficients; near full autonomy"
+  
+  promotion_criteria:
+    C2_to_C3:
+      - "12+ months of property history"
+      - "YoY pacing comparisons available"
+      - "Realized-outcome tracking confirms forecast reliability"
+    C3_to_C4:
+      - "24+ months of property history"
+      - "Per-segment elasticity coefficients statistically validated"
+      - "12+ months of clean C3 operation"
+
+# ============================================================
+# Hard Escalation Triggers (always escalate regardless of tier)
+# Master KB §12.3
+# ============================================================
+hard_escalation_triggers:
+  - description: "Price below variable cost floor"
+    trigger: "proposed_price < variable_cost_per_booking / avg_los"
+  - description: "Base price change > 10% in single audit"
+    trigger: "abs(base_price_change_pct) > 0.10"
+  - description: "Maximum price increase"
+    trigger: "max_price_change_proposed"
+  - description: "Cancellation policy change outside Moderate/Firm"
+    trigger: "proposed_policy IN ['flexible', 'strict', 'super_strict']"
+  - description: "Event multiplier > 2.5x except Lolla 3.0x"
+    trigger: "event_multiplier > 2.5 AND NOT (event == 'Lollapalooza' AND multiplier <= 3.0)"
+  - description: "Data anomaly detected"
+    trigger: "any_data_anomaly_flag"
+  - description: "Compliance/regulatory question"
+    trigger: "topic_includes_compliance_or_regulatory"
+  - description: "Capital expenditure or amenity change"
+    trigger: "topic_includes_capex_or_amenity"
+
+# ============================================================
+# Tier-Based Escalation Triggers
+# Master KB §8.5
+# ============================================================
+tier_escalation_triggers:
+  C0:
+    magnitude_threshold: 0      # everything escalates
+  C1:
+    magnitude_threshold: 0.15   # >15% magnitude escalates
+  C2:
+    magnitude_threshold: 0.20   # >20% magnitude escalates
+  C3:
+    magnitude_threshold: 0.30
+  C4:
+    magnitude_threshold: 0.50
+
+# ============================================================
+# Property Cost Structure (for break-even / floor calculations)
+# Master KB §2.2
+# ============================================================
+cost_structure:
+  fixed_monthly:
+    mortgage_with_tax_insurance: 5210
+    electric: 250
+    gas_average: 250
+    gas_winter_uplift: 250    # add to gas_average for winter months Nov-Mar
+    hot_tub_chemicals: 150
+    internet: 90
+    pricelabs: 40
+    total: 5990
+  
+  variable_per_booking:
+    cleaning: 350
+    laundry: 150
+    welcome_gifts: 40
+    total: 540
+  
+  # Operating break-even (cost-side floor only; positioning floor in T-11/T-12 is higher)
+  break_even_calculation:
+    variable_cost_floor_per_night: 180    # 540 / 3-night avg LOS
+    fixed_cost_per_month: 5990
+    fixed_cost_winter: 6240               # add gas uplift Nov-Mar
+
+# ============================================================
+# Channel Configuration
+# Master KB §8.2
+# ============================================================
+channels:
+  airbnb:
+    take_rate_default: 0.155
+    take_rate_super_strict: 0.175
+    cancellation_default: "moderate"
+    parity_priority: 1                  # primary anchor
+  vrbo:
+    take_rate_pms: 0.05
+    take_rate_pay_per_booking: 0.08
+    cancellation_default: "moderate"
+    parity_priority: 2
+    summer_markdown_active: true        # references T-15
+  direct:
+    take_rate: 0.029                    # payment processing only
+    cancellation_default: "firm"
+    parity_priority: 3
+    active: false                       # not yet activated; Phase 8
+
+# ============================================================
+# Goal Architecture
+# Master KB §2.5
+# ============================================================
+goals:
+  annual_revenue_target_stretch: 200000
+  annual_revenue_target_floor: 175000
+  goal_definition: "gross_revenue_all_channels"
+  notes: "Goal is GROSS revenue. Net cushion above break-even is ~$30K-$45K depending on path."
