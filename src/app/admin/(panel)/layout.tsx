@@ -31,6 +31,7 @@ export default async function AdminLayout({
           <Link href="/admin">Overview</Link>
           <Link href="/admin/categories">Categories</Link>
           <Link href="/admin/entries">Entries</Link>
+          <Link href="/admin/monthly">Monthly</Link>
           <Link href="/admin/capex">Capex</Link>
         </nav>
         <form action={logout} className={styles.logoutForm}>

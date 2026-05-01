@@ -1,19 +1,22 @@
 /**
- * Edge middleware — gates /admin/* routes behind the admin
- * session cookie. Login page itself is exempt (otherwise the
- * redirect would loop). All other admin paths redirect to
- * /admin/login when the cookie is missing or doesn't match
+ * Edge proxy — gates /admin/* routes behind the admin session
+ * cookie. Login page itself is exempt (otherwise the redirect
+ * would loop). All other admin paths redirect to /admin/login
+ * when the cookie is missing or doesn't match
  * ADMIN_SESSION_TOKEN.
  *
  * The cookie is set/cleared by src/lib/admin/auth.ts; this file
  * only verifies presence + value match.
+ *
+ * Next 16: this is the `proxy.ts` convention — formerly
+ * `middleware.ts`. Same shape, renamed file + function.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
 
 const COOKIE_NAME = "jp_admin";
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Login page is the one /admin/* path that's always reachable.

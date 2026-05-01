@@ -278,3 +278,56 @@
   color: var(--jp-error, #b04a3a);
   margin-bottom: 14px;
 }
+
+/* Variance pill — actual vs baseline. */
+.variancePill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--jp-radius-full);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.variancePillUnder {
+  background: var(--jp-sage-10, rgba(138, 160, 119, 0.12));
+  color: var(--jp-sage-deep, #6a8a55);
+}
+
+.variancePillAt {
+  background: var(--jp-gold-10, rgba(212, 169, 48, 0.12));
+  color: var(--jp-gold-deep);
+}
+
+.variancePillOver {
+  background: rgba(176, 74, 58, 0.1);
+  color: var(--jp-error, #b04a3a);
+}
+
+/* Bulk monthly snapshot form. */
+.bulkRow {
+  display: grid;
+  grid-template-columns: 1fr 110px 130px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--jp-border-subtle);
+}
+
+.bulkRow:last-of-type {
+  border-bottom: 0;
+}
+
+.bulkRowLabel {
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-primary);
+}
+
+.bulkRowBaseline {
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  color: var(--jp-text-tertiary);
+  text-align: right;
+}
