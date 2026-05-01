@@ -1,0 +1,280 @@
+/* Shared utility classes for the admin panel pages. */
+
+.h1 {
+  margin: 0 0 6px;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(24px, 3vw, 32px);
+  color: var(--jp-text-primary);
+}
+
+.subtitle {
+  margin: 0 0 24px;
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-secondary);
+}
+
+.section {
+  margin-top: 28px;
+}
+
+.sectionTitle {
+  margin: 0 0 12px;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+}
+
+/* Card grid for overview KPIs */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.kpi {
+  padding: 18px 20px;
+  background: var(--jp-bg-secondary, #f3ead4);
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-md);
+}
+
+.kpiLabel {
+  font-family: var(--jp-font-body);
+  font-size: 11px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin: 0 0 4px;
+}
+
+.kpiValue {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 26px;
+  color: var(--jp-text-primary);
+  margin: 0;
+}
+
+.kpiSub {
+  margin: 4px 0 0;
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  color: var(--jp-text-secondary);
+}
+
+/* Tables (used as CSS-grid rows so each row can be its own form) */
+.table {
+  display: flex;
+  flex-direction: column;
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-md);
+  overflow: hidden;
+}
+
+.tableHeader,
+.tableRow {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--jp-border-subtle);
+}
+
+.tableRow:last-child {
+  border-bottom: 0;
+}
+
+.tableHeader {
+  background: var(--jp-bg-secondary, #f3ead4);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+}
+
+.tableRow {
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-primary);
+}
+
+.tableRow:nth-child(even) {
+  background: rgba(212, 169, 48, 0.03);
+}
+
+.cell {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cellMuted {
+  color: var(--jp-text-tertiary);
+  font-size: 12px;
+}
+
+.bucketTag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--jp-radius-full);
+  background: var(--jp-gold-10, rgba(212, 169, 48, 0.12));
+  color: var(--jp-gold-deep);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-sm);
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-primary);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.input:focus-visible,
+.select:focus-visible {
+  border-color: var(--jp-gold-deep);
+}
+
+.button {
+  padding: 7px 14px;
+  background: var(--jp-gold-deep);
+  color: var(--jp-text-on-color);
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: filter 150ms ease;
+}
+
+.button:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.buttonGhost {
+  padding: 7px 14px;
+  background: transparent;
+  color: var(--jp-text-secondary);
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-full);
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.buttonGhost:hover {
+  color: var(--jp-gold-deep);
+  border-color: var(--jp-gold-deep);
+}
+
+.buttonDanger {
+  padding: 7px 14px;
+  background: transparent;
+  color: var(--jp-error, #b04a3a);
+  border: 1px solid var(--jp-error, #b04a3a);
+  border-radius: var(--jp-radius-full);
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.formCard {
+  padding: 18px 20px;
+  background: var(--jp-bg-secondary, #f3ead4);
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-md);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 24px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldLabel {
+  font-family: var(--jp-font-body);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+}
+
+.muted {
+  color: var(--jp-text-tertiary);
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-secondary);
+  background: var(--jp-bg-secondary, #f3ead4);
+  border: 1px dashed var(--jp-border-subtle);
+  border-radius: var(--jp-radius-md);
+}
+
+.bucketFilter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.bucketChip {
+  padding: 4px 10px;
+  border-radius: var(--jp-radius-full);
+  background: var(--jp-bg-secondary, #f3ead4);
+  border: 1px solid var(--jp-border-subtle);
+  font-family: var(--jp-font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--jp-text-secondary);
+  text-decoration: none;
+}
+
+.bucketChipActive {
+  background: var(--jp-gold-deep);
+  color: var(--jp-text-on-color);
+  border-color: var(--jp-gold-deep);
+}
+
+.error {
+  padding: 10px 14px;
+  background: rgba(176, 74, 58, 0.08);
+  border: 1px solid rgba(176, 74, 58, 0.3);
+  border-radius: var(--jp-radius-md);
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  color: var(--jp-error, #b04a3a);
+  margin-bottom: 14px;
+}
