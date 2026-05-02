@@ -13,6 +13,7 @@
 
 import Link from "next/link";
 
+import { BUCKETS } from "@/lib/admin/buckets";
 import { supabaseServer } from "@/lib/supabase-server";
 
 import styles from "../admin.module.css";
@@ -190,6 +191,19 @@ export default async function CategoriesPage({
         <em>per_booking</em> categories average per entry. Variance pill compares
         most recent (3mo) to baseline.
       </p>
+
+      <details className={styles.disclosure} style={{ marginBottom: 14 }}>
+        <summary>What do A1 / B1 / etc. mean?</summary>
+        <div className={styles.disclosureBody}>
+          {BUCKETS.map((b) => (
+            <div key={b.code} className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>{b.code}</div>
+              <div className={styles.disclosureName}>{b.name}</div>
+              <div className={styles.disclosureDesc}>{b.description}</div>
+            </div>
+          ))}
+        </div>
+      </details>
 
       <div className={styles.bucketFilter}>
         <Link

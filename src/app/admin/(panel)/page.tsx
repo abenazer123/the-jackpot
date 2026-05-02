@@ -6,19 +6,21 @@
  *   2. Cost structure breakdown — Fixed (per month) and Variable
  *      (per booking) line-itemed from active categories.
  *   3. Drift signals — diagnostic KPIs from Phase A of the
- *      Second Brain KPI map. All values data-derived: YTD pacing
- *      vs baseline, repair pulse, capex lifetime, baseline
- *      coverage, top drift categories.
- *   4. Recent entries.
- *
- * Profitability KPIs (P&L, contribution margin, goal pacing,
- * break-even ADR) need a PriceLabs reservation snapshot in
- * Supabase — that's Phase 6.1 in phase-6-architecture-v2.md
- * and is intentionally not surfaced here.
+ *      Second Brain KPI map.
+ *   4. Pricing math (live) — CVP KPIs (ADR, LOS, variable
+ *      per night, CM, CM ratio, break-even). ADR + LOS pulled
+ *      live from PriceLabs reservation_data. Stopgap; see
+ *      docs/second-brain/architecture-decisions.md §3 for the
+ *      proper version (cron + reservations table).
+ *   5. Recent entries.
+ *   6. Methodology — formula + explanation for every KPI on
+ *      the page, plus a bucket-code legend.
  */
 
 import Link from "next/link";
 
+import { BUCKETS } from "@/lib/admin/buckets";
+import { getRealizedAdr } from "@/lib/pricing/realized";
 import { supabaseServer } from "@/lib/supabase-server";
 
 import styles from "./admin.module.css";
@@ -178,6 +180,7 @@ export default async function AdminHome() {
     monthRes,
     trailingRes,
     recentRes,
+    realized,
   ] = await Promise.all([
     sb
       .from("expense_categories")
@@ -204,6 +207,11 @@ export default async function AdminHome() {
       )
       .order("entry_date", { ascending: false })
       .limit(8),
+    // Stopgap: live PriceLabs pull. See architecture-decisions.md §3.
+    getRealizedAdr().catch((e) => {
+      console.error("[admin] getRealizedAdr failed", e);
+      return null;
+    }),
   ]);
 
   const categories = (catsRes.data ?? []) as CategoryRow[];
@@ -443,7 +451,19 @@ export default async function AdminHome() {
 
       <section className={styles.section}>
         <p className={styles.sectionTitle}>Cost structure</p>
-        <div className={styles.breakdownGrid}>
+        <details className={styles.disclosure}>
+          <summary>What do A1 / B1 / etc. mean?</summary>
+          <div className={styles.disclosureBody}>
+            {BUCKETS.map((b) => (
+              <div key={b.code} className={styles.disclosureRow}>
+                <div className={styles.disclosureCode}>{b.code}</div>
+                <div className={styles.disclosureName}>{b.name}</div>
+                <div className={styles.disclosureDesc}>{b.description}</div>
+              </div>
+            ))}
+          </div>
+        </details>
+        <div className={styles.breakdownGrid} style={{ marginTop: 14 }}>
           <div className={styles.breakdownCard}>
             <p className={styles.breakdownTitle}>Fixed (per month)</p>
             {a1Items.map((c) => (
@@ -654,16 +674,118 @@ export default async function AdminHome() {
           </p>
         ) : null}
 
-        <p
-          className={styles.breakdownNote}
-          style={{ marginTop: 14 }}
-        >
-          Profitability KPIs (P&amp;L, contribution margin, goal pacing,
-          break-even ADR) need a PriceLabs reservation snapshot in Supabase —
-          tracked as Phase 6.1 in{" "}
-          <code>docs/second-brain/phase-6-architecture-v2.md</code>.
-        </p>
       </section>
+
+      {/* ─── Pricing math (live) ─────────────────────────── */}
+      {(() => {
+        // CVP KPIs from KB §5.1 + the worksheet (PDF §2/§3).
+        // ADR + LOS are pulled live from PriceLabs (stopgap;
+        // see architecture-decisions.md §3 row 1).
+        // Channel fees are NOT in CM — see data-watchlist.md §1.
+        const adrCents = realized?.adrCents ?? null;
+        const losNights = realized?.avgLosNights ?? null;
+        const varPerNightCents =
+          baselineB1 > 0 && losNights && losNights > 0
+            ? Math.round(baselineB1 / losNights)
+            : null;
+        const cmCents =
+          adrCents != null && varPerNightCents != null
+            ? adrCents - varPerNightCents
+            : null;
+        const cmRatioPct =
+          cmCents != null && adrCents && adrCents > 0
+            ? (cmCents / adrCents) * 100
+            : null;
+        const breakEvenNights =
+          cmCents != null && cmCents > 0 && totalFixedMonthly > 0
+            ? totalFixedMonthly / cmCents
+            : null;
+
+        return (
+          <section className={styles.section}>
+            <p className={styles.sectionTitle}>Pricing math (live)</p>
+            <div className={styles.kpiGrid}>
+              <div className={styles.kpi}>
+                <p className={styles.kpiLabel}>ADR (180d realized)</p>
+                <p className={styles.kpiValue}>
+                  {adrCents == null ? "—" : fmt(adrCents)}
+                </p>
+                <p className={styles.kpiSub}>
+                  {realized
+                    ? `${realized.bookingsCount} bookings · ${realized.nights} nights · ${realized.pms}`
+                    : "live data unavailable"}
+                </p>
+              </div>
+              <div className={styles.kpi}>
+                <p className={styles.kpiLabel}>Avg LOS (180d)</p>
+                <p className={styles.kpiValue}>
+                  {losNights == null
+                    ? "—"
+                    : `${losNights.toFixed(1)} nights`}
+                </p>
+                <p className={styles.kpiSub}>
+                  {realized
+                    ? `${realized.windowStart} → ${realized.windowEnd}`
+                    : "live data unavailable"}
+                </p>
+              </div>
+              <div className={styles.kpi}>
+                <p className={styles.kpiLabel}>Variable / night</p>
+                <p className={styles.kpiValue}>
+                  {varPerNightCents == null
+                    ? "—"
+                    : fmt(varPerNightCents)}
+                </p>
+                <p className={styles.kpiSub}>
+                  {varPerNightCents == null
+                    ? "needs B1 baseline + LOS"
+                    : `${fmt(baselineB1)} B1 ÷ ${losNights?.toFixed(1)} nights`}
+                </p>
+              </div>
+              <div className={styles.kpi}>
+                <p className={styles.kpiLabel}>Contribution margin</p>
+                <p className={styles.kpiValue}>
+                  {cmCents == null ? "—" : fmt(cmCents)}
+                </p>
+                <p className={styles.kpiSub}>
+                  {cmCents == null
+                    ? "needs ADR + variable / night"
+                    : "per night, excl. channel fees"}
+                </p>
+              </div>
+              <div className={styles.kpi}>
+                <p className={styles.kpiLabel}>CM ratio</p>
+                <p className={styles.kpiValue}>
+                  {cmRatioPct == null
+                    ? "—"
+                    : `${cmRatioPct.toFixed(0)}%`}
+                </p>
+                <p className={styles.kpiSub}>CM ÷ ADR</p>
+              </div>
+              <div className={styles.kpi}>
+                <p className={styles.kpiLabel}>Break-even nights / mo</p>
+                <p className={styles.kpiValue}>
+                  {breakEvenNights == null
+                    ? "—"
+                    : breakEvenNights.toFixed(1)}
+                </p>
+                <p className={styles.kpiSub}>
+                  {breakEvenNights == null
+                    ? "needs CM > 0"
+                    : `total fixed ${fmt(totalFixedMonthly)} ÷ CM`}
+                </p>
+              </div>
+            </div>
+            <p className={styles.breakdownNote} style={{ marginTop: 12 }}>
+              Stopgap — ADR + LOS pulled live from PriceLabs at request time
+              (single channel: {realized?.pms ?? "Airbnb"}). Channel fees not
+              yet in CM. Proper version tracked in{" "}
+              <code>architecture-decisions.md</code> §3 +{" "}
+              <code>data-watchlist.md</code>.
+            </p>
+          </section>
+        );
+      })()}
 
       <section className={styles.section}>
         <p className={styles.sectionTitle}>Recent entries</p>
@@ -707,6 +829,141 @@ export default async function AdminHome() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* ─── Methodology ─────────────────────────────────── */}
+      <section className={styles.section}>
+        <details className={styles.disclosure}>
+          <summary>How are these computed?</summary>
+          <div className={styles.disclosureBody}>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Cost</div>
+              <div className={styles.disclosureName}>Baseline implied</div>
+              <div className={styles.disclosureDesc}>
+                <code>SUM(active A1 monthly baselines) + capex monthly carry</code>.
+                The expected monthly fixed cost before any per-booking variable.
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Cost</div>
+              <div className={styles.disclosureName}>Avg monthly (3mo / 12mo)</div>
+              <div className={styles.disclosureDesc}>
+                Mean of total <code>expense_entries.amount_cents</code> grouped by{" "}
+                <code>period_month</code>, taken over the last 3 / 12 calendar
+                months that had any data. Months with zero entries are skipped
+                (so a missing month doesn&rsquo;t drag the avg down).
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Cost</div>
+              <div className={styles.disclosureName}>This month spend</div>
+              <div className={styles.disclosureDesc}>
+                <code>SUM(amount_cents)</code> of entries with{" "}
+                <code>entry_date ≥ start of current month</code>.
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Cost</div>
+              <div className={styles.disclosureName}>Total fixed (per month)</div>
+              <div className={styles.disclosureDesc}>
+                <code>A1 monthly + (A2 annual ÷ 12) + capex amortization</code>.
+                The all-in fixed run-rate before variable per-booking turns.
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Cost</div>
+              <div className={styles.disclosureName}>Per-booking floor</div>
+              <div className={styles.disclosureDesc}>
+                <code>SUM(active B1 baselines)</code>. Direct turn cost only —
+                channel fees + payment processing add on top (not yet
+                included; see <code>data-watchlist.md</code> §1).
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Drift</div>
+              <div className={styles.disclosureName}>YTD A1 pacing</div>
+              <div className={styles.disclosureDesc}>
+                Actual: <code>SUM(A1 entries since Jan 1)</code>. Expected:{" "}
+                <code>monthsElapsed × baselineA1</code>, where{" "}
+                <code>monthsElapsed</code> is fractional (e.g. May 15 ≈ 4.45).
+                Variance pill compares actual to expected.
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Drift</div>
+              <div className={styles.disclosureName}>Repair pulse (C1)</div>
+              <div className={styles.disclosureDesc}>
+                This month: <code>COUNT/SUM</code> of C1 entries with{" "}
+                <code>period_month = current</code>. Trailing 90d:{" "}
+                <code>SUM(C1 last 90d) ÷ 3</code> = monthly average. Spike
+                signal for the bi-weekly cadence.
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Drift</div>
+              <div className={styles.disclosureName}>Top drift categories</div>
+              <div className={styles.disclosureDesc}>
+                Per active category with a baseline:{" "}
+                <code>(3mo trailing avg − baseline) ÷ baseline</code>. Filtered
+                to <code>|Δ| &gt; 5%</code>, sorted by absolute magnitude, top
+                3.
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Pricing</div>
+              <div className={styles.disclosureName}>ADR (180d realized)</div>
+              <div className={styles.disclosureDesc}>
+                <code>SUM(rental_revenue) ÷ SUM(no_of_days)</code> across all
+                booked PriceLabs reservations in the trailing 180 days,
+                single-listing (Airbnb only — see{" "}
+                <code>data-watchlist.md</code> §2).
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Pricing</div>
+              <div className={styles.disclosureName}>Avg LOS</div>
+              <div className={styles.disclosureDesc}>
+                <code>SUM(no_of_days) ÷ COUNT(bookings)</code> over the same
+                window. Average length of stay per booking.
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Pricing</div>
+              <div className={styles.disclosureName}>Variable / night</div>
+              <div className={styles.disclosureDesc}>
+                <code>B1 turn cost ÷ avg LOS</code>. The cleaning / laundry /
+                supplies cost spread over the nights of an average stay.
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Pricing</div>
+              <div className={styles.disclosureName}>Contribution margin</div>
+              <div className={styles.disclosureDesc}>
+                <code>ADR − variable / night</code>. The dollars left over per
+                night after direct variable costs, before fixed-cost coverage.
+                <strong> Excludes channel fees</strong> in this stopgap (see{" "}
+                <code>data-watchlist.md</code> §1).
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Pricing</div>
+              <div className={styles.disclosureName}>CM ratio</div>
+              <div className={styles.disclosureDesc}>
+                <code>(CM ÷ ADR) × 100</code>. The percent of every dollar of
+                ADR that survives variable costs.
+              </div>
+            </div>
+            <div className={styles.disclosureRow}>
+              <div className={styles.disclosureCode}>Pricing</div>
+              <div className={styles.disclosureName}>Break-even nights / mo</div>
+              <div className={styles.disclosureDesc}>
+                <code>total fixed monthly ÷ CM</code>. Nights at average ADR
+                needed each month to cover all fixed costs (mortgage, utilities,
+                capex carry). Below this, the property loses money.
+              </div>
+            </div>
+          </div>
+        </details>
       </section>
     </div>
   );

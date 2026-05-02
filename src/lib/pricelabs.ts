@@ -157,3 +157,90 @@ export async function fetchListingPrices(params: {
   }
   return first;
 }
+
+// ---------- /v1/reservation_data --------------------------------------
+
+/**
+ * One reservation as returned by /v1/reservation_data. Money fields are
+ * delivered as strings (dollars). The PMS-specific quirks are documented
+ * in `docs/pricelabs-api.md` §256:
+ *   - `rental_revenue` is post-platform-fee revenue (Airbnb + VRBO ✅;
+ *     Booking.com sometimes empty).
+ *   - `total_cost` is what the guest paid (includes cleaning).
+ *   - `guestName` is privacy-redacted ("Hidden").
+ */
+export interface PriceLabsReservation {
+  listing_id: string;
+  listing_name?: string;
+  reservation_id: string;
+  check_in: string; // YYYY-MM-DD
+  check_out: string; // YYYY-MM-DD
+  booking_status: "booked" | "cancelled";
+  booked_date: string; // ISO datetime
+  cancelled_on: string | null;
+  rental_revenue: string; // dollars, as string
+  total_cost: string;
+  no_of_days: number; // = nights
+  cleaning_fees?: number;
+  currency: string;
+  channelConfirmationCode: string | null;
+  guestName?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * GET /v1/reservation_data — auto-paginates until next_page=false. Each
+ * page returns up to 100 reservations.
+ *
+ * Required: pms. Optional: listing_id (filter), start_date, end_date
+ * (YYYY-MM-DD; check-in date filter — NOT `dateFrom`/`dateTo` like
+ * /v1/listing_prices uses).
+ *
+ * Designed to be called from both render-time code (today's stopgap) and
+ * a daily ingestion cron (Phase 6.1; see
+ * docs/second-brain/architecture-decisions.md §1).
+ */
+export async function fetchReservations(params: {
+  pms: string;
+  listing_id?: string;
+  start_date?: string;
+  end_date?: string;
+  pageSize?: number;
+}): Promise<PriceLabsReservation[]> {
+  const limit = params.pageSize ?? 100;
+  const out: PriceLabsReservation[] = [];
+  let offset = 0;
+
+  // Cap iterations defensively; 500 pages × 100 = 50k reservations is
+  // far beyond plausible. Stops a runaway loop if next_page never flips.
+  for (let i = 0; i < 500; i++) {
+    const qs = new URLSearchParams({
+      pms: params.pms,
+      limit: String(limit),
+      offset: String(offset),
+    });
+    if (params.listing_id) qs.set("listing_id", params.listing_id);
+    if (params.start_date) qs.set("start_date", params.start_date);
+    if (params.end_date) qs.set("end_date", params.end_date);
+
+    const res = await plFetch(`/v1/reservation_data?${qs}`);
+    if (!res.ok) {
+      const bodyText = await res.text().catch(() => "");
+      throw new Error(
+        `PriceLabs /v1/reservation_data failed: ${res.status} ${res.statusText} ${bodyText.slice(0, 400)}`,
+      );
+    }
+    const body = (await res.json()) as {
+      pms_name?: string;
+      next_page?: boolean;
+      data?: PriceLabsReservation[];
+    };
+    const page = body.data ?? [];
+    out.push(...page);
+
+    if (!body.next_page || page.length === 0) break;
+    offset += limit;
+  }
+
+  return out;
+}

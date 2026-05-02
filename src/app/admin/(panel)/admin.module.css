@@ -288,6 +288,83 @@ a.kpi:hover {
   margin-bottom: 14px;
 }
 
+/* Legend / methodology disclosure blocks. */
+.disclosure {
+  margin: 12px 0 0;
+  padding: 14px 18px;
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-md);
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-primary);
+}
+
+.disclosure summary {
+  cursor: pointer;
+  list-style: none;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+}
+
+.disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure summary::before {
+  content: "▸ ";
+  color: var(--jp-gold-deep);
+  font-size: 11px;
+}
+
+.disclosure[open] summary::before {
+  content: "▾ ";
+}
+
+.disclosureBody {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.disclosureRow {
+  display: grid;
+  grid-template-columns: 70px 200px 1fr;
+  gap: 12px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-top: 1px dashed var(--jp-border-subtle);
+}
+
+.disclosureRow:first-child {
+  border-top: 0;
+}
+
+.disclosureCode {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  color: var(--jp-gold-deep);
+}
+
+.disclosureName {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--jp-text-primary);
+}
+
+.disclosureDesc {
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  color: var(--jp-text-secondary);
+  line-height: 1.5;
+}
+
 /* Cost-structure breakdown cards. */
 .breakdownGrid {
   display: grid;
