@@ -20,9 +20,11 @@
 import Link from "next/link";
 
 import { BUCKETS } from "@/lib/admin/buckets";
+import { KPI_META } from "@/lib/admin/kpis";
 import { getRealizedAdr } from "@/lib/pricing/realized";
 import { supabaseServer } from "@/lib/supabase-server";
 
+import { KPICard } from "./_components/KPICard";
 import styles from "./admin.module.css";
 
 export const dynamic = "force-dynamic";
@@ -402,51 +404,51 @@ export default async function AdminHome() {
       </p>
 
       <section className={styles.kpiGrid}>
-        <Link href="/admin/categories?bucket=A1" className={styles.kpi}>
-          <p className={styles.kpiLabel}>Baseline implied</p>
-          <p className={styles.kpiValue}>{fmt(baselineImplied)}</p>
-          <p className={styles.kpiSub}>
-            {fmt(baselineA1)} A1 fixed + {fmt(capexMonthly)} capex amortization
-          </p>
-        </Link>
-        <Link href="/admin/monthly" className={styles.kpi}>
-          <p className={styles.kpiLabel}>Avg monthly (3mo)</p>
-          <p className={styles.kpiValue}>
-            {avg3 == null ? "—" : fmt(avg3)}
-          </p>
-          <p className={styles.kpiSub}>
-            {months3.length === 0
+        <KPICard
+          meta={KPI_META.baseline_implied}
+          value={fmt(baselineImplied)}
+          sub={
+            <>
+              {fmt(baselineA1)} A1 fixed + {fmt(capexMonthly)} capex
+              amortization
+            </>
+          }
+          drillHref="/admin/categories?bucket=A1"
+        />
+        <KPICard
+          meta={KPI_META.avg_monthly_3mo}
+          value={avg3 == null ? "—" : fmt(avg3)}
+          sub={
+            <>
+              {months3.length === 0
+                ? "no entries yet"
+                : `from ${months3.length} month${months3.length === 1 ? "" : "s"} of data`}
+              {avg3 != null && baselineImplied > 0 ? (
+                <>
+                  {" · "}
+                  {variancePill(avg3, baselineImplied, "vs baseline")}
+                </>
+              ) : null}
+            </>
+          }
+          drillHref="/admin/monthly"
+        />
+        <KPICard
+          meta={KPI_META.avg_monthly_12mo}
+          value={avg12 == null ? "—" : fmt(avg12)}
+          sub={
+            months12.length === 0
               ? "no entries yet"
-              : `from ${months3.length} month${months3.length === 1 ? "" : "s"} of data`}
-            {avg3 != null && baselineImplied > 0 ? (
-              <>
-                {" · "}
-                {variancePill(avg3, baselineImplied, "vs baseline")}
-              </>
-            ) : null}
-          </p>
-        </Link>
-        <Link href="/admin/monthly" className={styles.kpi}>
-          <p className={styles.kpiLabel}>Avg monthly (12mo)</p>
-          <p className={styles.kpiValue}>
-            {avg12 == null ? "—" : fmt(avg12)}
-          </p>
-          <p className={styles.kpiSub}>
-            {months12.length === 0
-              ? "no entries yet"
-              : `from ${months12.length} month${months12.length === 1 ? "" : "s"} of data`}
-          </p>
-        </Link>
-        <Link
-          href={`/admin/entries?period_month=${monthStart}`}
-          className={styles.kpi}
-        >
-          <p className={styles.kpiLabel}>This month spend</p>
-          <p className={styles.kpiValue}>{fmt(monthSpend)}</p>
-          <p className={styles.kpiSub}>
-            from {monthRows.length} entr{monthRows.length === 1 ? "y" : "ies"}
-          </p>
-        </Link>
+              : `from ${months12.length} month${months12.length === 1 ? "" : "s"} of data`
+          }
+          drillHref="/admin/monthly"
+        />
+        <KPICard
+          meta={KPI_META.this_month_spend}
+          value={fmt(monthSpend)}
+          sub={`from ${monthRows.length} entr${monthRows.length === 1 ? "y" : "ies"}`}
+          drillHref={`/admin/entries?period_month=${monthStart}`}
+        />
       </section>
 
       <section className={styles.section}>
@@ -558,64 +560,57 @@ export default async function AdminHome() {
       <section className={styles.section}>
         <p className={styles.sectionTitle}>Drift signals</p>
         <div className={styles.kpiGrid}>
-          <div className={styles.kpi}>
-            <p className={styles.kpiLabel}>YTD A1 pacing</p>
-            <p className={styles.kpiValue}>
-              {ytdA1Spend === 0 ? "—" : fmt(ytdA1Spend)}
-            </p>
-            <p className={styles.kpiSub}>
-              {ytdA1Expected > 0
-                ? `expected ${fmt(ytdA1Expected)} (${monthsElapsed.toFixed(1)} mo × baseline)`
-                : "no baseline set"}
-              {ytdA1Spend > 0 && ytdA1Expected > 0 ? (
-                <>
-                  {" · "}
-                  {variancePill(ytdA1Spend, ytdA1Expected, "vs pace")}
-                </>
-              ) : null}
-            </p>
-          </div>
-
-          <div className={styles.kpi}>
-            <p className={styles.kpiLabel}>Repair pulse (C1)</p>
-            <p className={styles.kpiValue}>
-              {c1ThisMonth.length === 0 && c1Last90.length === 0
+          <KPICard
+            meta={KPI_META.ytd_a1_pacing}
+            value={ytdA1Spend === 0 ? "—" : fmt(ytdA1Spend)}
+            sub={
+              <>
+                {ytdA1Expected > 0
+                  ? `expected ${fmt(ytdA1Expected)} (${monthsElapsed.toFixed(1)} mo × baseline)`
+                  : "no baseline set"}
+                {ytdA1Spend > 0 && ytdA1Expected > 0 ? (
+                  <>
+                    {" · "}
+                    {variancePill(ytdA1Spend, ytdA1Expected, "vs pace")}
+                  </>
+                ) : null}
+              </>
+            }
+          />
+          <KPICard
+            meta={KPI_META.repair_pulse}
+            value={
+              c1ThisMonth.length === 0 && c1Last90.length === 0
                 ? "—"
-                : fmt(c1ThisMonthSum)}
-            </p>
-            <p className={styles.kpiSub}>
-              {c1ThisMonth.length === 0 && c1Last90.length === 0
+                : fmt(c1ThisMonthSum)
+            }
+            sub={
+              c1ThisMonth.length === 0 && c1Last90.length === 0
                 ? "no repairs logged"
-                : `${c1ThisMonth.length} this month · ${c1Last90.length} in last 90d (avg ${fmt(c1MonthlyAvg90)}/mo)`}
-            </p>
-          </div>
-
-          <Link href="/admin/capex" className={styles.kpi}>
-            <p className={styles.kpiLabel}>Capex lifetime</p>
-            <p className={styles.kpiValue}>
-              {capexLifetime === 0 ? "—" : fmt(capexLifetime)}
-            </p>
-            <p className={styles.kpiSub}>
-              {capexRows.length === 0
+                : `${c1ThisMonth.length} this month · ${c1Last90.length} in last 90d (avg ${fmt(c1MonthlyAvg90)}/mo)`
+            }
+            drillHref="/admin/categories?bucket=C1"
+          />
+          <KPICard
+            meta={KPI_META.capex_lifetime}
+            value={capexLifetime === 0 ? "—" : fmt(capexLifetime)}
+            sub={
+              capexRows.length === 0
                 ? "no items logged"
-                : `${capexRows.length} item${capexRows.length === 1 ? "" : "s"} · ${fmt(capexMonthly)}/mo carry`}
-            </p>
-          </Link>
-
-          <Link
-            href="/admin/categories?bucket=A1"
-            className={styles.kpi}
-          >
-            <p className={styles.kpiLabel}>Baseline coverage</p>
-            <p className={styles.kpiValue}>
-              {a1Items.length}/{a1Active.length}
-            </p>
-            <p className={styles.kpiSub}>
-              {a1Tbd.length === 0
+                : `${capexRows.length} item${capexRows.length === 1 ? "" : "s"} · ${fmt(capexMonthly)}/mo carry`
+            }
+            drillHref="/admin/capex"
+          />
+          <KPICard
+            meta={KPI_META.baseline_coverage}
+            value={`${a1Items.length}/${a1Active.length}`}
+            sub={
+              a1Tbd.length === 0
                 ? "all A1 categories priced"
-                : `${a1Tbd.length} A1 categor${a1Tbd.length === 1 ? "y" : "ies"} still TBD`}
-            </p>
-          </Link>
+                : `${a1Tbd.length} A1 categor${a1Tbd.length === 1 ? "y" : "ies"} still TBD`
+            }
+            drillHref="/admin/categories?bucket=A1"
+          />
         </div>
 
         {driftRows.length > 0 ? (
@@ -705,76 +700,66 @@ export default async function AdminHome() {
           <section className={styles.section}>
             <p className={styles.sectionTitle}>Pricing math (live)</p>
             <div className={styles.kpiGrid}>
-              <div className={styles.kpi}>
-                <p className={styles.kpiLabel}>ADR (180d realized)</p>
-                <p className={styles.kpiValue}>
-                  {adrCents == null ? "—" : fmt(adrCents)}
-                </p>
-                <p className={styles.kpiSub}>
-                  {realized
+              <KPICard
+                meta={KPI_META.adr_180d}
+                value={adrCents == null ? "—" : fmt(adrCents)}
+                sub={
+                  realized
                     ? `${realized.bookingsCount} bookings · ${realized.nights} nights · ${realized.pms}`
-                    : "live data unavailable"}
-                </p>
-              </div>
-              <div className={styles.kpi}>
-                <p className={styles.kpiLabel}>Avg LOS (180d)</p>
-                <p className={styles.kpiValue}>
-                  {losNights == null
+                    : "live data unavailable"
+                }
+              />
+              <KPICard
+                meta={KPI_META.avg_los}
+                value={
+                  losNights == null
                     ? "—"
-                    : `${losNights.toFixed(1)} nights`}
-                </p>
-                <p className={styles.kpiSub}>
-                  {realized
+                    : `${losNights.toFixed(1)} nights`
+                }
+                sub={
+                  realized
                     ? `${realized.windowStart} → ${realized.windowEnd}`
-                    : "live data unavailable"}
-                </p>
-              </div>
-              <div className={styles.kpi}>
-                <p className={styles.kpiLabel}>Variable / night</p>
-                <p className={styles.kpiValue}>
-                  {varPerNightCents == null
-                    ? "—"
-                    : fmt(varPerNightCents)}
-                </p>
-                <p className={styles.kpiSub}>
-                  {varPerNightCents == null
+                    : "live data unavailable"
+                }
+              />
+              <KPICard
+                meta={KPI_META.var_per_night}
+                value={varPerNightCents == null ? "—" : fmt(varPerNightCents)}
+                sub={
+                  varPerNightCents == null
                     ? "needs B1 baseline + LOS"
-                    : `${fmt(baselineB1)} B1 ÷ ${losNights?.toFixed(1)} nights`}
-                </p>
-              </div>
-              <div className={styles.kpi}>
-                <p className={styles.kpiLabel}>Contribution margin</p>
-                <p className={styles.kpiValue}>
-                  {cmCents == null ? "—" : fmt(cmCents)}
-                </p>
-                <p className={styles.kpiSub}>
-                  {cmCents == null
+                    : `${fmt(baselineB1)} B1 ÷ ${losNights?.toFixed(1)} nights`
+                }
+              />
+              <KPICard
+                meta={KPI_META.contribution_margin}
+                value={cmCents == null ? "—" : fmt(cmCents)}
+                sub={
+                  cmCents == null
                     ? "needs ADR + variable / night"
-                    : "per night, excl. channel fees"}
-                </p>
-              </div>
-              <div className={styles.kpi}>
-                <p className={styles.kpiLabel}>CM ratio</p>
-                <p className={styles.kpiValue}>
-                  {cmRatioPct == null
+                    : "per night, excl. channel fees"
+                }
+              />
+              <KPICard
+                meta={KPI_META.cm_ratio}
+                value={
+                  cmRatioPct == null ? "—" : `${cmRatioPct.toFixed(0)}%`
+                }
+                sub="CM ÷ ADR"
+              />
+              <KPICard
+                meta={KPI_META.break_even_nights}
+                value={
+                  breakEvenNights == null
                     ? "—"
-                    : `${cmRatioPct.toFixed(0)}%`}
-                </p>
-                <p className={styles.kpiSub}>CM ÷ ADR</p>
-              </div>
-              <div className={styles.kpi}>
-                <p className={styles.kpiLabel}>Break-even nights / mo</p>
-                <p className={styles.kpiValue}>
-                  {breakEvenNights == null
-                    ? "—"
-                    : breakEvenNights.toFixed(1)}
-                </p>
-                <p className={styles.kpiSub}>
-                  {breakEvenNights == null
+                    : breakEvenNights.toFixed(1)
+                }
+                sub={
+                  breakEvenNights == null
                     ? "needs CM > 0"
-                    : `total fixed ${fmt(totalFixedMonthly)} ÷ CM`}
-                </p>
-              </div>
+                    : `total fixed ${fmt(totalFixedMonthly)} ÷ CM`
+                }
+              />
             </div>
             <p className={styles.breakdownNote} style={{ marginTop: 12 }}>
               Stopgap — ADR + LOS pulled live from PriceLabs at request time
@@ -831,137 +816,24 @@ export default async function AdminHome() {
         )}
       </section>
 
-      {/* ─── Methodology ─────────────────────────────────── */}
+      {/* ─── Methodology — all KPIs at a glance ────────── */}
       <section className={styles.section}>
         <details className={styles.disclosure}>
-          <summary>How are these computed?</summary>
+          <summary>All KPIs at a glance — formulas + meaning</summary>
           <div className={styles.disclosureBody}>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Cost</div>
-              <div className={styles.disclosureName}>Baseline implied</div>
-              <div className={styles.disclosureDesc}>
-                <code>SUM(active A1 monthly baselines) + capex monthly carry</code>.
-                The expected monthly fixed cost before any per-booking variable.
+            {Object.values(KPI_META).map((m) => (
+              <div key={m.key} className={styles.disclosureRow}>
+                <div className={styles.disclosureCode}>
+                  {m.category === "cost"
+                    ? "Cost"
+                    : m.category === "drift"
+                      ? "Drift"
+                      : "Pricing"}
+                </div>
+                <div className={styles.disclosureName}>{m.label}</div>
+                <div className={styles.disclosureDesc}>{m.formula}</div>
               </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Cost</div>
-              <div className={styles.disclosureName}>Avg monthly (3mo / 12mo)</div>
-              <div className={styles.disclosureDesc}>
-                Mean of total <code>expense_entries.amount_cents</code> grouped by{" "}
-                <code>period_month</code>, taken over the last 3 / 12 calendar
-                months that had any data. Months with zero entries are skipped
-                (so a missing month doesn&rsquo;t drag the avg down).
-              </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Cost</div>
-              <div className={styles.disclosureName}>This month spend</div>
-              <div className={styles.disclosureDesc}>
-                <code>SUM(amount_cents)</code> of entries with{" "}
-                <code>entry_date ≥ start of current month</code>.
-              </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Cost</div>
-              <div className={styles.disclosureName}>Total fixed (per month)</div>
-              <div className={styles.disclosureDesc}>
-                <code>A1 monthly + (A2 annual ÷ 12) + capex amortization</code>.
-                The all-in fixed run-rate before variable per-booking turns.
-              </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Cost</div>
-              <div className={styles.disclosureName}>Per-booking floor</div>
-              <div className={styles.disclosureDesc}>
-                <code>SUM(active B1 baselines)</code>. Direct turn cost only —
-                channel fees + payment processing add on top (not yet
-                included; see <code>data-watchlist.md</code> §1).
-              </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Drift</div>
-              <div className={styles.disclosureName}>YTD A1 pacing</div>
-              <div className={styles.disclosureDesc}>
-                Actual: <code>SUM(A1 entries since Jan 1)</code>. Expected:{" "}
-                <code>monthsElapsed × baselineA1</code>, where{" "}
-                <code>monthsElapsed</code> is fractional (e.g. May 15 ≈ 4.45).
-                Variance pill compares actual to expected.
-              </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Drift</div>
-              <div className={styles.disclosureName}>Repair pulse (C1)</div>
-              <div className={styles.disclosureDesc}>
-                This month: <code>COUNT/SUM</code> of C1 entries with{" "}
-                <code>period_month = current</code>. Trailing 90d:{" "}
-                <code>SUM(C1 last 90d) ÷ 3</code> = monthly average. Spike
-                signal for the bi-weekly cadence.
-              </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Drift</div>
-              <div className={styles.disclosureName}>Top drift categories</div>
-              <div className={styles.disclosureDesc}>
-                Per active category with a baseline:{" "}
-                <code>(3mo trailing avg − baseline) ÷ baseline</code>. Filtered
-                to <code>|Δ| &gt; 5%</code>, sorted by absolute magnitude, top
-                3.
-              </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Pricing</div>
-              <div className={styles.disclosureName}>ADR (180d realized)</div>
-              <div className={styles.disclosureDesc}>
-                <code>SUM(rental_revenue) ÷ SUM(no_of_days)</code> across all
-                booked PriceLabs reservations in the trailing 180 days,
-                single-listing (Airbnb only — see{" "}
-                <code>data-watchlist.md</code> §2).
-              </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Pricing</div>
-              <div className={styles.disclosureName}>Avg LOS</div>
-              <div className={styles.disclosureDesc}>
-                <code>SUM(no_of_days) ÷ COUNT(bookings)</code> over the same
-                window. Average length of stay per booking.
-              </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Pricing</div>
-              <div className={styles.disclosureName}>Variable / night</div>
-              <div className={styles.disclosureDesc}>
-                <code>B1 turn cost ÷ avg LOS</code>. The cleaning / laundry /
-                supplies cost spread over the nights of an average stay.
-              </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Pricing</div>
-              <div className={styles.disclosureName}>Contribution margin</div>
-              <div className={styles.disclosureDesc}>
-                <code>ADR − variable / night</code>. The dollars left over per
-                night after direct variable costs, before fixed-cost coverage.
-                <strong> Excludes channel fees</strong> in this stopgap (see{" "}
-                <code>data-watchlist.md</code> §1).
-              </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Pricing</div>
-              <div className={styles.disclosureName}>CM ratio</div>
-              <div className={styles.disclosureDesc}>
-                <code>(CM ÷ ADR) × 100</code>. The percent of every dollar of
-                ADR that survives variable costs.
-              </div>
-            </div>
-            <div className={styles.disclosureRow}>
-              <div className={styles.disclosureCode}>Pricing</div>
-              <div className={styles.disclosureName}>Break-even nights / mo</div>
-              <div className={styles.disclosureDesc}>
-                <code>total fixed monthly ÷ CM</code>. Nights at average ADR
-                needed each month to cover all fixed costs (mortgage, utilities,
-                capex carry). Below this, the property loses money.
-              </div>
-            </div>
+            ))}
           </div>
         </details>
       </section>

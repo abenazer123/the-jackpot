@@ -1,0 +1,222 @@
+/* Card — visually identical to .kpi in admin.module.css but a
+ * <button> so it announces the click affordance correctly. */
+
+.card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 18px 20px;
+  background: var(--jp-bg-secondary, #f3ead4);
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-md);
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  position: relative;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.card:hover,
+.card:focus-visible {
+  border-color: var(--jp-gold-deep);
+  background: var(--jp-gold-10, rgba(212, 169, 48, 0.08));
+  outline: none;
+}
+
+.label {
+  font-family: var(--jp-font-body);
+  font-size: 11px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin: 0 0 4px;
+}
+
+.value {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 26px;
+  color: var(--jp-text-primary);
+  margin: 0;
+}
+
+.sub {
+  margin: 4px 0 0;
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  color: var(--jp-text-secondary);
+  line-height: 1.4;
+}
+
+.hint {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-family: var(--jp-font-body);
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  opacity: 0;
+  transition: opacity 150ms ease;
+  pointer-events: none;
+}
+
+.card:hover .hint,
+.card:focus-visible .hint {
+  opacity: 1;
+}
+
+/* Modal — native <dialog>. The browser handles ESC and the
+ * backdrop click is wired in the component. */
+
+.modal {
+  padding: 0;
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-lg, 18px);
+  background: var(--jp-bg-primary);
+  max-width: 560px;
+  width: calc(100% - 32px);
+  max-height: 90vh;
+  overflow: hidden;
+  color: var(--jp-text-primary);
+}
+
+.modal::backdrop {
+  background: rgba(122, 96, 48, 0.32); /* warm olive tint, brand-aligned */
+  backdrop-filter: blur(2px);
+}
+
+.modalInner {
+  padding: 24px 26px 26px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.modalCategory {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--jp-gold-deep);
+  margin: 0;
+}
+
+.modalTitle {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 24px;
+  color: var(--jp-text-primary);
+  margin: 4px 0 0;
+  line-height: 1.15;
+}
+
+.modalClose {
+  background: transparent;
+  border: 0;
+  font-family: var(--jp-font-body);
+  font-size: 24px;
+  line-height: 1;
+  color: var(--jp-text-tertiary);
+  cursor: pointer;
+  padding: 0 4px;
+  margin-top: -4px;
+}
+
+.modalClose:hover,
+.modalClose:focus-visible {
+  color: var(--jp-gold-deep);
+  outline: none;
+}
+
+.modalCurrentLabel {
+  margin: 4px 0 2px;
+  font-family: var(--jp-font-body);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+}
+
+.modalCurrent {
+  margin: 0;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 30px;
+  color: var(--jp-gold-deep);
+}
+
+.modalSub {
+  margin: 4px 0 0;
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  color: var(--jp-text-secondary);
+}
+
+.modalSection {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--jp-border-subtle);
+}
+
+.modalSectionTitle {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin: 0 0 6px;
+}
+
+.modalSectionBody {
+  margin: 0;
+  font-family: var(--jp-font-body);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--jp-text-primary);
+}
+
+.modalSectionBody code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  background: var(--jp-bg-secondary, #f3ead4);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.modalActions {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--jp-border-subtle);
+}
+
+.modalDrill {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--jp-gold-deep);
+  color: var(--jp-text-on-color);
+  border-radius: var(--jp-radius-full);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  text-decoration: none;
+  transition: filter 150ms ease;
+}
+
+.modalDrill:hover {
+  filter: brightness(1.06);
+}
