@@ -33,6 +33,7 @@ import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
 import type { Quote } from "@/lib/pricing/types";
 import { reasonToOccasion } from "@/lib/property/location";
 import { BRAND_PHOTOS } from "@/lib/property/photos";
+import { siteOrigin } from "@/lib/siteOrigin";
 import { supabaseServer } from "@/lib/supabase-server";
 
 import styles from "./page.module.css";
@@ -295,8 +296,5 @@ export default async function TripPage({ params }: TripPageProps) {
 }
 
 function shareUrlFor(token: string): string {
-  const origin = (
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  ).replace(/\/$/, "");
-  return `${origin}/trip/${token}`;
+  return `${siteOrigin()}/trip/${token}`;
 }

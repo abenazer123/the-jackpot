@@ -18,6 +18,7 @@ import { ImageResponse } from "next/og";
 
 import { COVER_PHOTO } from "@/lib/property/photos";
 import type { Quote } from "@/lib/pricing/types";
+import { siteOrigin } from "@/lib/siteOrigin";
 import { supabaseServer } from "@/lib/supabase-server";
 
 export const runtime = "nodejs";
@@ -44,12 +45,6 @@ function fmt(cents: number): string {
   return `$${Math.round(cents / 100).toLocaleString("en-US")}`;
 }
 
-function originUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-    "http://localhost:3000"
-  );
-}
 
 export default async function Image({ params }: OGProps) {
   const { token } = await params;
@@ -87,9 +82,9 @@ export default async function Image({ params }: OGProps) {
   }
 
   // Static photo URL the OG renderer can fetch over the public
-  // origin. NEXT_PUBLIC_SITE_URL must be set in prod; on localhost
-  // we fall back to localhost:3000 (the dev server).
-  const photoUrl = `${originUrl()}${COVER_PHOTO.src.src}`;
+  // origin. siteOrigin() resolves NEXT_PUBLIC_SITE_URL → VERCEL_URL
+  // → localhost so prod deploys never serve a localhost URL.
+  const photoUrl = `${siteOrigin()}${COVER_PHOTO.src.src}`;
 
   return new ImageResponse(
     (

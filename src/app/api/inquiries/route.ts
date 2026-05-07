@@ -35,6 +35,7 @@ import { serverCapture } from "@/lib/posthog-server";
 import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
 import type { Quote } from "@/lib/pricing/types";
 import { generateShareToken } from "@/lib/share/generateShareToken";
+import { siteOrigin } from "@/lib/siteOrigin";
 import { supabaseServer } from "@/lib/supabase-server";
 
 export const runtime = "nodejs"; // posthog-node + supabase-js need Node
@@ -540,9 +541,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         1,
         Math.round((d.getTime() - a.getTime()) / 86_400_000),
       );
-      const origin = (
-        process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-      ).replace(/\/$/, "");
+      const origin = siteOrigin();
       sendHostShareNotice({
         tripUrl: `${origin}/trip/${row.share_token}`,
         viewCount: (row.share_views as number | null) ?? 0,
@@ -719,11 +718,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
 
   // Build the trip portal URL so the guest confirmation email can
-  // link to it. NEXT_PUBLIC_SITE_URL is the canonical origin in
-  // prod; localhost fallback for dev.
-  const origin = (
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  ).replace(/\/$/, "");
+  // link to it. siteOrigin() resolves NEXT_PUBLIC_SITE_URL →
+  // VERCEL_URL → localhost so prod links don't degrade to
+  // localhost when the canonical env var is missing.
+  const origin = siteOrigin();
   const tripUrl = finalizedShareToken
     ? `${origin}/trip/${finalizedShareToken}`
     : undefined;

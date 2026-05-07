@@ -4,6 +4,7 @@ import { Cormorant_Garamond, Outfit } from "next/font/google";
 import { HostPresenceProvider } from "@/components/brand/HostPresenceProvider";
 import { PostHogProvider } from "@/components/brand/PostHogProvider";
 import { UtmProvider } from "@/components/brand/UtmProvider";
+import { siteOrigin } from "@/lib/siteOrigin";
 
 import "./globals.css";
 
@@ -25,9 +26,7 @@ const SITE_DESCRIPTION =
   "You found something special. A luxury group home in Chicago that sleeps 14 — five bedrooms, hot tub, cinema, game room, and a fire pit under the stars.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  ),
+  metadataBase: new URL(siteOrigin()),
   title: {
     default: SITE_NAME,
     template: `%s · ${SITE_NAME}`,

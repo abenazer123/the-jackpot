@@ -13,6 +13,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { sendHostReservationNotice } from "@/lib/email/hostReservationNotice";
 import { ensureViewerId } from "@/lib/share/viewerId";
+import { siteOrigin } from "@/lib/siteOrigin";
 import { supabaseServer } from "@/lib/supabase-server";
 
 export const runtime = "nodejs";
@@ -98,9 +99,7 @@ export async function POST(
     1,
     Math.round((d.getTime() - a.getTime()) / 86_400_000),
   );
-  const origin = (
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  ).replace(/\/$/, "");
+  const origin = siteOrigin();
   void sendHostReservationNotice({
     bookerName: (row.name as string) ?? "",
     bookerEmail: (row.email as string) ?? "",
