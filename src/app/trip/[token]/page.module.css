@@ -112,6 +112,33 @@
   line-height: 1.4;
 }
 
+/* Refresh treatment — when prices have come down since the original
+ * quote. Original total renders strikethrough above the hero, with a
+ * small "less than your original quote" line below the totalRow. */
+.priceRefresh {
+  margin: 0 0 14px;
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--jp-text-secondary);
+}
+
+.priceStrike {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  color: var(--jp-text-tertiary);
+  font-weight: 500;
+}
+
+.priceSavings {
+  margin: 10px 0 0;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--jp-gold-deep);
+  line-height: 1.4;
+}
+
 .noQuote {
   margin-top: 28px;
   padding: 18px 20px;

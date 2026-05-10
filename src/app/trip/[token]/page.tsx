@@ -85,7 +85,7 @@ export default async function TripPage({ params }: TripPageProps) {
   const { data, error } = await supabaseServer()
     .from("inquiries")
     .select(
-      "id, name, arrival, departure, guests, reason, quote_snapshot, shared_at",
+      "id, name, arrival, departure, guests, reason, quote_snapshot, quote_total_cents, quote_refreshed_snapshot, quote_refreshed_total_cents, shared_at",
     )
     .eq("share_token", token)
     .maybeSingle();
@@ -184,14 +184,39 @@ export default async function TripPage({ params }: TripPageProps) {
     return Math.max(1, Math.round((d.getTime() - a.getTime()) / 86_400_000));
   })();
 
+  // Refresh-aware pricing. If the inquiry has a `quote_refreshed_*`
+  // value AND it's lower than the original, we surface the refreshed
+  // number prominently with the original strikethrough — a small
+  // "good news, prices came down" treatment for re-engagement.
+  // Never refresh upward; that would feel like a bait-and-switch.
+  const originalTotalCents =
+    (data.quote_total_cents as number | null) ?? null;
+  const refreshedSnapshot =
+    (data.quote_refreshed_snapshot as Quote | null) ?? null;
+  const refreshedTotalCents =
+    (data.quote_refreshed_total_cents as number | null) ?? null;
+  const hasFavorableRefresh =
+    refreshedSnapshot != null &&
+    refreshedTotalCents != null &&
+    originalTotalCents != null &&
+    refreshedTotalCents < originalTotalCents;
+
+  const effectiveQuote = hasFavorableRefresh ? refreshedSnapshot : quote;
+
   const dateRange = `${isoToLong(arrival)} \u2013 ${isoToLong(departure)}`;
-  const totalCents = quote?.totalCents ?? 0;
+  const totalCents = effectiveQuote?.totalCents ?? 0;
   const perPersonCents =
-    quote && guests > 0
-      ? Math.round(quote.totalCents / guests / Math.max(1, nights))
+    effectiveQuote && guests > 0
+      ? Math.round(
+          effectiveQuote.totalCents / guests / Math.max(1, nights),
+        )
       : 0;
   const showSavings =
-    quote != null && quote.savedVsAirbnbCents > 0;
+    effectiveQuote != null && effectiveQuote.savedVsAirbnbCents > 0;
+  const refreshSavingsCents =
+    hasFavorableRefresh && originalTotalCents != null
+      ? originalTotalCents - (refreshedTotalCents ?? 0)
+      : 0;
 
   return (
     <main className={styles.page} data-with-dock={isOwner ? "true" : "false"}>
@@ -207,9 +232,18 @@ export default async function TripPage({ params }: TripPageProps) {
           occasion={occasion}
         />
 
-        {quote ? (
+        {effectiveQuote ? (
           <>
             <section className={styles.summary}>
+              {hasFavorableRefresh ? (
+                <p className={styles.priceRefresh}>
+                  Originally{" "}
+                  <span className={styles.priceStrike}>
+                    {fmt(originalTotalCents ?? 0)}
+                  </span>{" "}
+                  &mdash; pricing has come down since you inquired.
+                </p>
+              ) : null}
               <div className={styles.perPerson}>
                 {fmt(perPersonCents)}
                 <span className={styles.perPersonLabel}>per person/night</span>
@@ -222,10 +256,16 @@ export default async function TripPage({ params }: TripPageProps) {
                 <span className={styles.totalLabel}>Total for the group</span>
                 <span className={styles.totalValue}>{fmt(totalCents)}</span>
               </div>
+              {hasFavorableRefresh ? (
+                <p className={styles.priceSavings}>
+                  That&rsquo;s {fmt(refreshSavingsCents)} less than your
+                  original quote.
+                </p>
+              ) : null}
               {showSavings ? (
                 <div className={styles.savings}>
                   Booking direct saves the group{" "}
-                  {fmt(quote.savedVsAirbnbCents)} vs Airbnb.
+                  {fmt(effectiveQuote.savedVsAirbnbCents)} vs Airbnb.
                 </div>
               ) : null}
             </section>
