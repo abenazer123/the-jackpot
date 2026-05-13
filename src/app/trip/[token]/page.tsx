@@ -27,6 +27,7 @@ import { ShareDock } from "@/components/brand/trip/ShareDock";
 import { SleepingList } from "@/components/brand/trip/SleepingList";
 import { TripHero } from "@/components/brand/trip/TripHero";
 import { TripLocation } from "@/components/brand/trip/TripLocation";
+import { TripPhotoStrip } from "@/components/brand/trip/TripPhotoStrip";
 import { ViewTracker } from "@/components/brand/trip/ViewTracker";
 import { HeroPhotoCarousel } from "@/components/sections/HeroPhotoCarousel";
 import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
@@ -293,6 +294,8 @@ export default async function TripPage({ params }: TripPageProps) {
         <SleepingList />
 
         <PhotoGrid />
+
+        <TripPhotoStrip />
 
         <TripLocation
           occasion={reasonToOccasion((data.reason as string) ?? null)}
