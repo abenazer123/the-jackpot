@@ -31,6 +31,7 @@ import { sendHostNotification } from "@/lib/email/hostNotification";
 import { sendHostPathSignal } from "@/lib/email/hostPathSignal";
 import { sendHostShareNotice } from "@/lib/email/hostShareNotice";
 import type { InquiryPayload } from "@/lib/email/types";
+import { syncInquiryToVenueMBA } from "@/lib/integrations/venuembaSync";
 import { serverCapture } from "@/lib/posthog-server";
 import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
 import type { Quote } from "@/lib/pricing/types";
@@ -740,6 +741,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         );
       }
     });
+  });
+
+  // Mirror the inquiry into VenueMBA's CRM/inbox. Fire-and-forget,
+  // idempotent on sourceId — never blocks the response, never surfaces
+  // failures to the guest.
+  syncInquiryToVenueMBA({
+    sourceId: finalizedId,
+    payload: emailPayload,
+    quote,
+    shareToken: finalizedShareToken,
+    funnelSource: p.source ?? null,
+    revealFields: reveal,
   });
 
   const finalizeResponse = NextResponse.json({
