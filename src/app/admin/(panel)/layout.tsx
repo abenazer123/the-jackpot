@@ -29,10 +29,12 @@ export default async function AdminLayout({
         </Link>
         <nav className={styles.nav}>
           <Link href="/admin">Overview</Link>
+          <Link href="/admin/inquiries">Inquiries</Link>
           <Link href="/admin/categories">Categories</Link>
           <Link href="/admin/entries">Entries</Link>
           <Link href="/admin/monthly">Monthly</Link>
           <Link href="/admin/capex">Capex</Link>
+          <Link href="/admin/onboarding">Onboarding</Link>
         </nav>
         <form action={logout} className={styles.logoutForm}>
           <button type="submit" className={styles.logout}>
