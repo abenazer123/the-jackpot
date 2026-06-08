@@ -116,6 +116,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let slotsUpdate: Partial<ExtractedSlots> = {};
   let signalsUpdate: Partial<Signals> = {};
   const nextPhase: Phase | null = null;
+  let mirrorFired: { event: string; at: string } | null = null;
 
   if (isWidgetConfirm) {
     // Phase 1: acknowledge the commit without calling Claude. Widget
@@ -142,6 +143,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     oliviaReply = result.reply;
     slotsUpdate = result.slotsUpdate;
     signalsUpdate = result.signalsUpdate;
+    mirrorFired = result.mirrorFired;
     // Phase 1: don't auto-transition phase. Phase 2 will.
   }
 
@@ -157,6 +159,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     last_activity_at: now,
   };
   if (nextPhase) updatePayload.phase = nextPhase;
+  if (mirrorFired) {
+    updatePayload.last_mirror_event = mirrorFired.event;
+    updatePayload.last_mirror_at = mirrorFired.at;
+  }
 
   const { error: updateError } = await supabase
     .from("inquiry_session")

@@ -30,6 +30,8 @@ import { sendAbeNotification } from "@/lib/email/abeNotification";
 import { siteOrigin } from "@/lib/siteOrigin";
 import { supabaseServer } from "@/lib/supabase-server";
 
+import { mirrorSessionToVenueMBA } from "./mirror";
+
 import { QualifyResultSchema } from "./validation";
 import {
   type ActivityStatus,
@@ -333,6 +335,11 @@ export interface RunInquiryAgentOutput {
   signalsUpdate: Partial<Signals>;
   routingNextStep: string | null;
   hardTriggerBlocked: { reason: string; intent: string } | null;
+  /** When a mirror_to_venuemba fired successfully this turn, the
+   *  milestone it represented. The route handler persists this into
+   *  inquiry_session.last_mirror_event so subsequent turns don't
+   *  re-fire the same milestone. Null on skip / failure / no fire. */
+  mirrorFired: { event: string; at: string } | null;
 }
 
 export async function runInquiryAgent(
@@ -408,6 +415,7 @@ export async function runInquiryAgent(
         signalsUpdate: { intent: isHumanRequest ? "human_request" : "other" } as Partial<Signals>,
         routingNextStep: isHumanRequest ? "immediate_handoff" : null,
         hardTriggerBlocked: { reason: "matched_hard_trigger", intent: trig.intent },
+        mirrorFired: null,
       };
     }
   }
@@ -581,6 +589,7 @@ export async function runInquiryAgent(
   // ─── 7. Apply executed actions ─────────────────────────────────
   let oliviaReplyBody: string | null = null;
   const slotsUpdate: Partial<ExtractedSlots> = {};
+  let mirrorFiredEvent: RunInquiryAgentOutput["mirrorFired"] = null;
 
   for (const action of executed) {
     if (action.tool === "send_message") {
@@ -645,6 +654,50 @@ export async function runInquiryAgent(
   // slip; this is the deterministic enforcement.
   oliviaReplyBody = sanitizeGuestText(oliviaReplyBody);
 
+  // ─── 7.5 Mirror to VenueMBA on milestones ──────────────────────
+  // Routing-driven, not action-driven. The LLM signals intent by
+  // setting routing.should_mirror_to_venuemba + routing.mirror_reason;
+  // the harness fires the deterministic POST. Idempotent on
+  // session_id (VMBA upserts), but we also gate on
+  // session.last_mirror_event to avoid burning webhook traffic on
+  // every turn after the LLM keeps flagging the same milestone.
+  if (
+    result.routing.should_mirror_to_venuemba &&
+    result.routing.mirror_reason &&
+    session.last_mirror_event !== result.routing.mirror_reason
+  ) {
+    const mirrorResult = await mirrorSessionToVenueMBA(
+      // Apply this turn's slot update before the mirror so VMBA sees
+      // the latest contact info captured this turn.
+      {
+        ...session,
+        slots: { ...session.slots, ...slotsUpdate },
+      },
+      result.routing.mirror_reason,
+      result.routing.reason,
+      {
+        handoff_reason: result.routing.handoff_reason,
+        handoff_priority: result.routing.handoff_priority,
+      },
+    );
+    executed.push({
+      tool: "mirror_to_venuemba",
+      input: {
+        event: result.routing.mirror_reason,
+        reason: result.routing.reason,
+      },
+      confidence: result.overall_confidence,
+      rationale: "Fired from routing.should_mirror_to_venuemba",
+      result: mirrorResult as unknown as Record<string, unknown>,
+    });
+    if (mirrorResult.ok) {
+      mirrorFiredEvent = {
+        event: result.routing.mirror_reason,
+        at: new Date().toISOString(),
+      };
+    }
+  }
+
   // ─── 8. Log activity ───────────────────────────────────────────
   const status: ActivityStatus =
     drafted.length > 0 && executed.length === 0 ? "low_confidence" : "success";
@@ -679,6 +732,7 @@ export async function runInquiryAgent(
     signalsUpdate: pickSignalsUpdate(result.signals),
     routingNextStep: result.routing.next_step,
     hardTriggerBlocked: null,
+    mirrorFired: mirrorFiredEvent,
   };
 }
 
@@ -770,6 +824,7 @@ function fallbackReply(sessionId: string, body: string): RunInquiryAgentOutput {
     signalsUpdate: {},
     routingNextStep: null,
     hardTriggerBlocked: null,
+    mirrorFired: null,
   };
 }
 

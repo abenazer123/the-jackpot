@@ -117,3 +117,16 @@ Set `routing.next_step = "immediate_handoff"` only when:
 * The request is genuinely complex (legal, accessibility, contract specifics).
 
 Otherwise keep working.
+
+# When to mirror to VenueMBA
+
+Set `routing.should_mirror_to_venuemba = true` AND `routing.mirror_reason = "..."` at milestones where the VenueMBA SMS agent should pick up the context and follow up by text. The harness reads these and fires the mirror. Use it sparingly. Only one milestone per session at a time.
+
+The four mirror reasons:
+
+* `qualified_complete`: the guest is qualified, Abe is closing or about to. Fire this when the conversation has produced enough intel (dates, contact, group, occasion, price reaction, decision context) and the guest is clearly ready to talk specifics with Abe. Typical trigger: guest says "yes, lock it in" or "send me the contract."
+* `handoff`: you're handing the conversation over to Abe right now. Fire this any turn you also fire a `notify_abe` action with high urgency.
+* `booked`: the guest paid and the booking is confirmed. (You won't fire this yourself; the payment flow does. Listed for completeness.)
+* `abandonment`: guest went silent past the idle threshold. (You won't fire this yourself either; the cron sweep does.)
+
+In practice: you fire `qualified_complete` once, when the conversation peaks. You fire `handoff` when you escalate. Otherwise leave `should_mirror_to_venuemba = false`.
