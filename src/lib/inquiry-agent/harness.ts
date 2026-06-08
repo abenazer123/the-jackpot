@@ -26,11 +26,12 @@ import path from "node:path";
 
 import Anthropic from "@anthropic-ai/sdk";
 
+import { sendAbeNotification } from "@/lib/email/abeNotification";
+import { siteOrigin } from "@/lib/siteOrigin";
 import { supabaseServer } from "@/lib/supabase-server";
 
 import { QualifyResultSchema } from "./validation";
 import {
-  type Action,
   type ActivityStatus,
   type AgentActivityRow,
   DEFAULT_THRESHOLDS,
@@ -54,11 +55,14 @@ const PROMPT_VERSION = "v1";
 const SKILL = "inquiry";
 const MAX_TOKENS = 16_000;
 
-/** Tools the harness actually executes in Phase 1. Anything else gets
- *  logged as a skipped action with reason `not_implemented_yet`. */
-const PHASE_1_EXECUTABLE_TOOLS = new Set<ToolName>([
+/** Tools the harness actually executes today. Phase 2.5 added
+ *  notify_abe (real Resend send). Phase 2.6+ will add mirror_to_venuemba
+ *  and show_widget. Anything not in this set still gets recorded in
+ *  agent_activity for visibility. */
+const EXECUTABLE_TOOLS = new Set<ToolName>([
   "send_message",
   "commit_facts",
+  "notify_abe",
 ]);
 
 /** Hard-trigger patterns — bypass Claude entirely when matched. */
@@ -216,7 +220,7 @@ const QUALIFY_RESULT_TOOL: Anthropic.Tool = {
       actions: {
         type: "array",
         description:
-          "Proposed tool calls. The harness executes them per-action by confidence threshold. Phase 1 ships `send_message` and `commit_facts` only.",
+          "Proposed tool calls. The harness executes per-action by confidence threshold. Available tools: `send_message`, `commit_facts`, `notify_abe`. Propose `notify_abe` when the guest needs Abe specifically (contract / deposit / legal questions, explicit human request, anything outside your fact sheet) AND has confirmed they want you to flag him.",
         items: {
           oneOf: [
             {
@@ -247,6 +251,31 @@ const QUALIFY_RESULT_TOOL: Anthropic.Tool = {
                   properties: {
                     slots: { type: "object" },
                     confidence: { type: "object" },
+                  },
+                },
+                confidence: { type: "number", minimum: 0, maximum: 1 },
+                rationale: { type: ["string", "null"] },
+              },
+            },
+            {
+              type: "object",
+              required: ["tool", "input", "confidence"],
+              properties: {
+                tool: { const: "notify_abe" },
+                input: {
+                  type: "object",
+                  required: ["reason", "urgency"],
+                  properties: {
+                    reason: {
+                      type: "string",
+                      description: "One sentence explaining why Abe needs to look. He sees this in the email subject and banner.",
+                    },
+                    urgency: { type: "string", enum: ["low", "normal", "high"] },
+                    transcript_url: {
+                      type: "string",
+                      description: "Ignored on server side. The harness overrides with the real /admin/sessions URL.",
+                    },
+                    preferred_channel: { type: "string", enum: ["sms", "slack", "email"] },
                   },
                 },
                 confidence: { type: "number", minimum: 0, maximum: 1 },
@@ -315,13 +344,45 @@ export async function runInquiryAgent(
   // ─── 1. Hard-trigger pre-check ─────────────────────────────────
   for (const trig of HARD_TRIGGERS) {
     if (trig.pattern.test(guestMessage.body)) {
+      const isHumanRequest = trig.intent === "human_request";
       const reply: TurnMessage = {
         role: "olivia",
-        body: trig.intent === "human_request"
+        body: isHumanRequest
           ? "Got it. I’ll flag Abe to text you directly. Best number for him to reach you on?"
           : "All good. I’ll back off. If you want to pick this up later, just text back.",
         ts: new Date().toISOString(),
       };
+
+      // Human-request triggers fire notify_abe deterministically. The
+      // promised "I'll flag Abe" only holds if Abe actually hears
+      // about it; skipping the email here would silently strand the
+      // guest. Non-human triggers (stop/unsubscribe) don't email.
+      const executedActions: ExecutedAction[] = [];
+      if (isHumanRequest) {
+        const recentTranscript = session.transcript
+          .filter((m) => m.role === "user" || m.role === "olivia")
+          .slice(-6)
+          .map((m) => ({ role: m.role, body: m.body, ts: m.ts }));
+        const emailResult = await sendAbeNotification({
+          sessionId: session.id,
+          reason: `Guest explicitly asked for you. They said: "${guestMessage.body.slice(0, 240)}"`,
+          urgency: "high",
+          transcriptUrl: `${siteOrigin()}/admin/sessions/${session.id}`,
+          slots: session.slots as Record<string, unknown>,
+          signals: session.signals as Record<string, unknown>,
+          recentTranscript,
+        });
+        executedActions.push({
+          tool: "notify_abe",
+          input: { reason: "hard_trigger_human_request", urgency: "high" },
+          confidence: 1,
+          rationale: "Deterministic fire from hard-trigger pre-check",
+          result: emailResult.ok
+            ? { sent: true, email_id: emailResult.id, channel: "email" }
+            : { sent: false, error: emailResult.error },
+        });
+      }
+
       await persistActivity(session.id, {
         session_id: session.id,
         model: MODEL,
@@ -337,15 +398,15 @@ export async function runInquiryAgent(
         output_tokens: null,
         cost_cents: null,
         error_message: null,
-        actions_executed: [],
+        actions_executed: executedActions,
         actions_drafted: [],
         actions_skipped: [],
       });
       return {
         reply,
         slotsUpdate: {},
-        signalsUpdate: { intent: trig.intent === "human_request" ? "human_request" : "other" } as Partial<Signals>,
-        routingNextStep: trig.intent === "human_request" ? "immediate_handoff" : null,
+        signalsUpdate: { intent: isHumanRequest ? "human_request" : "other" } as Partial<Signals>,
+        routingNextStep: isHumanRequest ? "immediate_handoff" : null,
         hardTriggerBlocked: { reason: "matched_hard_trigger", intent: trig.intent },
       };
     }
@@ -470,7 +531,7 @@ export async function runInquiryAgent(
 
   for (const action of result.actions) {
     const thresholds = DEFAULT_THRESHOLDS[action.tool];
-    const isExecutable = PHASE_1_EXECUTABLE_TOOLS.has(action.tool);
+    const isExecutable = EXECUTABLE_TOOLS.has(action.tool);
 
     if (action.confidence < thresholds.floor) {
       skipped.push({
@@ -532,6 +593,43 @@ export async function runInquiryAgent(
         Object.assign(slotsUpdate, input.slots);
       }
       action.result = { slots_keys: Object.keys(input.slots ?? {}) };
+    } else if (action.tool === "notify_abe") {
+      // Fetch fresh session for the email payload (slots may have
+      // shifted during this turn via earlier commit_facts execution).
+      const merged = {
+        ...session.slots,
+        ...slotsUpdate,
+      } as Record<string, unknown>;
+      const recentTranscript = session.transcript
+        .filter((m) => m.role === "user" || m.role === "olivia")
+        .slice(-6)
+        .map((m) => ({ role: m.role, body: m.body, ts: m.ts }));
+
+      const input = action.input as {
+        reason?: string;
+        urgency?: "low" | "normal" | "high";
+        transcript_url?: string;
+      };
+
+      // Server-side override on the URL — never trust an LLM to invent
+      // a valid path. Admin viewer at /admin/sessions/<id> is a Phase
+      // 2.6 follow-up; for now the link points at the route even if
+      // the page renders a 404.
+      const transcriptUrl = `${siteOrigin()}/admin/sessions/${session.id}`;
+
+      const emailResult = await sendAbeNotification({
+        sessionId: session.id,
+        reason: input.reason ?? "Olivia flagged this session",
+        urgency: input.urgency ?? "normal",
+        transcriptUrl,
+        slots: merged,
+        signals: session.signals as Record<string, unknown>,
+        recentTranscript,
+      });
+
+      action.result = emailResult.ok
+        ? { sent: true, email_id: emailResult.id, channel: "email" }
+        : { sent: false, error: emailResult.error };
     }
   }
 

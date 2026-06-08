@@ -293,8 +293,11 @@ export const OfferConcessionInputSchema = z.object({
 
 export const NotifyAbeInputSchema = z.object({
   reason: z.string(),
-  transcript_url: z.string(),
   urgency: z.enum(["low", "normal", "high"]),
+  // transcript_url is optional from the LLM's side; the harness always
+  // overrides it server-side with the real /admin/sessions URL so the
+  // model can't hallucinate a bad link.
+  transcript_url: z.string().optional(),
   preferred_channel: z.enum(["sms", "slack", "email"]).optional(),
 });
 
