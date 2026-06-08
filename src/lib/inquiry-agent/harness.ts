@@ -93,7 +93,7 @@ function loadSystemPrompt(): string {
 const QUALIFY_RESULT_TOOL: Anthropic.Tool = {
   name: "qualify_result",
   description:
-    "Return your structured response for this turn. EVERY reply must use this tool — it is your only way to communicate. Include the next message to the guest, any slots you extracted, signals you inferred, routing decision, and proposed actions.",
+    "Return your structured response for this turn. EVERY reply must use this tool. It is your only way to communicate. Include the next message to the guest, any slots you extracted, signals you inferred, routing decision, and proposed actions.",
   input_schema: {
     type: "object",
     required: [
@@ -108,11 +108,11 @@ const QUALIFY_RESULT_TOOL: Anthropic.Tool = {
     properties: {
       summary_for_human: {
         type: "string",
-        description: "1–3 sentence summary for Abe — what the guest said, what you decided this turn.",
+        description: "1 to 3 sentence summary for Abe. What the guest said, what you decided this turn.",
       },
       extracted_slots: {
         type: "object",
-        description: "Facts you parsed from the guest's latest message. Omit slots you can't confidently extract — never invent.",
+        description: "Facts you parsed from the guest's latest message. Omit slots you can't confidently extract. Never invent.",
         required: ["confidence"],
         properties: {
           price_response: { type: "string", enum: ["happy", "stretched", "too_high", "open", "unknown"] },
@@ -137,7 +137,7 @@ const QUALIFY_RESULT_TOOL: Anthropic.Tool = {
           concession_accepted: { type: ["string", "null"] },
           confidence: {
             type: "object",
-            description: "Per-slot confidence 0–1. `overall` required; per-slot keys optional.",
+            description: "Per-slot confidence 0 to 1. `overall` required; per-slot keys optional.",
             required: ["overall"],
             properties: { overall: { type: "number", minimum: 0, maximum: 1 } },
           },
@@ -262,6 +262,33 @@ const QUALIFY_RESULT_TOOL: Anthropic.Tool = {
 };
 
 // ──────────────────────────────────────────────────────────────────
+// Output sanitization: hard brand rule
+// ──────────────────────────────────────────────────────────────────
+//
+// Every dash character is banned in AI-authored text the guest sees.
+// That includes em (—, U+2014), en (–, U+2013), hyphen-minus (-,
+// U+002D), and non-breaking hyphen (‑, U+2011). Belt-and-suspenders:
+// (1) the prompt forbids them, (2) anything that slips through the
+// prompt gets cleaned here before it hits the guest.
+//
+// Strategy:
+//   1. Em / en dashes (commonly used as sentence breaks) collapse with
+//      surrounding whitespace into a comma-space.
+//   2. Any remaining hyphen-minus or non-breaking hyphen becomes a
+//      space. "mid-week" becomes "mid week"; "Thursday-Saturday"
+//      becomes "Thursday Saturday".
+//   3. Trim, collapse whitespace, strip stray leading commas.
+
+export function sanitizeGuestText(s: string): string {
+  return s
+    .replace(/\s*[\u2014\u2013]\s*/g, ", ")
+    .replace(/[\u002D\u2011]/g, " ")
+    .replace(/^,\s*/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// ──────────────────────────────────────────────────────────────────
 // Public entry point
 // ──────────────────────────────────────────────────────────────────
 
@@ -291,8 +318,8 @@ export async function runInquiryAgent(
       const reply: TurnMessage = {
         role: "olivia",
         body: trig.intent === "human_request"
-          ? "Got it — I’ll flag Abe to text you directly. Best number for him to reach you on?"
-          : "All good — I’ll back off. If you want to pick this up later, just text back.",
+          ? "Got it. I’ll flag Abe to text you directly. Best number for him to reach you on?"
+          : "All good. I’ll back off. If you want to pick this up later, just text back.",
         ts: new Date().toISOString(),
       };
       await persistActivity(session.id, {
@@ -378,7 +405,7 @@ export async function runInquiryAgent(
       actions_drafted: [],
       actions_skipped: [],
     });
-    return fallbackReply(session.id, "I lost my place for a second — give me a beat and ask again?");
+    return fallbackReply(session.id, "I lost my place for a second. Give me a beat and ask again?");
   }
 
   const latencyMs = Date.now() - startedAt;
@@ -407,7 +434,7 @@ export async function runInquiryAgent(
       actions_drafted: [],
       actions_skipped: [],
     });
-    return fallbackReply(session.id, "Hold on — let me catch up.");
+    return fallbackReply(session.id, "Hold on. Let me catch up.");
   }
 
   // ─── 5. Zod validate ───────────────────────────────────────────
@@ -432,7 +459,7 @@ export async function runInquiryAgent(
       actions_drafted: [],
       actions_skipped: [],
     });
-    return fallbackReply(session.id, "Hold on — let me catch up.");
+    return fallbackReply(session.id, "Hold on. Let me catch up.");
   }
   const result: QualifyResult = parsed.data;
 
@@ -514,6 +541,11 @@ export async function runInquiryAgent(
   if (oliviaReplyBody === null) {
     oliviaReplyBody = result.next_message.body;
   }
+
+  // Belt-and-suspenders: strip em/en dashes from the body before it
+  // ever leaves the harness. The prompt also forbids them, but LLMs
+  // slip; this is the deterministic enforcement.
+  oliviaReplyBody = sanitizeGuestText(oliviaReplyBody);
 
   // ─── 8. Log activity ───────────────────────────────────────────
   const status: ActivityStatus =
