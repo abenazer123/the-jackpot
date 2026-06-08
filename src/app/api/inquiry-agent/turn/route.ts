@@ -105,8 +105,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     ...(turn.message.widget_payload ? { widget_payload: turn.message.widget_payload } : {}),
   };
 
-  // 4. Branch: widget-confirm tokens stay deterministic. Free-text and
-  //    direct messages go through the harness.
+  // 4. Branch: widget-confirm tokens stay deterministic. Free-text,
+  //    direct messages, and synthetic system events go through the
+  //    harness.
   const isWidgetConfirm = WIDGET_CONFIRM_PREFIXES.some((p) =>
     turn.message.body.startsWith(p),
   );
@@ -122,15 +123,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Phase 2 concern — for now we just record the token.
     oliviaReply = {
       role: "olivia",
-      body: "(widget commit recorded — Phase 2 will handle widget semantics)",
+      body: "(widget commit recorded. Phase 2 will handle widget semantics)",
       ts: new Date().toISOString(),
     };
   } else {
-    // Free-text or post-price message → harness owns the turn.
+    // Free-text guest message OR a synthetic system event (e.g. price
+    // card just rendered) → harness owns the turn.
+    const trigger = userMessage.role === "system"
+      ? "system_event"
+      : session.transcript.length === 0
+        ? "free_text_first"
+        : "guest_message";
     const result = await runInquiryAgent({
       session,
       guestMessage: userMessage,
-      trigger: session.transcript.length === 0 ? "free_text_first" : "guest_message",
+      trigger,
     });
     oliviaReply = result.reply;
     slotsUpdate = result.slotsUpdate;

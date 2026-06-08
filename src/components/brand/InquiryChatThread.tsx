@@ -58,6 +58,24 @@ interface HarnessMessage {
   widget?: string;
 }
 
+/** Subset of the server's Quote shape that the price card actually
+ *  renders. Full shape lives at src/lib/pricing/types.ts; we narrow
+ *  to keep the client bundle off server-only modules. All monetary
+ *  fields are cents (ints). */
+interface PriceQuote {
+  arrival: string;
+  departure: string;
+  nights: number;
+  guests: number;
+  subtotalCents: number;
+  cleaningCents: number;
+  taxEnabled: boolean;
+  taxCents: number;
+  totalCents: number;
+  perGuestCents: number;
+  discountTotalCents: number;
+}
+
 /**
  * Reveal phases inside the "checking" step. Each new beat fades into the
  * conversation rather than landing all at once.
@@ -189,6 +207,32 @@ function stepToPhase(step: Step): string {
   }
 }
 
+/** Format cents as a US dollar amount with commas, no decimals.
+ *  Drops cents because every Jackpot price the guest sees is a whole
+ *  dollar by construction (no per-cent line items). */
+function formatDollars(cents: number): string {
+  const dollars = Math.round(cents / 100);
+  return dollars.toLocaleString("en-US");
+}
+
+/** Map a QuoteErrorCode to a guest-facing Olivia bubble. Never expose
+ *  raw error codes; never quote a number. Voice rules apply. */
+function priceErrorMessage(code: string): string {
+  switch (code) {
+    case "out_of_window":
+    case "cache_empty":
+      return "Hmm. I can't pull a real number for those dates right this second. Let me flag Abe to text you a quote in the next few minutes. Want me to do that?";
+    case "unavailable":
+      return "Those nights are taken on the calendar. Want me to show you the closest open windows?";
+    case "sub_floor":
+      return "We're a 2 night minimum. Want me to bump the stay by a night so we can get you a real number?";
+    case "max_guests":
+      return "We cap at 14 guests on a single booking. Could the group come down to 14, or split into two weekends?";
+    default:
+      return "Something on my end is off. Let me get Abe on it. What's the best number for him to text you?";
+  }
+}
+
 // Lightweight email validity — must contain `@` and a `.` after it.
 // Real validation happens server-side; we only gate the Save button.
 function looksLikeEmail(s: string): boolean {
@@ -248,6 +292,13 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
   const [harnessMessages, setHarnessMessages] = useState<HarnessMessage[]>([]);
   const [isWaitingForOlivia, setIsWaitingForOlivia] = useState(false);
 
+  // Price reveal state. Populated when step transitions to "pricing"
+  // and we fetch from /api/inquiry-agent/quote. Either lands as a
+  // real quote (renders the price card) or as an error (renders a
+  // fallback bubble + notify_abe).
+  const [priceQuote, setPriceQuote] = useState<PriceQuote | null>(null);
+  const [priceError, setPriceError] = useState<string | null>(null);
+
   const firstName = firstNameOf(contactName);
 
   useEffect(() => {
@@ -282,6 +333,8 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
       setHarnessSessionId(null);
       setHarnessMessages([]);
       setIsWaitingForOlivia(false);
+      setPriceQuote(null);
+      setPriceError(null);
     }, 0);
     return () => window.clearTimeout(t);
   }, [open]);
@@ -296,7 +349,63 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
       body.scrollTop = body.scrollHeight;
     });
     return () => window.cancelAnimationFrame(id);
-  }, [step, checkingPhase, availablePhase, harnessMessages.length, isWaitingForOlivia]);
+  }, [step, checkingPhase, availablePhase, harnessMessages.length, isWaitingForOlivia, priceQuote]);
+
+  // Fetch the real quote when the conversation enters the pricing
+  // step. While it's in flight the existing "Pulling pricing now…"
+  // pill keeps spinning; once it lands we render the price card.
+  // Errors (out_of_window, unavailable, sub_floor) surface a fallback
+  // bubble so the guest isn't stranded.
+  useEffect(() => {
+    if (step !== "pricing") return;
+    if (priceQuote || priceError) return; // already resolved
+    if (!arrival || !departure || !groupSize) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/inquiry-agent/quote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            arrival,
+            departure,
+            guests: Number.parseInt(groupSize, 10),
+            occasion: occasion || undefined,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data:
+          | { ok: true; quote: PriceQuote }
+          | { ok: false; error: { code: string; message: string } } =
+          await res.json();
+        if (cancelled) return;
+        if (data.ok) {
+          setPriceQuote(data.quote);
+        } else {
+          setPriceError(data.error.code);
+        }
+      } catch {
+        if (!cancelled) setPriceError("network");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [step, arrival, departure, groupSize, occasion, priceQuote, priceError]);
+
+  // Once the price card has rendered, fire a synthetic "system" turn
+  // through the harness so Olivia composes her first post-price
+  // bubble ("How does that sit?", etc.). Runs at most once per quote.
+  const postPriceTriggeredRef = useRef(false);
+  useEffect(() => {
+    if (!priceQuote) return;
+    if (postPriceTriggeredRef.current) return;
+    postPriceTriggeredRef.current = true;
+    void firePostPriceTrigger(priceQuote);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priceQuote]);
 
   // Drip-feed the "checking" step: typing dots → first Olivia reply +
   // availability pill → typing dots again → second Olivia reply →
@@ -424,6 +533,47 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
     },
     [arrival, contactName, contactEmail, contactPhone, departure, groupSize, occasion, today],
   );
+
+  /** Fire a synthetic "system" turn so Olivia composes the first
+   *  post-price bubble. Unlike a guest send, we do NOT add the
+   *  trigger message to local harnessMessages — the guest didn't
+   *  type anything, so there's no user bubble to render. We only
+   *  surface Olivia's reply. */
+  const firePostPriceTrigger = async (quote: PriceQuote) => {
+    setIsWaitingForOlivia(true);
+    const body = `[EVENT:price_revealed] Price card just rendered. ${quote.nights} nights, ${quote.guests} guests, total ${(quote.totalCents / 100).toFixed(0)} dollars, per person ${(quote.perGuestCents / 100).toFixed(0)} dollars. The guest has just seen this and has not reacted yet.`;
+    try {
+      const res = await fetch("/api/inquiry-agent/turn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: harnessSessionId,
+          message: { role: "system", body, ts: new Date().toISOString() },
+          client_context: {
+            phase: "post_price",
+            slots: {
+              arrival,
+              departure,
+              guest_count: Number.parseInt(groupSize, 10),
+              occasion,
+              quote_total_cents: quote.totalCents,
+            },
+            viewport: "mobile",
+          },
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: { session_id: string; messages: HarnessMessage[] } = await res.json();
+      if (!harnessSessionId) setHarnessSessionId(data.session_id);
+      setHarnessMessages((prev) => [...prev, ...data.messages]);
+    } catch {
+      // Silent on trigger failure — guest still sees the price card,
+      // they can just type something and Olivia will pick up from
+      // there. No need for a visible error.
+    } finally {
+      setIsWaitingForOlivia(false);
+    }
+  };
 
   const canSend = draft.trim().length > 0 && !isWaitingForOlivia;
   const handleSubmitDraft = async (e: FormEvent<HTMLFormElement>) => {
@@ -872,20 +1022,80 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
                 </div>
               </div>
 
-              <div
-                className={`${styles.checking} ${styles.fadeIn}`}
-                role="status"
-                aria-live="polite"
-              >
-                <span className={styles.checkingDots} aria-hidden="true">
-                  <span className={styles.checkingDot} />
-                  <span className={styles.checkingDot} />
-                  <span className={styles.checkingDot} />
-                </span>
-                <span className={styles.checkingText}>
-                  Pulling pricing now&hellip;
-                </span>
-              </div>
+              {!priceQuote && !priceError && (
+                <div
+                  className={`${styles.checking} ${styles.fadeIn}`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className={styles.checkingDots} aria-hidden="true">
+                    <span className={styles.checkingDot} />
+                    <span className={styles.checkingDot} />
+                    <span className={styles.checkingDot} />
+                  </span>
+                  <span className={styles.checkingText}>
+                    Pulling pricing now&hellip;
+                  </span>
+                </div>
+              )}
+
+              {priceQuote && (
+                <div className={`${styles.priceCard} ${styles.fadeIn}`}>
+                  <div className={styles.priceCardLabel}>Your weekend</div>
+                  <div className={styles.priceCardRange}>
+                    {formatRangeShort(priceQuote.arrival, priceQuote.departure)}
+                  </div>
+                  <div className={styles.priceCardMeta}>
+                    {priceQuote.nights} {priceQuote.nights === 1 ? "night" : "nights"}
+                    {" · "}
+                    {priceQuote.guests} {priceQuote.guests === 1 ? "guest" : "guests"}
+                  </div>
+
+                  <div className={styles.priceCardDivider} />
+
+                  <div className={styles.priceCardRow}>
+                    <span>Nightly subtotal</span>
+                    <span>${formatDollars(priceQuote.subtotalCents)}</span>
+                  </div>
+                  {priceQuote.discountTotalCents > 0 && (
+                    <div className={styles.priceCardRow}>
+                      <span>Discount</span>
+                      <span>{`-$${formatDollars(priceQuote.discountTotalCents)}`}</span>
+                    </div>
+                  )}
+                  <div className={styles.priceCardRow}>
+                    <span>Cleaning</span>
+                    <span>${formatDollars(priceQuote.cleaningCents)}</span>
+                  </div>
+                  {priceQuote.taxEnabled && (
+                    <div className={styles.priceCardRow}>
+                      <span>Taxes</span>
+                      <span>${formatDollars(priceQuote.taxCents)}</span>
+                    </div>
+                  )}
+
+                  <div className={styles.priceCardDivider} />
+
+                  <div className={`${styles.priceCardRow} ${styles.priceCardTotal}`}>
+                    <span>Total</span>
+                    <span>${formatDollars(priceQuote.totalCents)}</span>
+                  </div>
+                  <div className={styles.priceCardPerGuest}>
+                    ${formatDollars(priceQuote.perGuestCents)} per guest
+                  </div>
+                </div>
+              )}
+
+              {priceError && (
+                <div className={`${styles.msgRow} ${styles.fadeIn}`}>
+                  <div className={styles.msgAvatar} aria-hidden="true">
+                    O
+                  </div>
+                  <div className={styles.msgBubble}>
+                    {priceErrorMessage(priceError)}
+                  </div>
+                </div>
+              )}
             </>
           )}
 

@@ -737,6 +737,78 @@
   outline-offset: 2px;
 }
 
+/* Price card — the post-quote reveal. Editorial layout, gold-tinted
+   surface, totals stacked. Sits in place of the spinning pricing pill
+   once /api/inquiry-agent/quote returns. */
+.priceCard {
+  margin: 12px 0 8px 0;
+  padding: 20px 22px 18px;
+  background: var(--jp-bg-secondary, var(--jp-linen));
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-lg);
+}
+
+.priceCardLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+}
+
+.priceCardRange {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--jp-text-primary);
+  margin-top: 4px;
+}
+
+.priceCardMeta {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--jp-text-secondary);
+  margin-top: 2px;
+}
+
+.priceCardDivider {
+  height: 1px;
+  background: var(--jp-border-default);
+  margin: 14px 0;
+}
+
+.priceCardRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--jp-text-primary);
+  margin: 4px 0;
+}
+
+.priceCardTotal {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 20px;
+  margin-top: 8px;
+}
+
+.priceCardPerGuest {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--jp-text-secondary);
+  text-align: right;
+  margin-top: 2px;
+}
+
 .optionsContinue {
   display: inline-flex;
   align-items: center;

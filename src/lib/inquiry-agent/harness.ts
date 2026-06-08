@@ -594,31 +594,58 @@ function buildClaudeMessages(
 ): Anthropic.MessageParam[] {
   // Conversation history. We treat olivia↔user as the assistant↔user
   // alternation Claude expects. Widget-confirm tokens stay as user
-  // messages so Claude sees what was committed.
+  // messages so Claude sees what was committed. System-role transcript
+  // entries (e.g. past price reveals) get folded into the next user
+  // message as <system-reminder> blocks; if a system entry is the
+  // tail, we drop it here since the live trigger below replays it.
   const messages: Anthropic.MessageParam[] = [];
+  let pendingSystemBlocks: string[] = [];
 
   for (const turn of session.transcript) {
+    if (turn.role === "system") {
+      pendingSystemBlocks.push(turn.body);
+      continue;
+    }
+    const prefix = pendingSystemBlocks.length
+      ? `<system-reminder>\n${pendingSystemBlocks.join("\n")}\n</system-reminder>\n\n`
+      : "";
+    pendingSystemBlocks = [];
     if (turn.role === "user") {
-      messages.push({ role: "user", content: turn.body });
+      messages.push({ role: "user", content: `${prefix}${turn.body}` });
     } else if (turn.role === "olivia") {
+      // System block can't ride on an assistant turn — defer to the
+      // next user turn (or to the live trigger below).
+      if (prefix) pendingSystemBlocks.push(...prefix.split("\n"));
       messages.push({ role: "assistant", content: turn.body });
     }
-    // 'system' role turns get folded into the next user message as a
-    // <system-reminder> block to preserve cache. None today.
   }
 
-  // Append the live guest message + session context as a single user
-  // turn. The system-reminder block keeps Claude oriented without
-  // pushing volatile content into the cached system prompt.
+  // Build the live trigger. The system-reminder block carries phase +
+  // slots + signals so Claude doesn't have to infer them.
   const sessionContext = JSON.stringify({
     phase: session.phase,
     slots: session.slots,
     signals: session.signals,
   });
-  messages.push({
-    role: "user",
-    content: `<system-reminder>\nCurrent session state:\n${sessionContext}\n</system-reminder>\n\n${guestMessage.body}`,
-  });
+  const trailingSystem = pendingSystemBlocks.length
+    ? `\n${pendingSystemBlocks.join("\n")}`
+    : "";
+
+  if (guestMessage.role === "system") {
+    // No actual guest message — this is an event trigger (e.g.
+    // price card just rendered). Frame it explicitly so Claude knows
+    // there's nothing typed to react to, just a state change.
+    messages.push({
+      role: "user",
+      content:
+        `<system-reminder>\nState changed in the chat without the guest typing anything. Respond to this event as Olivia would.\n\nEvent: ${guestMessage.body}\n\nCurrent session state:\n${sessionContext}${trailingSystem}\n</system-reminder>\n\nProduce your turn now.`,
+    });
+  } else {
+    messages.push({
+      role: "user",
+      content: `<system-reminder>\nCurrent session state:\n${sessionContext}${trailingSystem}\n</system-reminder>\n\n${guestMessage.body}`,
+    });
+  }
 
   return messages;
 }
