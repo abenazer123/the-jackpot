@@ -122,7 +122,11 @@ export interface ConfidenceThresholds {
 export const DEFAULT_THRESHOLDS: Record<ToolName, ConfidenceThresholds> = {
   send_message: { auto: 0.75, floor: 0.4 },
   show_widget: { auto: 0.7, floor: 0.4 },
-  commit_facts: { auto: 0.65, floor: 0.4 },
+  // commit_facts auto threshold is intentionally low because the
+  // widget itself is the second safety check — pre-fills still
+  // require the guest to tap Continue / Save. Let extractions through
+  // freely; the worst case is the guest edits before confirming.
+  commit_facts: { auto: 0.5, floor: 0.3 },
   offer_concession: { auto: 0.75, floor: 0.4 },
   notify_abe: { auto: 0.85, floor: 0.4 },
   schedule_callback: { auto: 0.8, floor: 0.4 },

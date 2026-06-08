@@ -388,6 +388,14 @@ export const TurnResponseSchema = z.object({
   phase: z.string(),
   messages: z.array(TurnMessageSchema),
   widgets: z.array(TurnWidgetSchema).default([]),
+  /**
+   * Slots the harness extracted and committed this turn. The frontend
+   * uses this to pre-fill scripted widgets so a guest who typed
+   * "memorial day weekend, 12 girls bachelorette" in the composer
+   * doesn't re-enter the same info via chips. Strict-confirm: pre-fills
+   * still require the guest to tap the widget's commit button.
+   */
+  extracted_slots: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 // ──────────────────────────────────────────────────────────────────

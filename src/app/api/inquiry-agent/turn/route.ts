@@ -163,12 +163,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // 6. Return turn response
+  // 6. Return turn response. extracted_slots lets the frontend pre-fill
+  //    scripted widgets so the guest doesn't re-enter info Olivia
+  //    already parsed from their message.
   const response: TurnResponse = {
     session_id: session.id,
     phase: (nextPhase ?? session.phase) as Phase,
     messages: [oliviaReply],
     widgets: [],
+    extracted_slots: slotsUpdate as Record<string, unknown>,
   };
 
   return NextResponse.json(response);

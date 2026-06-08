@@ -96,13 +96,23 @@ const AVAILABLE_PHASE_DELAYS = {
 /** Chip options for the group/occasion widget. Group buckets mirror what
  *  the booking funnel uses elsewhere; occasions are the four we hear
  *  most in inbound messages today. */
-const GROUP_OPTIONS = ["6\u20138", "9\u201311", "12\u201314"] as const;
 const OCCASION_OPTIONS = [
   "Bachelor",
   "Bachelorette",
   "Wedding",
   "Other",
 ] as const;
+
+/** Map the harness's lowercase enum (`bachelorette`) back to the
+ *  title case the widget displays (`Bachelorette`). Defensive: if a
+ *  value lands outside the known set, leave it alone for the widget to
+ *  surface as-is. */
+const OCCASION_FROM_HARNESS: Record<string, (typeof OCCASION_OPTIONS)[number]> = {
+  bachelor: "Bachelor",
+  bachelorette: "Bachelorette",
+  wedding: "Wedding",
+  other: "Other",
+};
 
 function addDaysIso(iso: string, days: number): string {
   const [y, m, d] = iso.split("-").map(Number);
@@ -134,7 +144,7 @@ function formatShort(iso: string): string {
 
 function formatRangeShort(arrival: string, departure: string): string {
   if (!arrival || !departure) return "";
-  return `${formatShort(arrival)} \u2013 ${formatShort(departure)}`;
+  return `${formatShort(arrival)} to ${formatShort(departure)}`;
 }
 
 function formatRangeLong(arrival: string, departure: string): string {
@@ -360,11 +370,60 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
       return;
     }
     setDeparture(iso);
-    // Picking departure commits the range and kicks the mocked
-    // availability + pricing check. Real API call goes here later.
+    // Departure pick no longer auto-advances; the guest takes an
+    // explicit "Confirm dates" tap so the same affordance handles
+    // both manual picks and harness pre-fills the same way.
+  };
+
+  const canConfirmDates =
+    !!arrival && !!departure && departure >= addDaysIso(arrival, MIN_NIGHTS);
+  const handleConfirmDates = () => {
+    if (!canConfirmDates) return;
     setCheckingPhase(0);
     setStep("checking");
   };
+
+  /** Apply slots the harness extracted to the scripted-widget state.
+   *  Strict-confirm: every pre-fill still needs the widget's commit
+   *  button (Confirm dates / Save my info / Continue). Existing user
+   *  entries are never clobbered. Past dates are silently skipped
+   *  since they can't pass the Calendar's today floor. */
+  const applyHarnessSlots = useCallback(
+    (slots: Record<string, unknown>) => {
+      if (typeof slots.name === "string" && slots.name && !contactName) {
+        setContactName(slots.name);
+      }
+      if (typeof slots.email === "string" && slots.email && !contactEmail) {
+        setContactEmail(slots.email);
+      }
+      if (typeof slots.phone === "string" && slots.phone && !contactPhone) {
+        setContactPhone(slots.phone);
+      }
+      if (typeof slots.guest_count === "number" && !groupSize) {
+        const n = slots.guest_count;
+        if (n >= 1 && n <= 14) setGroupSize(String(n));
+      }
+      if (typeof slots.occasion === "string" && !occasion) {
+        const mapped = OCCASION_FROM_HARNESS[slots.occasion.toLowerCase()];
+        if (mapped) setOccasion(mapped);
+      }
+      // Dates: only apply when they're in the future and the user
+      // hasn't already entered something. Calendar floor is today, so
+      // past dates would render as un-pickable noise.
+      const t = today;
+      if (typeof slots.arrival === "string" && slots.arrival >= t && !arrival) {
+        setArrival(slots.arrival);
+      }
+      if (
+        typeof slots.departure === "string" &&
+        slots.departure >= t &&
+        !departure
+      ) {
+        setDeparture(slots.departure);
+      }
+    },
+    [arrival, contactName, contactEmail, contactPhone, departure, groupSize, occasion, today],
+  );
 
   const canSend = draft.trim().length > 0 && !isWaitingForOlivia;
   const handleSubmitDraft = async (e: FormEvent<HTMLFormElement>) => {
@@ -413,11 +472,25 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
-      const data: { session_id: string; messages: HarnessMessage[] } = await res.json();
+      const data: {
+        session_id: string;
+        messages: HarnessMessage[];
+        extracted_slots?: Record<string, unknown>;
+      } = await res.json();
 
       // First successful turn fixes the session ID for the rest of the dialog.
       if (!harnessSessionId) setHarnessSessionId(data.session_id);
       setHarnessMessages((prev) => [...prev, ...data.messages]);
+
+      // Apply harness-extracted slots to scripted-widget state so the
+      // guest sees their typed info pre-filled. Strict-confirm: the
+      // widget's commit button still has to be tapped. Dates are
+      // deliberately not pre-filled yet — the calendar widget auto-
+      // advances on departure pick, and pre-filling without a confirm
+      // affordance creates a weird in-between state. That's a follow-up.
+      if (data.extracted_slots) {
+        applyHarnessSlots(data.extracted_slots);
+      }
     } catch {
       // Network or server failure — surface a soft fallback bubble so
       // the guest doesn't see silence. Don't surface raw error details.
@@ -425,7 +498,7 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
         ...prev,
         {
           role: "olivia",
-          body: "Hmm — I lost my signal for a beat. Mind sending that again?",
+          body: "Hmm. I lost my signal for a beat. Mind sending that again?",
           ts: new Date().toISOString(),
         },
       ]);
@@ -464,8 +537,8 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
   // when we have it. Kept sparingly elsewhere so the rapport doesn't
   // feel performed.
   const goodNewsGreeting = firstName
-    ? `Good news, ${firstName} \u2014 `
-    : "Good news \u2014 ";
+    ? `Good news, ${firstName}. `
+    : "Good news. ";
 
   return (
     <dialog
@@ -559,6 +632,15 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
                 rangeStart={calendarRangeStart}
                 onSelect={handleCalendarSelect}
               />
+
+              <button
+                type="button"
+                className={styles.dateConfirm}
+                disabled={!canConfirmDates}
+                onClick={handleConfirmDates}
+              >
+                Confirm dates
+              </button>
             </div>
           )}
 
@@ -726,19 +808,29 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
                 <div className={`${styles.optionsBlock} ${styles.fadeIn}`}>
                   <div className={styles.optionsGroup}>
                     <p className={styles.optionsLabel}>How big&apos;s the group</p>
-                    <div className={styles.optionsChips}>
-                      {GROUP_OPTIONS.map((opt) => (
-                        <button
-                          key={opt}
-                          type="button"
-                          className={styles.optionChip}
-                          data-selected={groupSize === opt ? "true" : undefined}
-                          onClick={() => setGroupSize(opt)}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={14}
+                      className={styles.guestCountInput}
+                      placeholder="1 to 14"
+                      value={groupSize}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        // Clamp to 1..14; allow empty while typing.
+                        if (v === "") {
+                          setGroupSize("");
+                          return;
+                        }
+                        const n = Number.parseInt(v, 10);
+                        if (Number.isNaN(n)) return;
+                        if (n < 1) setGroupSize("1");
+                        else if (n > 14) setGroupSize("14");
+                        else setGroupSize(String(n));
+                      }}
+                      aria-label="Guest count"
+                    />
                   </div>
                   <div className={styles.optionsGroup}>
                     <p className={styles.optionsLabel}>What&apos;s the occasion</p>
@@ -776,7 +868,7 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
             <>
               <div className={`${styles.msgUserRow} ${styles.fadeIn}`}>
                 <div className={styles.msgUserBubble}>
-                  {groupSize} guests &middot; {occasion}
+                  {groupSize} {Number(groupSize) === 1 ? "guest" : "guests"} &middot; {occasion}
                 </div>
               </div>
 
