@@ -28,6 +28,25 @@
   animation: calendarFadeInDown 160ms ease-out both;
 }
 
+/* Inline mode — flow element inside the parent container (used by the
+   inquiry chat thread). Drops the popover positioning, shadow, and
+   width cap so the calendar fills the surrounding card. */
+.calendarInline {
+  position: static;
+  top: auto;
+  left: auto;
+  bottom: auto;
+  z-index: auto;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  overflow-y: visible;
+  background: var(--jp-bg-primary);
+  border-color: var(--jp-border-default);
+  box-shadow: none;
+  animation: none;
+}
+
 /* Opens upward when there isn't enough room below the trigger. */
 .calendarAbove {
   animation: calendarFadeInUp 160ms ease-out both;

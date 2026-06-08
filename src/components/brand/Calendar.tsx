@@ -25,17 +25,24 @@ interface CalendarProps {
   value: string;
   onSelect: (iso: string) => void;
   min?: string;
-  /** Trigger button's getBoundingClientRect at the moment the calendar opened. */
-  triggerRect: DOMRect;
-  placement: "top" | "bottom";
+  /** Trigger button's getBoundingClientRect at the moment the calendar
+   *  opened. Required for popover mode; ignored when `inline` is true. */
+  triggerRect?: DOMRect;
+  placement?: "top" | "bottom";
   /** Optional portal target. Default: document.body. Pass an open <dialog>
    *  element when the trigger is inside one so the calendar joins the
-   *  browser's top layer instead of rendering beneath the backdrop. */
+   *  browser's top layer instead of rendering beneath the backdrop.
+   *  Ignored when `inline` is true. */
   portalTarget?: HTMLElement | null;
   /** When picking the departure date, pass the arrival here so the cell
    *  is visibly highlighted (outlined gold) — gives the user a visual
    *  anchor for the stay range without forcing a full range-picker UX. */
   rangeStart?: string;
+  /** Inline mode — render directly into the DOM as a flow element instead
+   *  of portaling to document.body and fixed-positioning to the trigger.
+   *  Used by InquiryChatThread where the calendar lives inside the chat
+   *  body, not as a popover. */
+  inline?: boolean;
 }
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -68,9 +75,10 @@ export function Calendar({
   onSelect,
   min,
   triggerRect,
-  placement,
+  placement = "bottom",
   portalTarget,
   rangeStart,
+  inline = false,
 }: CalendarProps) {
   // Initial month: prefer the current selection, then the floor (`min`)
   // — typically arrival+2 nights when this is the departure picker —
@@ -92,10 +100,10 @@ export function Calendar({
   // nothing since they can't be a valid departure.
   const [hoverIso, setHoverIso] = useState<string | null>(null);
 
-  // SSR guard — Calendar only ever mounts from a user click in a "use client"
-  // tree, so document.body is always defined in practice. This keeps the
-  // static shell safe during prerender.
-  if (typeof document === "undefined") return null;
+  // SSR guard — popover mode renders via portal to document.body, so the
+  // static shell needs to bail during prerender. Inline mode is fine to
+  // render server-side (just a flow element).
+  if (!inline && typeof document === "undefined") return null;
 
   const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
   const firstDayIndex = new Date(view.year, view.month, 1).getDay();
@@ -128,20 +136,30 @@ export function Calendar({
     }),
   ];
 
-  const positionStyle: CSSProperties =
-    placement === "bottom"
-      ? ({
-          "--jp-cal-top": `${triggerRect.bottom + 10}px`,
-          "--jp-cal-left": `${triggerRect.left}px`,
-        } as CSSProperties)
-      : ({
-          "--jp-cal-bottom": `${window.innerHeight - triggerRect.top + 10}px`,
-          "--jp-cal-left": `${triggerRect.left}px`,
-        } as CSSProperties);
+  const positionStyle: CSSProperties | undefined =
+    inline || !triggerRect
+      ? undefined
+      : placement === "bottom"
+        ? ({
+            "--jp-cal-top": `${triggerRect.bottom + 10}px`,
+            "--jp-cal-left": `${triggerRect.left}px`,
+          } as CSSProperties)
+        : ({
+            "--jp-cal-bottom": `${window.innerHeight - triggerRect.top + 10}px`,
+            "--jp-cal-left": `${triggerRect.left}px`,
+          } as CSSProperties);
 
-  return createPortal(
+  const calendarClassName = [
+    styles.calendar,
+    inline ? styles.calendarInline : "",
+    !inline && placement === "top" ? styles.calendarAbove : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const content = (
     <div
-      className={`${styles.calendar} ${placement === "top" ? styles.calendarAbove : ""}`}
+      className={calendarClassName}
       style={positionStyle}
       role="dialog"
       aria-label="Select a date"
@@ -240,7 +258,9 @@ export function Calendar({
           ),
         )}
       </div>
-    </div>,
-    portalTarget ?? document.body,
+    </div>
   );
+
+  if (inline) return content;
+  return createPortal(content, portalTarget ?? document.body);
 }
