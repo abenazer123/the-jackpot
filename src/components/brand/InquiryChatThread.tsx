@@ -365,6 +365,12 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  order received; render after the matching Olivia bubble. */
   const [harnessWidgets, setHarnessWidgets] = useState<Array<{ type: string; payload: Record<string, unknown> }>>([]);
 
+  /** Gates the scripted opener bubble + the dates widget. Starts false
+   *  on open, flips to true after ~900ms so Olivia's first line feels
+   *  written rather than instant. Same drip-feed pattern as the rest
+   *  of the conversation. */
+  const [introReady, setIntroReady] = useState(false);
+
   // Price reveal state. Populated when step transitions to "pricing"
   // and we fetch from /api/inquiry-agent/quote. Either lands as a
   // real quote (renders the price card) or as an error (renders a
@@ -409,7 +415,27 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setIsWaitingForOlivia(false);
       setPriceQuote(null);
       setPriceError(null);
+      setIntroReady(false);
     }, 0);
+    return () => window.clearTimeout(t);
+  }, [open]);
+
+  // Drip-feed pacing on dialog open: hold the scripted Olivia opener
+  // (and the dates widget) behind typing dots for ~900ms so it feels
+  // written, not instant. Honors prefers-reduced-motion.
+  useEffect(() => {
+    if (!open) {
+      setIntroReady(false);
+      return;
+    }
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setIntroReady(true);
+      return;
+    }
+    const t = window.setTimeout(() => setIntroReady(true), 900);
     return () => window.clearTimeout(t);
   }, [open]);
 
@@ -423,7 +449,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       body.scrollTop = body.scrollHeight;
     });
     return () => window.cancelAnimationFrame(id);
-  }, [step, checkingPhase, availablePhase, harnessMessages.length, isWaitingForOlivia, priceQuote]);
+  }, [step, checkingPhase, availablePhase, harnessMessages.length, isWaitingForOlivia, priceQuote, introReady]);
 
   // Fetch the real quote when the conversation enters the pricing
   // step. While it's in flight the existing "Pulling pricing now…"
@@ -863,24 +889,41 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         </div>
 
         <div className={styles.body} ref={bodyRef}>
-          {/* Initial exchange — always visible across every step. */}
-          <div className={styles.msgUserRow}>
-            <div className={styles.msgUserBubble}>Check dates &amp; price</div>
-          </div>
-
-          <div className={styles.msgRow}>
-            <div className={styles.msgAvatar} aria-hidden="true">
-              O
+          {/* Entry user bubble — mirrors which chip the guest tapped.
+              For the share path, the harness composes the opener so
+              we skip the scripted Olivia reply below. */}
+          {initialIntent === "share" ? (
+            <div className={styles.msgUserRow}>
+              <div className={styles.msgUserBubble}>Send this to my group</div>
             </div>
-            <div className={styles.msgBubble}>
-              Cool &mdash; what weekend? Pick anything and I&apos;ll pull a
-              real number.
+          ) : (
+            <div className={styles.msgUserRow}>
+              <div className={styles.msgUserBubble}>Check dates &amp; price</div>
             </div>
-          </div>
+          )}
 
-          {/* Step "dates" — inline calendar block. Collapses to a user
-              bubble (rendered below) the moment a departure is picked. */}
-          {step === "dates" && (
+          {/* Scripted Olivia opener — only the check_dates path. Drip-
+              fed: typing dots first, then the message + the calendar
+              widget land together after ~900ms. */}
+          {initialIntent !== "share" && !introReady && <OliviaTyping />}
+
+          {initialIntent !== "share" && introReady && (
+            <div className={`${styles.msgRow} ${styles.fadeIn}`}>
+              <div className={styles.msgAvatar} aria-hidden="true">
+                O
+              </div>
+              <div className={styles.msgBubble}>
+                Cool. What weekend? Pick anything and I&apos;ll pull a real
+                number.
+              </div>
+            </div>
+          )}
+
+          {/* Step "dates" — inline calendar block. Only for the
+              check_dates path, only after the scripted intro lands.
+              Collapses to a user bubble (rendered below) the moment a
+              departure is picked. */}
+          {step === "dates" && initialIntent !== "share" && introReady && (
             <div className={styles.dateBlock}>
               <div className={styles.dateFields}>
                 <button
@@ -955,7 +998,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                       O
                     </div>
                     <div className={styles.msgBubble}>
-                      Got it &mdash; {formatRangeLong(arrival, departure)}.
+                      Got it. {formatRangeLong(arrival, departure)}.
                       Pulling availability + pricing now&hellip;
                     </div>
                   </div>
@@ -986,7 +1029,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                   </div>
                   <div className={styles.msgBubble}>
                     <em>
-                      While I look &mdash; where can I reach you? In case we
+                      While I look. Where can I reach you? In case we
                       get disconnected, I&apos;ll send the full answer your
                       way.
                     </em>
@@ -1067,7 +1110,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                 <span className={styles.successTick} aria-hidden="true">
                   &#10003;
                 </span>
-                Got it &mdash; the answer will land in your inbox too.
+                Got it. The answer will land in your inbox too.
               </div>
             </>
           )}

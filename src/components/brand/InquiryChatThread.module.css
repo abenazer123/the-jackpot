@@ -15,18 +15,30 @@
   border: 0;
   background: transparent;
   color: var(--jp-text-primary);
-  width: 100vw;
-  max-width: 100vw;
-  height: 100vh;
-  max-height: 100vh;
   margin: 0;
   overflow: hidden;
 }
 
 .dialog[open] {
+  /* Fullscreen modal. position: fixed + inset: 0 overrides the user-
+     agent stylesheet that would otherwise center the dialog and leave
+     whitespace around it. */
   display: flex;
   flex-direction: column;
   justify-content: stretch;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: 100vw;
+  /* 100vh on mobile Safari is "tall viewport" — includes the URL bar
+     even when it isn't visible — so the composer at the bottom gets
+     pushed below the visible area. dvh is the dynamic viewport unit
+     that follows the actual visible chrome. Fallback to vh for older
+     browsers that don't know dvh. */
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
 }
 
 .dialog::backdrop {
