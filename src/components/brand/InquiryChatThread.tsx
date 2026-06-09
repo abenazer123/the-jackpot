@@ -244,6 +244,72 @@ function looksLikeEmail(s: string): boolean {
   return dot > at + 1 && dot < v.length - 1;
 }
 
+/** Share-link widget. Surfaced when Olivia fires
+ *  `show_widget: {widget: "share_link"}`. Gives the guest a shareable
+ *  /trip URL with copy + native-share buttons. The harness mints the
+ *  token + writes the inquiry row server-side; we just render. */
+function ShareLinkWidget({
+  url,
+  guestCount,
+  occasion,
+}: {
+  url: string;
+  guestCount: number;
+  occasion: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const canNativeShare =
+    typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // Fallback: select the text so the guest can manually copy.
+    }
+  };
+
+  const handleShare = async () => {
+    const title = "The Jackpot Chicago";
+    const text = occasion
+      ? `${occasion} for ${guestCount || ""} at The Jackpot. Take a look:`
+      : "Take a look at this place I found:";
+    try {
+      await navigator.share({ title, text: text.trim(), url });
+    } catch {
+      // Guest cancelled or share unsupported. No-op.
+    }
+  };
+
+  return (
+    <div className={`${styles.shareCard} ${styles.fadeIn}`}>
+      <div className={styles.shareCardLabel}>For the crew</div>
+      <div className={styles.shareCardUrl}>{url}</div>
+      <div className={styles.shareCardButtons}>
+        <button
+          type="button"
+          className={styles.shareCardBtn}
+          onClick={handleCopy}
+          data-state={copied ? "copied" : undefined}
+        >
+          {copied ? "Copied" : "Copy link"}
+        </button>
+        {canNativeShare && (
+          <button
+            type="button"
+            className={`${styles.shareCardBtn} ${styles.shareCardBtnPrimary}`}
+            onClick={handleShare}
+          >
+            Send it
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** Typing-indicator bubble — three pulsing dots inside an assistant-
  *  style bubble that fills the slot for an upcoming Olivia message.
  *  Lives at module scope so React doesn't remount and re-create the dot
@@ -291,6 +357,9 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
   const [harnessSessionId, setHarnessSessionId] = useState<string | null>(null);
   const [harnessMessages, setHarnessMessages] = useState<HarnessMessage[]>([]);
   const [isWaitingForOlivia, setIsWaitingForOlivia] = useState(false);
+  /** Widgets Olivia surfaced via show_widget actions. Appended in
+   *  order received; render after the matching Olivia bubble. */
+  const [harnessWidgets, setHarnessWidgets] = useState<Array<{ type: string; payload: Record<string, unknown> }>>([]);
 
   // Price reveal state. Populated when step transitions to "pricing"
   // and we fetch from /api/inquiry-agent/quote. Either lands as a
@@ -332,6 +401,7 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
       setOccasion("");
       setHarnessSessionId(null);
       setHarnessMessages([]);
+      setHarnessWidgets([]);
       setIsWaitingForOlivia(false);
       setPriceQuote(null);
       setPriceError(null);
@@ -563,9 +633,16 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: { session_id: string; messages: HarnessMessage[] } = await res.json();
+      const data: {
+        session_id: string;
+        messages: HarnessMessage[];
+        widgets?: Array<{ type: string; payload: Record<string, unknown> }>;
+      } = await res.json();
       if (!harnessSessionId) setHarnessSessionId(data.session_id);
       setHarnessMessages((prev) => [...prev, ...data.messages]);
+      if (data.widgets && data.widgets.length) {
+        setHarnessWidgets((prev) => [...prev, ...data.widgets!]);
+      }
     } catch {
       // Silent on trigger failure — guest still sees the price card,
       // they can just type something and Olivia will pick up from
@@ -626,6 +703,7 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
         session_id: string;
         messages: HarnessMessage[];
         extracted_slots?: Record<string, unknown>;
+        widgets?: Array<{ type: string; payload: Record<string, unknown> }>;
       } = await res.json();
 
       // First successful turn fixes the session ID for the rest of the dialog.
@@ -634,12 +712,14 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
 
       // Apply harness-extracted slots to scripted-widget state so the
       // guest sees their typed info pre-filled. Strict-confirm: the
-      // widget's commit button still has to be tapped. Dates are
-      // deliberately not pre-filled yet — the calendar widget auto-
-      // advances on departure pick, and pre-filling without a confirm
-      // affordance creates a weird in-between state. That's a follow-up.
+      // widget's commit button still has to be tapped.
       if (data.extracted_slots) {
         applyHarnessSlots(data.extracted_slots);
+      }
+
+      // Surface any widgets the harness rendered (e.g. share_link).
+      if (data.widgets && data.widgets.length) {
+        setHarnessWidgets((prev) => [...prev, ...data.widgets!]);
       }
     } catch {
       // Network or server failure — surface a soft fallback bubble so
@@ -1122,6 +1202,17 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
                 <div className={styles.msgBubble}>{msg.body}</div>
               </div>
             ),
+          )}
+
+          {harnessWidgets.map((w, idx) =>
+            w.type === "share_link" ? (
+              <ShareLinkWidget
+                key={`widget-${idx}-${w.payload.token}`}
+                url={String(w.payload.url ?? "")}
+                guestCount={Number(groupSize) || 0}
+                occasion={occasion}
+              />
+            ) : null,
           )}
 
           {isWaitingForOlivia && <OliviaTyping />}

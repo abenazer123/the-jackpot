@@ -117,6 +117,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let signalsUpdate: Partial<Signals> = {};
   const nextPhase: Phase | null = null;
   let mirrorFired: { event: string; at: string } | null = null;
+  let harnessWidgets: Array<{ type: string; payload: Record<string, unknown> }> = [];
+  let inquiryIdLinked: string | null = null;
 
   if (isWidgetConfirm) {
     // Phase 1: acknowledge the commit without calling Claude. Widget
@@ -144,6 +146,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     slotsUpdate = result.slotsUpdate;
     signalsUpdate = result.signalsUpdate;
     mirrorFired = result.mirrorFired;
+    harnessWidgets = result.widgets;
+    inquiryIdLinked = result.inquiryIdLinked;
     // Phase 1: don't auto-transition phase. Phase 2 will.
   }
 
@@ -163,6 +167,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     updatePayload.last_mirror_event = mirrorFired.event;
     updatePayload.last_mirror_at = mirrorFired.at;
   }
+  if (inquiryIdLinked) {
+    updatePayload.inquiry_id = inquiryIdLinked;
+  }
 
   const { error: updateError } = await supabase
     .from("inquiry_session")
@@ -178,12 +185,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // 6. Return turn response. extracted_slots lets the frontend pre-fill
   //    scripted widgets so the guest doesn't re-enter info Olivia
-  //    already parsed from their message.
+  //    already parsed from their message. widgets carries any
+  //    show_widget renders (share_link, etc).
   const response: TurnResponse = {
     session_id: session.id,
     phase: (nextPhase ?? session.phase) as Phase,
     messages: [oliviaReply],
-    widgets: [],
+    widgets: harnessWidgets,
     extracted_slots: slotsUpdate as Record<string, unknown>,
   };
 

@@ -809,6 +809,94 @@
   margin-top: 2px;
 }
 
+/* Share-link widget — surfaced when Olivia fires the share path.
+   Gives the guest a /trip URL plus copy and native-share buttons. */
+.shareCard {
+  margin: 12px 0 8px 0;
+  padding: 16px 18px;
+  background: var(--jp-bg-secondary, var(--jp-linen));
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-lg);
+}
+
+.shareCardLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+  margin-bottom: 6px;
+}
+
+.shareCardUrl {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--jp-text-primary);
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+  padding: 10px 12px;
+  word-break: break-all;
+  margin-bottom: 10px;
+}
+
+.shareCardButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shareCardBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-full);
+  padding: 9px 18px;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  color: var(--jp-text-primary);
+  background: var(--jp-bg-primary);
+  cursor: pointer;
+  transition:
+    background var(--jp-transition),
+    border-color var(--jp-transition),
+    color var(--jp-transition);
+}
+
+.shareCardBtn:hover {
+  border-color: var(--jp-border-hover);
+  background: var(--jp-gold-10);
+}
+
+.shareCardBtn:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
+}
+
+.shareCardBtn[data-state="copied"] {
+  background: var(--jp-gold-25);
+  border-color: var(--jp-gold);
+  color: var(--jp-gold-deep);
+}
+
+.shareCardBtnPrimary {
+  border: 0;
+  color: #ffffff;
+  background-image: var(--jp-gradient-button);
+}
+
+.shareCardBtnPrimary:hover {
+  border: 0;
+  background-image: var(--jp-gradient-button);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212, 169, 48, 0.28);
+}
+
 .optionsContinue {
   display: inline-flex;
   align-items: center;

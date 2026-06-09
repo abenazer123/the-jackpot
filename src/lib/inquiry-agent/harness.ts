@@ -27,6 +27,8 @@ import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 
 import { sendAbeNotification } from "@/lib/email/abeNotification";
+import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
+import { generateShareToken } from "@/lib/share/generateShareToken";
 import { siteOrigin } from "@/lib/siteOrigin";
 import { supabaseServer } from "@/lib/supabase-server";
 
@@ -57,14 +59,15 @@ const PROMPT_VERSION = "v1";
 const SKILL = "inquiry";
 const MAX_TOKENS = 16_000;
 
-/** Tools the harness actually executes today. Phase 2.5 added
- *  notify_abe (real Resend send). Phase 2.6+ will add mirror_to_venuemba
- *  and show_widget. Anything not in this set still gets recorded in
- *  agent_activity for visibility. */
+/** Tools the harness actually executes today. mirror_to_venuemba is
+ *  routing-driven, not action-driven (see §7.5 below), so it's not in
+ *  this set even though it's wired up. Anything proposed but not in
+ *  this set still gets recorded in agent_activity for visibility. */
 const EXECUTABLE_TOOLS = new Set<ToolName>([
   "send_message",
   "commit_facts",
   "notify_abe",
+  "show_widget",
 ]);
 
 /** Hard-trigger patterns — bypass Claude entirely when matched. */
@@ -263,6 +266,30 @@ const QUALIFY_RESULT_TOOL: Anthropic.Tool = {
               type: "object",
               required: ["tool", "input", "confidence"],
               properties: {
+                tool: { const: "show_widget" },
+                input: {
+                  type: "object",
+                  required: ["widget"],
+                  properties: {
+                    widget: {
+                      type: "string",
+                      enum: ["share_link"],
+                      description: "Which widget to render in the chat. `share_link` mints a /trip URL the guest can send to their crew.",
+                    },
+                    payload: {
+                      type: "object",
+                      description: "Optional widget-specific data. The harness fills server-controlled fields (token, URL) automatically.",
+                    },
+                  },
+                },
+                confidence: { type: "number", minimum: 0, maximum: 1 },
+                rationale: { type: ["string", "null"] },
+              },
+            },
+            {
+              type: "object",
+              required: ["tool", "input", "confidence"],
+              properties: {
                 tool: { const: "notify_abe" },
                 input: {
                   type: "object",
@@ -340,6 +367,15 @@ export interface RunInquiryAgentOutput {
    *  inquiry_session.last_mirror_event so subsequent turns don't
    *  re-fire the same milestone. Null on skip / failure / no fire. */
   mirrorFired: { event: string; at: string } | null;
+  /** Widgets the LLM proposed via show_widget actions, executed and
+   *  enriched server-side with whatever the widget needs (e.g.
+   *  share_link gets a real /trip URL minted from a fresh inquiry
+   *  row). Frontend renders these inline below Olivia's reply. */
+  widgets: Array<{ type: string; payload: Record<string, unknown> }>;
+  /** If the share executor wrote an inquiry row, the route handler
+   *  links it onto inquiry_session.inquiry_id so the session and the
+   *  lead point at each other. */
+  inquiryIdLinked: string | null;
 }
 
 export async function runInquiryAgent(
@@ -416,6 +452,8 @@ export async function runInquiryAgent(
         routingNextStep: isHumanRequest ? "immediate_handoff" : null,
         hardTriggerBlocked: { reason: "matched_hard_trigger", intent: trig.intent },
         mirrorFired: null,
+        widgets: [],
+        inquiryIdLinked: null,
       };
     }
   }
@@ -590,6 +628,8 @@ export async function runInquiryAgent(
   let oliviaReplyBody: string | null = null;
   const slotsUpdate: Partial<ExtractedSlots> = {};
   let mirrorFiredEvent: RunInquiryAgentOutput["mirrorFired"] = null;
+  const widgets: RunInquiryAgentOutput["widgets"] = [];
+  let inquiryIdLinked: string | null = null;
 
   for (const action of executed) {
     if (action.tool === "send_message") {
@@ -602,6 +642,27 @@ export async function runInquiryAgent(
         Object.assign(slotsUpdate, input.slots);
       }
       action.result = { slots_keys: Object.keys(input.slots ?? {}) };
+    } else if (action.tool === "show_widget") {
+      const input = action.input as { widget?: string };
+      if (input.widget === "share_link") {
+        const share = await ensureShareLink(session, slotsUpdate);
+        if (share.ok) {
+          widgets.push({
+            type: "share_link",
+            payload: {
+              url: share.url,
+              token: share.token,
+              total_cents: share.totalCents,
+            },
+          });
+          if (share.inquiryIdLinked) inquiryIdLinked = share.inquiryIdLinked;
+          action.result = { rendered: "share_link", url: share.url };
+        } else {
+          action.result = { rendered: false, error: share.error };
+        }
+      } else {
+        action.result = { rendered: false, error: "unknown_widget" };
+      }
     } else if (action.tool === "notify_abe") {
       // Fetch fresh session for the email payload (slots may have
       // shifted during this turn via earlier commit_facts execution).
@@ -733,6 +794,8 @@ export async function runInquiryAgent(
     routingNextStep: result.routing.next_step,
     hardTriggerBlocked: null,
     mirrorFired: mirrorFiredEvent,
+    widgets,
+    inquiryIdLinked,
   };
 }
 
@@ -825,6 +888,8 @@ function fallbackReply(sessionId: string, body: string): RunInquiryAgentOutput {
     routingNextStep: null,
     hardTriggerBlocked: null,
     mirrorFired: null,
+    widgets: [],
+    inquiryIdLinked: null,
   };
 }
 
@@ -833,6 +898,103 @@ function estimateCostCents(usage: Anthropic.Usage): number {
   const inputCents = (usage.input_tokens / 1_000_000) * 500;
   const outputCents = (usage.output_tokens / 1_000_000) * 2_500;
   return Math.round(inputCents + outputCents);
+}
+
+/** Ensure a share-link inquiry exists for this session. Returns the
+ *  full /trip URL plus the token. Idempotent on inquiry_session.inquiry_id —
+ *  if a row already exists, re-fetches the token instead of creating
+ *  a duplicate. Skips when the required slot data isn't there yet.
+ */
+async function ensureShareLink(
+  session: InquirySessionRow,
+  slotsUpdateThisTurn: Partial<ExtractedSlots>,
+): Promise<
+  | {
+      ok: true;
+      url: string;
+      token: string;
+      totalCents: number | null;
+      inquiryIdLinked: string | null;
+    }
+  | { ok: false; error: string }
+> {
+  const merged = {
+    ...(session.slots as Record<string, unknown>),
+    ...(slotsUpdateThisTurn as Record<string, unknown>),
+  };
+  const arrival = typeof merged.arrival === "string" ? merged.arrival : null;
+  const departure = typeof merged.departure === "string" ? merged.departure : null;
+  const email = typeof merged.email === "string" ? merged.email : null;
+  const name = typeof merged.name === "string" ? merged.name : null;
+  const phone = typeof merged.phone === "string" ? merged.phone : null;
+  const guests = typeof merged.guest_count === "number" ? merged.guest_count : null;
+  const occasion = typeof merged.occasion === "string" ? merged.occasion : null;
+
+  if (!arrival || !departure || !email || !name || !guests || !occasion) {
+    return { ok: false, error: "missing_required_slots" };
+  }
+
+  const supabase = supabaseServer();
+
+  // Idempotency: if this session already links to an inquiry row,
+  // reuse its token.
+  if (session.inquiry_id) {
+    const { data } = await supabase
+      .from("inquiries")
+      .select("share_token,quote_total_cents")
+      .eq("id", session.inquiry_id)
+      .single();
+    if (data && typeof data.share_token === "string" && data.share_token) {
+      return {
+        ok: true,
+        url: `${siteOrigin()}/trip/${data.share_token}`,
+        token: data.share_token,
+        totalCents:
+          typeof data.quote_total_cents === "number" ? data.quote_total_cents : null,
+        inquiryIdLinked: null, // already linked
+      };
+    }
+  }
+
+  // Compute the quote — best-effort. If pricing fails we still create
+  // the inquiry without a snapshot; the /trip page will fall back to
+  // its existing live-quote path.
+  const quoteResult = await computeQuoteLive({ arrival, departure, guests, occasion });
+  const quote = quoteResult.ok ? quoteResult.quote : null;
+
+  const token = generateShareToken();
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("inquiries")
+    .insert({
+      arrival,
+      departure,
+      email,
+      name,
+      phone: phone ?? "",
+      guests,
+      reason: occasion,
+      source: "chat_share",
+      share_token: token,
+      shared_at: now,
+      quote_snapshot: quote,
+      quote_total_cents: quote?.totalCents ?? null,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    return { ok: false, error: error?.message ?? "insert_failed" };
+  }
+
+  return {
+    ok: true,
+    url: `${siteOrigin()}/trip/${token}`,
+    token,
+    totalCents: quote?.totalCents ?? null,
+    inquiryIdLinked: data.id as string,
+  };
 }
 
 async function persistActivity(sessionId: string, row: AgentActivityRow): Promise<void> {
