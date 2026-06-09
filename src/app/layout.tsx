@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Outfit } from "next/font/google";
 
 import { HostPresenceProvider } from "@/components/brand/HostPresenceProvider";
@@ -46,6 +46,17 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
   },
   robots: { index: true, follow: true },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Tells iOS Safari to resize the LAYOUT viewport when the soft
+  // keyboard opens, not just shrink the visual viewport. Means
+  // 100dvh / position: fixed elements (our chat dialog) track the
+  // keyboard correctly instead of being clipped or pushing the page
+  // behind them. Replaces the default Next-injected viewport meta.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

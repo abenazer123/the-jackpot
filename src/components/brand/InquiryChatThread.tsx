@@ -1331,6 +1331,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             aria-label="Message Olivia"
+            inputMode="text"
+            enterKeyHint="send"
+            autoComplete="off"
+            autoCorrect="on"
+            autoCapitalize="sentences"
           />
           <button
             type="submit"

@@ -964,11 +964,27 @@
   background: var(--jp-bg-primary);
   font-family: var(--jp-font-body);
   font-weight: 400;
-  font-size: 15px;
+  /* 16px is the iOS auto-zoom threshold. Anything smaller and Safari
+     zooms the page on focus, which causes the caret-text desync Abe
+     saw and leaves the page zoomed after dismiss. Keep at 16+. */
+  font-size: 16px;
+  /* Explicit. Inherits 1.7 from body otherwise, which makes the caret
+     sit above the text instead of with it. */
+  line-height: 1.4;
   color: var(--jp-text-primary);
   padding: 10px 14px;
   outline: none;
   min-width: 0;
+  box-sizing: border-box;
+  /* Kill the residual iOS native input styling that paints over our
+     border-radius / shadow / color. */
+  -webkit-appearance: none;
+  appearance: none;
+  /* Prevent any other auto font-size adjustments Safari might apply. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* No gray flash on tap. */
+  -webkit-tap-highlight-color: transparent;
   transition:
     border-color var(--jp-transition),
     box-shadow var(--jp-transition);
@@ -997,6 +1013,7 @@
   font-size: 16px;
   cursor: pointer;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
   transition:
     background var(--jp-transition),
     transform var(--jp-transition);
