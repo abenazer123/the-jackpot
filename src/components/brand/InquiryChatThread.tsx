@@ -44,6 +44,10 @@ import styles from "./InquiryChatThread.module.css";
 interface InquiryChatThreadProps {
   open: boolean;
   onClose: () => void;
+  /** When set, fires a synthetic system event to the harness on
+   *  open so Olivia composes the right opener. Used by InquiryChat's
+   *  entry chips ("Send this to my group" → "share"). */
+  initialIntent?: "share" | null;
 }
 
 type DateFocus = "arrival" | "departure";
@@ -333,7 +337,7 @@ function OliviaTyping() {
   );
 }
 
-export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
+export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatThreadProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -477,6 +481,23 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [priceQuote]);
 
+  // When the dialog opens with an entry-chip intent (e.g. "Send this
+  // to my group"), fire a one-shot system event so Olivia composes the
+  // right opener for that path instead of the generic greeting. Runs
+  // at most once per dialog open.
+  const intentTriggeredRef = useRef(false);
+  useEffect(() => {
+    if (!open) {
+      intentTriggeredRef.current = false;
+      return;
+    }
+    if (!initialIntent) return;
+    if (intentTriggeredRef.current) return;
+    intentTriggeredRef.current = true;
+    void fireChipIntent(initialIntent);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialIntent]);
+
   // Drip-feed the "checking" step: typing dots → first Olivia reply +
   // availability pill → typing dots again → second Olivia reply →
   // contact form. Cleared on unmount or if the dialog closes mid-flow.
@@ -603,6 +624,43 @@ export function InquiryChatThread({ open, onClose }: InquiryChatThreadProps) {
     },
     [arrival, contactName, contactEmail, contactPhone, departure, groupSize, occasion, today],
   );
+
+  /** Fire a one-shot system event when the guest opens the dialog
+   *  with a specific chip intent. Olivia sees the event in her
+   *  system-reminder and composes the right opener for that path. */
+  const fireChipIntent = async (intent: "share") => {
+    setIsWaitingForOlivia(true);
+    const body =
+      intent === "share"
+        ? "[EVENT:chip_intent_share] Guest just tapped the 'Send this to my group' chip on the entry card. They want to share the home with their crew. No info has been captured yet. Acknowledge warmly, ask for the minimum you need to mint a share link (name, email, weekend they're eyeing, group size, occasion), and once you have it propose show_widget: share_link."
+        : "[EVENT:chip_intent_unknown]";
+    try {
+      const res = await fetch("/api/inquiry-agent/turn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: harnessSessionId,
+          message: { role: "system", body, ts: new Date().toISOString() },
+          client_context: { phase: "state1", slots: {}, viewport: "mobile" },
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: {
+        session_id: string;
+        messages: HarnessMessage[];
+        widgets?: Array<{ type: string; payload: Record<string, unknown> }>;
+      } = await res.json();
+      if (!harnessSessionId) setHarnessSessionId(data.session_id);
+      setHarnessMessages((prev) => [...prev, ...data.messages]);
+      if (data.widgets && data.widgets.length) {
+        setHarnessWidgets((prev) => [...prev, ...data.widgets!]);
+      }
+    } catch {
+      // Silent on intent-fire failure — guest can just type something.
+    } finally {
+      setIsWaitingForOlivia(false);
+    }
+  };
 
   /** Fire a synthetic "system" turn so Olivia composes the first
    *  post-price bubble. Unlike a guest send, we do NOT add the

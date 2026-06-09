@@ -19,7 +19,7 @@ import { InquiryChatThread } from "./InquiryChatThread";
 import styles from "./InquiryChat.module.css";
 
 type Intent = "share" | "check_dates" | "save_for_later" | "free_text";
-type ExpandedView = "check_dates" | null;
+type ExpandedView = "check_dates" | "share" | null;
 
 interface InquiryChatProps {
   /** Fired when the guest picks a chip or sends a free-text message. */
@@ -52,6 +52,13 @@ export function InquiryChat({ onIntent }: InquiryChatProps) {
     // round. >900px taps stay no-ops while we design the desktop variant.
     if (isMobileViewport()) {
       setExpanded("check_dates");
+    }
+  };
+
+  const handleShare = () => {
+    onIntent?.("share");
+    if (isMobileViewport()) {
+      setExpanded("share");
     }
   };
 
@@ -96,13 +103,13 @@ export function InquiryChat({ onIntent }: InquiryChatProps) {
           <button
             type="button"
             className={styles.chip}
-            onClick={() => onIntent?.("share")}
+            onClick={handleShare}
             role="listitem"
           >
             <span className={styles.chipText}>
               <span className={styles.chipTitle}>Send this to my group</span>
               <span className={styles.chipSub}>
-                No commitment &mdash; just the link + photos
+                No commitment. Just the link plus photos.
               </span>
             </span>
             <span className={styles.chipArrow} aria-hidden="true">
@@ -154,8 +161,9 @@ export function InquiryChat({ onIntent }: InquiryChatProps) {
       </p>
 
       <InquiryChatThread
-        open={expanded === "check_dates"}
+        open={expanded !== null}
         onClose={() => setExpanded(null)}
+        initialIntent={expanded === "share" ? "share" : null}
       />
     </div>
   );

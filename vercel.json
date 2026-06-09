@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/pricelabs-sync",
       "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/cron/inquiry-abandonment-sweep",
+      "schedule": "*/10 * * * *"
     }
   ]
 }
