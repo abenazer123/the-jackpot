@@ -371,6 +371,13 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  of the conversation. */
   const [introReady, setIntroReady] = useState(false);
 
+  /** True once the guest goes conversational (composer send or a chip
+   *  intent). In this mode the AGENT drives which widget shows and
+   *  composes all the text — so the scripted Olivia bubbles are
+   *  suppressed and the widgets' commit handlers fire harness turns
+   *  instead of advancing the scripted step machine. */
+  const [agentDriven, setAgentDriven] = useState(false);
+
   // Price reveal state. Populated when step transitions to "pricing"
   // and we fetch from /api/inquiry-agent/quote. Either lands as a
   // real quote (renders the price card) or as an error (renders a
@@ -416,6 +423,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setPriceQuote(null);
       setPriceError(null);
       setIntroReady(false);
+      setAgentDriven(false);
     }, 0);
     return () => window.clearTimeout(t);
   }, [open]);
@@ -605,6 +613,13 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     !!arrival && !!departure && departure >= addDaysIso(arrival, MIN_NIGHTS);
   const handleConfirmDates = () => {
     if (!canConfirmDates) return;
+    if (agentDriven) {
+      // Agent owns the flow: tell it the dates landed and let it
+      // decide the next widget / advance. Echo a compact user bubble.
+      const label = formatRangeShort(arrival, departure);
+      void fireWidgetCommit(`I picked my dates: ${label}.`, label);
+      return;
+    }
     setCheckingPhase(0);
     setStep("checking");
   };
@@ -656,9 +671,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  system-reminder and composes the right opener for that path. */
   const fireChipIntent = async (intent: "share") => {
     setIsWaitingForOlivia(true);
+    setAgentDriven(true);
     const body =
       intent === "share"
-        ? "[EVENT:chip_intent_share] Guest just tapped the 'Send this to my group' chip on the entry card. They want to share the home with their crew. No info has been captured yet. Acknowledge warmly, ask for the minimum you need to mint a share link (name, email, weekend they're eyeing, group size, occasion), and once you have it propose show_widget: share_link."
+        ? "[EVENT:chip_intent_share] Guest just tapped the 'Send this to my group' chip on the entry card. They want to share the home with their crew. No info captured yet. Acknowledge warmly, then fire show_widget for whatever you need first (date_picker, contact_form, or group_occasion). Once you have name, email, dates, count, and occasion, propose show_widget: share_link."
         : "[EVENT:chip_intent_unknown]";
     try {
       const res = await fetch("/api/inquiry-agent/turn", {
@@ -671,16 +687,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: {
-        session_id: string;
-        messages: HarnessMessage[];
-        widgets?: Array<{ type: string; payload: Record<string, unknown> }>;
-      } = await res.json();
-      if (!harnessSessionId) setHarnessSessionId(data.session_id);
-      setHarnessMessages((prev) => [...prev, ...data.messages]);
-      if (data.widgets && data.widgets.length) {
-        setHarnessWidgets((prev) => [...prev, ...data.widgets!]);
-      }
+      applyHarnessResponse(await res.json());
     } catch {
       // Silent on intent-fire failure — guest can just type something.
     } finally {
@@ -736,6 +743,99 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     }
   };
 
+  /** Apply a harness turn response uniformly across all call sites:
+   *  render Olivia's messages, pre-fill slots, surface terminal
+   *  widgets (share_link), drive the agent-requested collection
+   *  widgets via the step machine, and fast-forward to pricing when
+   *  the agent signals advance. */
+  type HarnessResponse = {
+    session_id: string;
+    messages: HarnessMessage[];
+    extracted_slots?: Record<string, unknown>;
+    widgets?: Array<{ type: string; payload: Record<string, unknown> }>;
+    advance_to_pricing?: boolean;
+  };
+  const applyHarnessResponse = (data: HarnessResponse) => {
+    if (!harnessSessionId) setHarnessSessionId(data.session_id);
+    setHarnessMessages((prev) => [...prev, ...data.messages]);
+    if (data.extracted_slots) applyHarnessSlots(data.extracted_slots);
+
+    // Terminal widget (share_link) renders inline in the chat list.
+    // Collection widgets (date_picker / contact_form / group_occasion)
+    // drive the existing step machine to reveal the matching control.
+    for (const w of data.widgets ?? []) {
+      if (w.type === "share_link") {
+        setHarnessWidgets((prev) => [...prev, w]);
+      } else if (w.type === "date_picker") {
+        setIntroReady(true);
+        setStep("dates");
+      } else if (w.type === "contact_form") {
+        setCheckingPhase(3); // skip the drip; show the form immediately
+        setStep("checking");
+      } else if (w.type === "group_occasion") {
+        setAvailablePhase(2); // skip the drip; show the picker immediately
+        setStep("available");
+      }
+    }
+
+    // Fast-forward to the price reveal. The pricing useEffect fetches
+    // the quote (needs arrival/departure/groupSize, already pre-filled)
+    // and the post-price trigger fires Olivia's opener.
+    if (data.advance_to_pricing) {
+      setStep("pricing");
+    }
+  };
+
+  /** Fire a harness turn after the guest commits an agent-surfaced
+   *  widget. `userBubble` is what shows as the guest's message;
+   *  current local slots ride along in client_context so the agent
+   *  sees the freshly committed values and decides the next step
+   *  (another widget, or advance_to_pricing). */
+  const fireWidgetCommit = async (userBubble: string, _summary: string) => {
+    void _summary;
+    const userMsg: HarnessMessage = {
+      role: "user",
+      body: userBubble,
+      ts: new Date().toISOString(),
+    };
+    setHarnessMessages((prev) => [...prev, userMsg]);
+    setIsWaitingForOlivia(true);
+
+    const slots: Record<string, unknown> = {};
+    if (arrival) slots.arrival = arrival;
+    if (departure) slots.departure = departure;
+    if (contactName) slots.name = contactName;
+    if (contactEmail) slots.email = contactEmail;
+    if (contactPhone) slots.phone = contactPhone;
+    if (groupSize) slots.guest_count = Number.parseInt(groupSize, 10) || groupSize;
+    if (occasion) slots.occasion = occasion;
+
+    try {
+      const res = await fetch("/api/inquiry-agent/turn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: harnessSessionId,
+          message: userMsg,
+          client_context: { phase: stepToPhase(step), slots, viewport: "mobile" },
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      applyHarnessResponse(await res.json());
+    } catch {
+      setHarnessMessages((prev) => [
+        ...prev,
+        {
+          role: "olivia",
+          body: "Hmm. I lost my signal for a beat. Mind sending that again?",
+          ts: new Date().toISOString(),
+        },
+      ]);
+    } finally {
+      setIsWaitingForOlivia(false);
+    }
+  };
+
   const canSend = draft.trim().length > 0 && !isWaitingForOlivia;
   const handleSubmitDraft = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -750,9 +850,12 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       ts: new Date().toISOString(),
     };
 
-    // Echo the user bubble immediately + show typing dots.
+    // Echo the user bubble immediately + show typing dots. Typing in
+    // the composer is the canonical "go conversational" signal — the
+    // agent takes over widget + text control from here.
     setHarnessMessages((prev) => [...prev, userMsg]);
     setIsWaitingForOlivia(true);
+    setAgentDriven(true);
 
     // Build the client_context slot bundle from current local state so
     // the harness can see what the scripted widgets already committed.
@@ -783,28 +886,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
-      const data: {
-        session_id: string;
-        messages: HarnessMessage[];
-        extracted_slots?: Record<string, unknown>;
-        widgets?: Array<{ type: string; payload: Record<string, unknown> }>;
-      } = await res.json();
-
-      // First successful turn fixes the session ID for the rest of the dialog.
-      if (!harnessSessionId) setHarnessSessionId(data.session_id);
-      setHarnessMessages((prev) => [...prev, ...data.messages]);
-
-      // Apply harness-extracted slots to scripted-widget state so the
-      // guest sees their typed info pre-filled. Strict-confirm: the
-      // widget's commit button still has to be tapped.
-      if (data.extracted_slots) {
-        applyHarnessSlots(data.extracted_slots);
-      }
-
-      // Surface any widgets the harness rendered (e.g. share_link).
-      if (data.widgets && data.widgets.length) {
-        setHarnessWidgets((prev) => [...prev, ...data.widgets!]);
-      }
+      applyHarnessResponse(await res.json());
     } catch {
       // Network or server failure — surface a soft fallback bubble so
       // the guest doesn't see silence. Don't surface raw error details.
@@ -825,9 +907,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   const handleSaveContact = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!canSaveContact) return;
-    // Persistence + CRM sync lives in a later task. Today the save
-    // simply advances the conversation: the form collapses into a
-    // summary bubble and Olivia greets the guest by name.
+    if (agentDriven) {
+      const summary = formatContactSummary(contactName, contactEmail, contactPhone);
+      void fireWidgetCommit(`Here's my info: ${summary}.`, summary);
+      return;
+    }
     setAvailablePhase(0);
     setStep("available");
   };
@@ -835,9 +919,13 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   const canContinueOptions = !!groupSize && !!occasion;
   const handleContinueOptions = () => {
     if (!canContinueOptions) return;
-    // Widget collapses into a "groupSize · occasion" user bubble and
-    // we kick into the pricing-check beat. Price reveal widget lands
-    // in the next round.
+    if (agentDriven) {
+      void fireWidgetCommit(
+        `${groupSize} guests for a ${occasion.toLowerCase()}.`,
+        `${groupSize} guests, ${occasion}`,
+      );
+      return;
+    }
     setStep("pricing");
   };
 
@@ -902,12 +990,13 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
             </div>
           )}
 
-          {/* Scripted Olivia opener — only the check_dates path. Drip-
-              fed: typing dots first, then the message + the calendar
-              widget land together after ~900ms. */}
-          {initialIntent !== "share" && !introReady && <OliviaTyping />}
+          {/* Scripted Olivia opener — only the pure tap-through lane
+              (check_dates chip, no agent involvement). Suppressed once
+              the agent takes over (agentDriven) since it composes the
+              text itself. Drip-fed: typing dots, then message + calendar. */}
+          {!agentDriven && initialIntent !== "share" && !introReady && <OliviaTyping />}
 
-          {initialIntent !== "share" && introReady && (
+          {!agentDriven && initialIntent !== "share" && introReady && (
             <div className={`${styles.msgRow} ${styles.fadeIn}`}>
               <div className={styles.msgAvatar} aria-hidden="true">
                 O
@@ -919,11 +1008,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
             </div>
           )}
 
-          {/* Step "dates" — inline calendar block. Only for the
-              check_dates path, only after the scripted intro lands.
-              Collapses to a user bubble (rendered below) the moment a
-              departure is picked. */}
-          {step === "dates" && initialIntent !== "share" && introReady && (
+          {/* Inline calendar block. Shows whenever we're on the dates
+              step and the intro is ready, in any lane (tap-through OR
+              agent-surfaced via show_widget: date_picker). Collapses to
+              a user bubble once a departure is picked + confirmed. */}
+          {step === "dates" && introReady && (
             <div className={styles.dateBlock}>
               <div className={styles.dateFields}>
                 <button
@@ -975,9 +1064,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
             </div>
           )}
 
-          {/* Committed dates user bubble — stays visible from "checking"
-              onward as part of the chat history. */}
-          {step !== "dates" && (
+          {/* Committed dates user bubble — tap lane only. In the agent
+              lane the dates commit was already echoed via a widget-
+              commit bubble, so this would duplicate. */}
+          {!agentDriven && step !== "dates" && (
             <div className={styles.msgUserRow}>
               <div className={styles.msgUserBubble}>
                 {formatRangeShort(arrival, departure)}
@@ -989,9 +1079,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
               availability pill, her follow-up, and the contact form. */}
           {step === "checking" && (
             <>
-              {checkingPhase === 0 && <OliviaTyping />}
+              {!agentDriven && checkingPhase === 0 && <OliviaTyping />}
 
-              {checkingPhase >= 1 && (
+              {!agentDriven && checkingPhase >= 1 && (
                 <>
                   <div className={`${styles.msgRow} ${styles.fadeIn}`}>
                     <div className={styles.msgAvatar} aria-hidden="true">
@@ -1020,9 +1110,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                 </>
               )}
 
-              {checkingPhase === 1 && <OliviaTyping />}
+              {!agentDriven && checkingPhase === 1 && <OliviaTyping />}
 
-              {checkingPhase >= 2 && (
+              {!agentDriven && checkingPhase >= 2 && (
                 <div className={`${styles.msgRow} ${styles.fadeIn}`}>
                   <div className={styles.msgAvatar} aria-hidden="true">
                     O
@@ -1097,8 +1187,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
 
           {/* Collapsed contact form — once we move past "checking", the
               form is replaced by a compact user-bubble summary and a
-              sage success line that stays in the chat history. */}
-          {(step === "available" || step === "pricing") && (
+              sage success line. Suppressed when agentDriven: the agent
+              lane already echoed the contact via a widget-commit bubble
+              and the agent composes its own acknowledgment. */}
+          {!agentDriven && (step === "available" || step === "pricing") && (
             <>
               <div className={`${styles.msgUserRow} ${styles.fadeIn}`}>
                 <div className={styles.msgUserBubble}>{contactSummary}</div>
@@ -1119,9 +1211,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
               widget. Persists into "pricing" as collapsed history below. */}
           {step === "available" && (
             <>
-              {availablePhase === 0 && <OliviaTyping />}
+              {!agentDriven && availablePhase === 0 && <OliviaTyping />}
 
-              {availablePhase >= 1 && (
+              {!agentDriven && availablePhase >= 1 && (
                 <div className={`${styles.msgRow} ${styles.fadeIn}`}>
                   <div className={styles.msgAvatar} aria-hidden="true">
                     O
@@ -1197,11 +1289,13 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
               widget arrives in the next round. */}
           {step === "pricing" && (
             <>
-              <div className={`${styles.msgUserRow} ${styles.fadeIn}`}>
-                <div className={styles.msgUserBubble}>
-                  {groupSize} {Number(groupSize) === 1 ? "guest" : "guests"} &middot; {occasion}
+              {!agentDriven && (
+                <div className={`${styles.msgUserRow} ${styles.fadeIn}`}>
+                  <div className={styles.msgUserBubble}>
+                    {groupSize} {Number(groupSize) === 1 ? "guest" : "guests"} &middot; {occasion}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {!priceQuote && !priceError && (
                 <div

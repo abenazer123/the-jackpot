@@ -280,6 +280,10 @@ export const ShowWidgetInputSchema = z.object({
   payload: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
+export const AdvanceToPricingInputSchema = z.object({
+  reason: z.string().optional(),
+});
+
 export const CommitFactsInputSchema = z.object({
   slots: z.record(z.string(), z.unknown()),
   confidence: z.record(z.string(), z.number()).optional(),
@@ -330,6 +334,7 @@ const ActionCommon = {
 export const ActionSchema = z.discriminatedUnion("tool", [
   z.object({ tool: z.literal("send_message"), input: SendMessageInputSchema, ...ActionCommon }),
   z.object({ tool: z.literal("show_widget"), input: ShowWidgetInputSchema, ...ActionCommon }),
+  z.object({ tool: z.literal("advance_to_pricing"), input: AdvanceToPricingInputSchema, ...ActionCommon }),
   z.object({ tool: z.literal("commit_facts"), input: CommitFactsInputSchema, ...ActionCommon }),
   z.object({ tool: z.literal("offer_concession"), input: OfferConcessionInputSchema, ...ActionCommon }),
   z.object({ tool: z.literal("notify_abe"), input: NotifyAbeInputSchema, ...ActionCommon }),
@@ -399,6 +404,9 @@ export const TurnResponseSchema = z.object({
    * still require the guest to tap the widget's commit button.
    */
   extracted_slots: z.record(z.string(), z.unknown()).optional().default({}),
+  /** True when the agent fired advance_to_pricing. Frontend fast-
+   *  forwards to the price reveal (gated on having email locally). */
+  advance_to_pricing: z.boolean().optional().default(false),
 });
 
 // ──────────────────────────────────────────────────────────────────

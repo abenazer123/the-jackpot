@@ -68,6 +68,7 @@ const EXECUTABLE_TOOLS = new Set<ToolName>([
   "commit_facts",
   "notify_abe",
   "show_widget",
+  "advance_to_pricing",
 ]);
 
 /** Hard-trigger patterns — bypass Claude entirely when matched. */
@@ -273,13 +274,28 @@ const QUALIFY_RESULT_TOOL: Anthropic.Tool = {
                   properties: {
                     widget: {
                       type: "string",
-                      enum: ["share_link"],
-                      description: "Which widget to render in the chat. `share_link` mints a /trip URL the guest can send to their crew.",
+                      enum: ["date_picker", "contact_form", "group_occasion", "share_link"],
+                      description: "Which widget to render inline in the chat so the guest taps instead of types. `date_picker` = calendar for arrival/departure. `contact_form` = name/email/phone. `group_occasion` = guest count + occasion. `share_link` = mints a /trip URL. Use a widget WHENEVER you need structured data (dates, counts, occasion, contact). Never ask for those in prose.",
                     },
                     payload: {
                       type: "object",
                       description: "Optional widget-specific data. The harness fills server-controlled fields (token, URL) automatically.",
                     },
+                  },
+                },
+                confidence: { type: "number", minimum: 0, maximum: 1 },
+                rationale: { type: ["string", "null"] },
+              },
+            },
+            {
+              type: "object",
+              required: ["tool", "input", "confidence"],
+              properties: {
+                tool: { const: "advance_to_pricing" },
+                input: {
+                  type: "object",
+                  properties: {
+                    reason: { type: "string", description: "Why you're advancing now (e.g. 'have dates, count, occasion, and email')." },
                   },
                 },
                 confidence: { type: "number", minimum: 0, maximum: 1 },
@@ -376,6 +392,9 @@ export interface RunInquiryAgentOutput {
    *  links it onto inquiry_session.inquiry_id so the session and the
    *  lead point at each other. */
   inquiryIdLinked: string | null;
+  /** True when the agent fired advance_to_pricing. The frontend
+   *  fast-forwards to the price reveal (gated on having email locally). */
+  advanceToPricing: boolean;
 }
 
 export async function runInquiryAgent(
@@ -454,6 +473,7 @@ export async function runInquiryAgent(
         mirrorFired: null,
         widgets: [],
         inquiryIdLinked: null,
+        advanceToPricing: false,
       };
     }
   }
@@ -630,6 +650,7 @@ export async function runInquiryAgent(
   let mirrorFiredEvent: RunInquiryAgentOutput["mirrorFired"] = null;
   const widgets: RunInquiryAgentOutput["widgets"] = [];
   let inquiryIdLinked: string | null = null;
+  let advanceToPricing = false;
 
   for (const action of executed) {
     if (action.tool === "send_message") {
@@ -660,9 +681,26 @@ export async function runInquiryAgent(
         } else {
           action.result = { rendered: false, error: share.error };
         }
+      } else if (
+        input.widget === "date_picker" ||
+        input.widget === "contact_form" ||
+        input.widget === "group_occasion"
+      ) {
+        // Collection widgets render inline client-side from the
+        // existing scripted components. No server work needed; just
+        // pass the widget type through and the frontend mounts it.
+        widgets.push({ type: input.widget, payload: {} });
+        action.result = { rendered: input.widget };
       } else {
         action.result = { rendered: false, error: "unknown_widget" };
       }
+    } else if (action.tool === "advance_to_pricing") {
+      // Signal the frontend to fast-forward to the price reveal. The
+      // frontend validates it has dates + guest count + occasion +
+      // email locally before acting (email-before-price gate); if
+      // anything's missing it shows the relevant widget instead.
+      advanceToPricing = true;
+      action.result = { signalled: true };
     } else if (action.tool === "notify_abe") {
       // Fetch fresh session for the email payload (slots may have
       // shifted during this turn via earlier commit_facts execution).
@@ -796,6 +834,7 @@ export async function runInquiryAgent(
     mirrorFired: mirrorFiredEvent,
     widgets,
     inquiryIdLinked,
+    advanceToPricing,
   };
 }
 
@@ -890,6 +929,7 @@ function fallbackReply(sessionId: string, body: string): RunInquiryAgentOutput {
     mirrorFired: null,
     widgets: [],
     inquiryIdLinked: null,
+    advanceToPricing: false,
   };
 }
 

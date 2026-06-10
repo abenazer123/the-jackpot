@@ -127,6 +127,10 @@ export const DEFAULT_THRESHOLDS: Record<ToolName, ConfidenceThresholds> = {
   // require the guest to tap Continue / Save. Let extractions through
   // freely; the worst case is the guest edits before confirming.
   commit_facts: { auto: 0.5, floor: 0.3 },
+  // Widget surfacing + advance are low-risk: the widget itself is the
+  // commit gate, and advance just fast-forwards to a price the guest
+  // can react to. Let them through freely.
+  advance_to_pricing: { auto: 0.5, floor: 0.3 },
   offer_concession: { auto: 0.75, floor: 0.4 },
   notify_abe: { auto: 0.85, floor: 0.4 },
   schedule_callback: { auto: 0.8, floor: 0.4 },

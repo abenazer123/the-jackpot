@@ -119,6 +119,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let mirrorFired: { event: string; at: string } | null = null;
   let harnessWidgets: Array<{ type: string; payload: Record<string, unknown> }> = [];
   let inquiryIdLinked: string | null = null;
+  let advanceToPricing = false;
 
   if (isWidgetConfirm) {
     // Phase 1: acknowledge the commit without calling Claude. Widget
@@ -148,6 +149,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     mirrorFired = result.mirrorFired;
     harnessWidgets = result.widgets;
     inquiryIdLinked = result.inquiryIdLinked;
+    advanceToPricing = result.advanceToPricing;
     // Phase 1: don't auto-transition phase. Phase 2 will.
   }
 
@@ -193,6 +195,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     messages: [oliviaReply],
     widgets: harnessWidgets,
     extracted_slots: slotsUpdate as Record<string, unknown>,
+    advance_to_pricing: advanceToPricing,
   };
 
   return NextResponse.json(response);
