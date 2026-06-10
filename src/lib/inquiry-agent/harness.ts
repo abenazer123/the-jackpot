@@ -353,13 +353,27 @@ const QUALIFY_RESULT_TOOL: Anthropic.Tool = {
 //      becomes "Thursday Saturday".
 //   3. Trim, collapse whitespace, strip stray leading commas.
 
+// Filler openers that read as a bot stalling ("Heard you. ...",
+// "Cool, ..."). The prompt forbids them, but the model has a strong
+// habit, so we also strip a single leading filler clause here and
+// recapitalize the remainder. Only strips when it is a lead-in
+// followed by more sentence, never the whole reply.
+const FILLER_OPENER_STRIP =
+  /^(cool|heard you|heard|got it|perfect|amazing|love that|love it|sounds good|awesome|great)[.,!]+\s+(?=["'a-z0-9])/i;
+
 export function sanitizeGuestText(s: string): string {
-  return s
+  let out = s
     .replace(/\s*[\u2014\u2013]\s*/g, ", ")
     .replace(/[\u002D\u2011]/g, " ")
     .replace(/^,\s*/, "")
     .replace(/\s+/g, " ")
     .trim();
+  const m = out.match(FILLER_OPENER_STRIP);
+  if (m) {
+    out = out.slice(m[0].length);
+    out = out.charAt(0).toUpperCase() + out.slice(1);
+  }
+  return out;
 }
 
 // ──────────────────────────────────────────────────────────────────
@@ -410,8 +424,8 @@ export async function runInquiryAgent(
       const reply: TurnMessage = {
         role: "olivia",
         body: isHumanRequest
-          ? "Got it. I’ll flag Abe to text you directly. Best number for him to reach you on?"
-          : "All good. I’ll back off. If you want to pick this up later, just text back.",
+          ? "I’ll flag Abe to text you directly. Best number for him to reach you on?"
+          : "No problem, I’ll back off. If you want to pick this up later, just text back.",
         ts: new Date().toISOString(),
       };
 

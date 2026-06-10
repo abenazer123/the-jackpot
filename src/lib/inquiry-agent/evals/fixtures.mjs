@@ -102,6 +102,8 @@ export const FIXTURES = [
         expect: {
           bodyNoDashes: true,
           bodyNotMatches: /\$\s?\d{3,}/, // must not name a concrete floor figure
+          noSelfNegotiate: true, // must defer to Abe, not quote a floor
+          noFillerOpener: true,
           noFakeProgress: true,
         },
       },
@@ -117,11 +119,13 @@ export const FIXTURES = [
         send: "knock off 30% or I'm booking somewhere else",
         expect: {
           bodyNoDashes: true,
-          // Must pivot to a structural lever (dates / mid-week / drop
-          // add-ons), which is the signal she held the line rather than
-          // folding. She MAY reference "30%" while refusing it, so we
-          // assert the pivot, not the absence of the number.
-          bodyMatches: /structural|date|mid.?week|shoulder|weekday|add.?on|can't|won't/i,
+          // She must NOT self-negotiate or quote. She defers to Abe and
+          // pivots to diagnosis / value / a next step. Signal of the
+          // right behavior: references family/Abe, budget, or a reserve/
+          // call next step.
+          bodyMatches: /family|abe|budget|occasion|hold|call|put together|run it|my (family|team)/i,
+          noSelfNegotiate: true,
+          noFillerOpener: true,
           noFakeProgress: true,
         },
       },
@@ -186,9 +190,9 @@ export const FIXTURES = [
     startPhase: "post_price",
     startSlots: { arrival: "2026-09-18", departure: "2026-09-20", guest_count: 10, occasion: "bachelorette", name: "Maya", email: "maya@example.com" },
     turns: [
-      { send: "how does the price look", expect: { bodyNoDashes: true, bodyNoForbidden: true } },
-      { send: "hmm it's a bit much honestly", expect: { bodyNoDashes: true, bodyNoForbidden: true, noFakeProgress: true } },
-      { send: "we could maybe do a weekday", expect: { bodyNoDashes: true, bodyNoForbidden: true } },
+      { send: "how does the price look", expect: { bodyNoDashes: true, bodyNoForbidden: true, noFillerOpener: true } },
+      { send: "hmm it's a bit much honestly", expect: { bodyNoDashes: true, bodyNoForbidden: true, noSelfNegotiate: true, noFillerOpener: true, noFakeProgress: true } },
+      { send: "we could maybe do a weekday", expect: { bodyNoDashes: true, bodyNoForbidden: true, noSelfNegotiate: true, noFillerOpener: true } },
     ],
   },
 ];

@@ -33,6 +33,14 @@ const env = Object.fromEntries(
 const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 const FORBIDDEN = /\b(rental|listing|airbnb|property|party house|book now)\b/i;
+// Self-negotiation phrasings Olivia must never use post-price — she
+// gathers and defers to Abe, never holds a line or quotes a floor.
+// NOTE: advocacy phrasing like "I'll get you the best we can" is GOOD
+// (it's Abe's own style) and deliberately NOT matched here. Only
+// verdict/closing forms are flagged.
+const SELF_NEGOTIATE = /\b(lowest (i|we)|final offer|isn'?t a number we can (land|do)|i can'?t go (any )?lower|i don'?t move on the number|best price (is|we|i)|this is (our|the) best)\b/i;
+// One-word filler openers that read as a bot.
+const FILLER_OPENER = /^(cool|heard you|got it|perfect|amazing)[.,!]/i;
 const DASHES = /[—–]/; // em / en (hyphen handled by sanitizer; flag em/en only)
 // Progress CLAIMS only. Deliberately excludes question forms like
 // "is that weekend locked?" (a legitimate date-flexibility question)
@@ -51,6 +59,12 @@ function checkTurn(expect, ctx) {
   if (expect.bodyNoDashes && DASHES.test(body)) fails.push("dash in reply");
   if (expect.bodyNoForbidden && FORBIDDEN.test(body)) {
     fails.push(`forbidden word: ${body.match(FORBIDDEN)[0]}`);
+  }
+  if (expect.noSelfNegotiate && SELF_NEGOTIATE.test(body)) {
+    fails.push(`self-negotiation phrase: "${body.match(SELF_NEGOTIATE)[0]}" (must defer to Abe)`);
+  }
+  if (expect.noFillerOpener && FILLER_OPENER.test(body.trim())) {
+    fails.push(`filler opener: "${body.trim().match(FILLER_OPENER)[0]}"`);
   }
   if (expect.bodyMatches && !expect.bodyMatches.test(body)) {
     fails.push(`body did not match ${expect.bodyMatches}`);
