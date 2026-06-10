@@ -821,6 +821,71 @@
   margin-top: 2px;
 }
 
+/* Alternate-dates widget — tappable cards shown when the requested
+   nights are booked. Each row picks that range and re-quotes. */
+.altDates {
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.altDatesLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+  margin-bottom: 2px;
+}
+
+.altDateRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background var(--jp-transition),
+    border-color var(--jp-transition),
+    transform var(--jp-transition);
+}
+
+.altDateRow:hover {
+  border-color: var(--jp-border-hover);
+  background: var(--jp-gold-10);
+}
+
+.altDateRow:active {
+  transform: scale(0.99);
+}
+
+.altDateRow:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
+}
+
+.altDateRange {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--jp-text-primary);
+}
+
+.altDatePrice {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--jp-gold-deep);
+}
+
 /* Share-link widget — surfaced when Olivia fires the share path.
    Gives the guest a /trip URL plus copy and native-share buttons. */
 .shareCard {

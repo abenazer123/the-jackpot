@@ -14,6 +14,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
+import { findAlternateRanges } from "@/lib/inquiry-agent/alternates";
 import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
 
 export const runtime = "nodejs";
@@ -43,11 +44,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const result = await computeQuoteLive(parsed.data);
   if (!result.ok) {
-    // Surface the structured error so the chat thread can render a
-    // useful fallback bubble (out_of_window, unavailable, sub_floor,
-    // etc.) instead of just "something broke."
+    // On `unavailable`, find nearby open ranges so the chat can offer
+    // real alternates instead of an empty "those are taken" dead end.
+    let alternates;
+    if (result.error.code === "unavailable") {
+      alternates = await findAlternateRanges(
+        parsed.data.arrival,
+        parsed.data.departure,
+        parsed.data.guests,
+      );
+    }
     return NextResponse.json(
-      { ok: false, error: result.error },
+      { ok: false, error: result.error, alternates: alternates ?? [] },
       { status: 200 },
     );
   }

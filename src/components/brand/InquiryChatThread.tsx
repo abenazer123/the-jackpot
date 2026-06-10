@@ -80,6 +80,15 @@ interface PriceQuote {
   discountTotalCents: number;
 }
 
+/** Nearby open range offered when requested dates are booked. */
+interface AlternateRange {
+  arrival: string;
+  departure: string;
+  nights: number;
+  totalCents: number;
+  perGuestCents: number;
+}
+
 /**
  * Reveal phases inside the "checking" step. Each new beat fades into the
  * conversation rather than landing all at once.
@@ -221,13 +230,15 @@ function formatDollars(cents: number): string {
 
 /** Map a QuoteErrorCode to a guest-facing Olivia bubble. Never expose
  *  raw error codes; never quote a number. Voice rules apply. */
-function priceErrorMessage(code: string): string {
+function priceErrorMessage(code: string, hasAlternates = false): string {
   switch (code) {
     case "out_of_window":
     case "cache_empty":
       return "Hmm. I can't pull a real number for those dates right this second. Let me flag Abe to text you a quote in the next few minutes. Want me to do that?";
     case "unavailable":
-      return "Those nights are taken on the calendar. Want me to show you the closest open windows?";
+      return hasAlternates
+        ? "Those exact nights are taken. Here are the closest open weekends I can pull a real number for."
+        : "Those exact nights are taken, and I'm not seeing close open weekends right now. Want me to flag Abe to find you something?";
     case "sub_floor":
       return "We're a 2 night minimum. Want me to bump the stay by a night so we can get you a real number?";
     case "max_guests":
@@ -384,6 +395,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   // fallback bubble + notify_abe).
   const [priceQuote, setPriceQuote] = useState<PriceQuote | null>(null);
   const [priceError, setPriceError] = useState<string | null>(null);
+  /** Nearby open ranges returned alongside an `unavailable` quote.
+   *  Rendered as tappable cards; picking one re-quotes that range. */
+  const [alternates, setAlternates] = useState<AlternateRange[]>([]);
 
   const firstName = firstNameOf(contactName);
 
@@ -422,6 +436,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setIsWaitingForOlivia(false);
       setPriceQuote(null);
       setPriceError(null);
+      setAlternates([]);
       setIntroReady(false);
       setAgentDriven(false);
     }, 0);
@@ -485,13 +500,16 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data:
           | { ok: true; quote: PriceQuote }
-          | { ok: false; error: { code: string; message: string } } =
+          | { ok: false; error: { code: string; message: string }; alternates?: AlternateRange[] } =
           await res.json();
         if (cancelled) return;
         if (data.ok) {
           setPriceQuote(data.quote);
         } else {
           setPriceError(data.error.code);
+          if (data.alternates && data.alternates.length) {
+            setAlternates(data.alternates);
+          }
         }
       } catch {
         if (!cancelled) setPriceError("network");
@@ -607,6 +625,18 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     // Departure pick no longer auto-advances; the guest takes an
     // explicit "Confirm dates" tap so the same affordance handles
     // both manual picks and harness pre-fills the same way.
+  };
+
+  /** Guest tapped a nearby open range after their first choice was
+   *  booked. Swap in the new dates and re-run the quote effect by
+   *  clearing the resolved price state. Stays on the pricing step. */
+  const handlePickAlternate = (alt: AlternateRange) => {
+    setArrival(alt.arrival);
+    setDeparture(alt.departure);
+    setAlternates([]);
+    setPriceError(null);
+    setPriceQuote(null);
+    postPriceTriggeredRef.current = false; // let the opener fire for the new quote
   };
 
   const canConfirmDates =
@@ -1367,8 +1397,29 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     O
                   </div>
                   <div className={styles.msgBubble}>
-                    {priceErrorMessage(priceError)}
+                    {priceErrorMessage(priceError, alternates.length > 0)}
                   </div>
+                </div>
+              )}
+
+              {priceError === "unavailable" && alternates.length > 0 && (
+                <div className={`${styles.altDates} ${styles.fadeIn}`}>
+                  <div className={styles.altDatesLabel}>Closest open weekends</div>
+                  {alternates.map((alt) => (
+                    <button
+                      key={alt.arrival}
+                      type="button"
+                      className={styles.altDateRow}
+                      onClick={() => handlePickAlternate(alt)}
+                    >
+                      <span className={styles.altDateRange}>
+                        {formatRangeShort(alt.arrival, alt.departure)}
+                      </span>
+                      <span className={styles.altDatePrice}>
+                        ${formatDollars(alt.totalCents)}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               )}
             </>
