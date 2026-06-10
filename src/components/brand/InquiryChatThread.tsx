@@ -372,6 +372,12 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   // accumulating across the dialog's lifetime.
   const [harnessSessionId, setHarnessSessionId] = useState<string | null>(null);
   const [harnessMessages, setHarnessMessages] = useState<HarnessMessage[]>([]);
+  /** Increments every time the dialog opens (or the entry intent
+   *  changes). Async harness calls capture the epoch at fire time and
+   *  bail before writing if it no longer matches — so a request from a
+   *  prior open (e.g. the share opener) can't land its reply in a
+   *  later, different session (e.g. check dates). */
+  const sessionEpochRef = useRef(0);
   const [isWaitingForOlivia, setIsWaitingForOlivia] = useState(false);
   /** Widgets Olivia surfaced via show_widget actions. Appended in
    *  order received; render after the matching Olivia bubble. */
@@ -425,6 +431,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   // effect pattern HeroBookingBar uses for its draft hydration).
   useEffect(() => {
     if (!open) return;
+    // Bump synchronously so any harness call fired on this open (intent
+    // opener, etc.) captures the new epoch before it awaits.
+    sessionEpochRef.current += 1;
     const t = window.setTimeout(() => {
       setArrival("");
       setDeparture("");
@@ -451,7 +460,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setAgentDriven(false);
     }, 0);
     return () => window.clearTimeout(t);
-  }, [open]);
+  }, [open, initialIntent]);
 
   // Drip-feed pacing on dialog open: hold the scripted Olivia opener
   // (and the dates widget) behind typing dots for ~900ms so it feels
@@ -644,6 +653,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   const handleSubmitReserve = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!canSubmitReserve || !harnessSessionId) return;
+    const epoch = sessionEpochRef.current;
     setReserveBusy(true);
     try {
       const res = await fetch("/api/inquiry-agent/reserve", {
@@ -657,6 +667,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (sessionEpochRef.current !== epoch) return;
       // Move to the call-scheduling step. The call is the guarantee
       // mechanism: we hold the calendar with nothing due, the quick
       // call locks it in.
@@ -670,6 +681,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         },
       ]);
     } catch {
+      if (sessionEpochRef.current !== epoch) return;
       setHarnessMessages((prev) => [
         ...prev,
         {
@@ -679,7 +691,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         },
       ]);
     } finally {
-      setReserveBusy(false);
+      if (sessionEpochRef.current === epoch) setReserveBusy(false);
     }
   };
 
@@ -688,6 +700,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  time. This is the guarantee mechanism. */
   const handlePickCallWindow = async (window: string) => {
     if (!harnessSessionId) return;
+    const epoch = sessionEpochRef.current;
     setReserveBusy(true);
     try {
       await fetch("/api/inquiry-agent/reserve", {
@@ -706,21 +719,23 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       // update shouldn't block the confirmation. Abe still got the
       // reserve notification.
     } finally {
-      setReserveBusy(false);
-      setPriceAction("reserved");
-      setHarnessMessages((prev) => [
-        ...prev,
-        {
-          role: "user",
-          body: window,
-          ts: new Date().toISOString(),
-        },
-        {
-          role: "olivia",
-          body: `Perfect. Your dates are held and Abe will call you ${window.toLowerCase()} to lock it in. Talk soon.`,
-          ts: new Date().toISOString(),
-        },
-      ]);
+      if (sessionEpochRef.current === epoch) {
+        setReserveBusy(false);
+        setPriceAction("reserved");
+        setHarnessMessages((prev) => [
+          ...prev,
+          {
+            role: "user",
+            body: window,
+            ts: new Date().toISOString(),
+          },
+          {
+            role: "olivia",
+            body: `Perfect. Your dates are held and Abe will call you ${window.toLowerCase()} to lock it in. Talk soon.`,
+            ts: new Date().toISOString(),
+          },
+        ]);
+      }
     }
   };
 
@@ -816,6 +831,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  with a specific chip intent. Olivia sees the event in her
    *  system-reminder and composes the right opener for that path. */
   const fireChipIntent = async (intent: "share" | "reserve") => {
+    const epoch = sessionEpochRef.current;
     setIsWaitingForOlivia(true);
     setAgentDriven(true);
     const body =
@@ -835,11 +851,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      applyHarnessResponse(await res.json());
+      applyHarnessResponse(await res.json(), epoch);
     } catch {
       // Silent on intent-fire failure — guest can just type something.
     } finally {
-      setIsWaitingForOlivia(false);
+      if (sessionEpochRef.current === epoch) setIsWaitingForOlivia(false);
     }
   };
 
@@ -849,6 +865,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  type anything, so there's no user bubble to render. We only
    *  surface Olivia's reply. */
   const firePostPriceTrigger = async (quote: PriceQuote) => {
+    const epoch = sessionEpochRef.current;
     setIsWaitingForOlivia(true);
     const body = `[EVENT:price_revealed] Price card just rendered: ${quote.nights} nights, ${quote.guests} guests, total ${(quote.totalCents / 100).toFixed(0)} dollars, ${(quote.perGuestCents / 100).toFixed(0)} per person per night. Below your reply, the guest sees three buttons: "Reserve now, nothing due", "I have a few questions", and "Send to my group". Do NOT ask "how does it sit" or survey their budget. Tee up the buttons: one warm sentence anchoring the value (per person per night for the whole private home), then point them to holding the dates with nothing due now or asking you anything. Keep it to two sentences.`;
     try {
@@ -877,6 +894,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         messages: HarnessMessage[];
         widgets?: Array<{ type: string; payload: Record<string, unknown> }>;
       } = await res.json();
+      if (sessionEpochRef.current !== epoch) return;
       if (!harnessSessionId) setHarnessSessionId(data.session_id);
       setHarnessMessages((prev) => [...prev, ...data.messages]);
       if (data.widgets && data.widgets.length) {
@@ -887,7 +905,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       // they can just type something and Olivia will pick up from
       // there. No need for a visible error.
     } finally {
-      setIsWaitingForOlivia(false);
+      if (sessionEpochRef.current === epoch) setIsWaitingForOlivia(false);
     }
   };
 
@@ -903,7 +921,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     widgets?: Array<{ type: string; payload: Record<string, unknown> }>;
     advance_to_pricing?: boolean;
   };
-  const applyHarnessResponse = (data: HarnessResponse) => {
+  const applyHarnessResponse = (data: HarnessResponse, epoch: number) => {
+    // The dialog was closed/reopened (or switched intent) while this
+    // request was in flight — drop the response so it can't surface in
+    // a different session.
+    if (sessionEpochRef.current !== epoch) return;
     if (!harnessSessionId) setHarnessSessionId(data.session_id);
     setHarnessMessages((prev) => [...prev, ...data.messages]);
     if (data.extracted_slots) applyHarnessSlots(data.extracted_slots);
@@ -945,6 +967,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  (another widget, or advance_to_pricing). */
   const fireWidgetCommit = async (userBubble: string, _summary: string) => {
     void _summary;
+    const epoch = sessionEpochRef.current;
     const userMsg: HarnessMessage = {
       role: "user",
       body: userBubble,
@@ -973,8 +996,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      applyHarnessResponse(await res.json());
+      applyHarnessResponse(await res.json(), epoch);
     } catch {
+      if (sessionEpochRef.current !== epoch) return;
       setHarnessMessages((prev) => [
         ...prev,
         {
@@ -984,7 +1008,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         },
       ]);
     } finally {
-      setIsWaitingForOlivia(false);
+      if (sessionEpochRef.current === epoch) setIsWaitingForOlivia(false);
     }
   };
 
@@ -995,6 +1019,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
 
     const body = draft.trim();
     setDraft("");
+    const epoch = sessionEpochRef.current;
 
     const userMsg: HarnessMessage = {
       role: "user",
@@ -1038,10 +1063,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
-      applyHarnessResponse(await res.json());
+      applyHarnessResponse(await res.json(), epoch);
     } catch {
       // Network or server failure — surface a soft fallback bubble so
       // the guest doesn't see silence. Don't surface raw error details.
+      if (sessionEpochRef.current !== epoch) return;
       setHarnessMessages((prev) => [
         ...prev,
         {
@@ -1051,7 +1077,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         },
       ]);
     } finally {
-      setIsWaitingForOlivia(false);
+      if (sessionEpochRef.current === epoch) setIsWaitingForOlivia(false);
     }
   };
 
@@ -1154,8 +1180,8 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                 O
               </div>
               <div className={styles.msgBubble}>
-                Cool. What weekend? Pick anything and I&apos;ll pull a real
-                number.
+                What weekend are you thinking? Pick any dates and I&apos;ll
+                pull a real number.
               </div>
             </div>
           )}
