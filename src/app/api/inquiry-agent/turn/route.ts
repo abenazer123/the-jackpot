@@ -13,7 +13,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { runInquiryAgent } from "@/lib/inquiry-agent/harness";
-import { TurnRequestSchema } from "@/lib/inquiry-agent/validation";
+import { PhaseSchema, TurnRequestSchema } from "@/lib/inquiry-agent/validation";
 import type {
   ExtractedSlots,
   InquirySessionRow,
@@ -164,6 +164,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     signals: updatedSignals,
     last_activity_at: now,
   };
+  // Phase write-back: the client reports the real UI phase
+  // (stepToPhase(step) on the frontend, or an explicit phase on
+  // system-event triggers). Persist it so the stored phase tracks the
+  // conversation instead of being frozen at state1. Validated against
+  // the enum; terminal phases set by the harness/cron are never
+  // downgraded by a client report.
+  const TERMINAL = new Set(["awaiting_abe", "booked", "abandoned", "disqualified", "handoff_complete"]);
+  const reportedPhase = PhaseSchema.safeParse(turn.client_context.phase);
+  if (
+    reportedPhase.success &&
+    reportedPhase.data !== session.phase &&
+    !TERMINAL.has(session.phase)
+  ) {
+    updatePayload.phase = reportedPhase.data;
+  }
   if (nextPhase) updatePayload.phase = nextPhase;
   if (mirrorFired) {
     updatePayload.last_mirror_event = mirrorFired.event;
@@ -191,7 +206,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   //    show_widget renders (share_link, etc).
   const response: TurnResponse = {
     session_id: session.id,
-    phase: (nextPhase ?? session.phase) as Phase,
+    phase: (updatePayload.phase ?? session.phase) as Phase,
     messages: [oliviaReply],
     widgets: harnessWidgets,
     extracted_slots: slotsUpdate as Record<string, unknown>,

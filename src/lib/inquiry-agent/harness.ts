@@ -27,7 +27,7 @@ import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 
 import { sendAbeNotification } from "@/lib/email/abeNotification";
-import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
+import { computeQuote } from "@/lib/pricing/computeQuote";
 import { generateShareToken } from "@/lib/share/generateShareToken";
 import { siteOrigin } from "@/lib/siteOrigin";
 import { supabaseServer } from "@/lib/supabase-server";
@@ -484,28 +484,79 @@ export async function runInquiryAgent(
 
   // ─── 3. Call Claude ────────────────────────────────────────────
   const client = new Anthropic();
-  let response: Anthropic.Message;
-  try {
+
+  // Single call attempt: returns the parsed QualifyResult or a reason
+  // it failed (so the caller can retry once). Opus 4.7 occasionally
+  // returns an empty tool input on the first shot; a single retry
+  // clears it without user-visible failure.
+  async function attempt(): Promise<
+    | { ok: true; response: Anthropic.Message; result: QualifyResult }
+    | { ok: false; response: Anthropic.Message | null; reason: "no_tool_block" | "validation_failed"; detail: string }
+  > {
     // Note: `thinking` is omitted on purpose. Opus 4.7 rejects
     // `thinking: {type: "adaptive"}` when tool_choice forces a specific
-    // tool — the model can't think before producing the structured
-    // output it's been pinned to. If we ever want thinking back we'd
-    // need to drop the forced tool_choice (or accept output_config-
-    // shaped structured outputs instead of the qualify_result tool).
-    response = await client.messages.create({
+    // tool.
+    const resp = await client.messages.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      system: [
-        {
-          type: "text",
-          text: systemPrompt,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
+      system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
       tools: [QUALIFY_RESULT_TOOL],
       tool_choice: { type: "tool", name: "qualify_result" },
       messages,
     });
+    const block = resp.content.find(
+      (c): c is Anthropic.ToolUseBlock => c.type === "tool_use" && c.name === "qualify_result",
+    );
+    if (!block) {
+      return { ok: false, response: resp, reason: "no_tool_block", detail: "No qualify_result tool block" };
+    }
+    const p = QualifyResultSchema.safeParse(block.input);
+    if (!p.success) {
+      return {
+        ok: false,
+        response: resp,
+        reason: "validation_failed",
+        detail: p.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),
+      };
+    }
+    return { ok: true, response: resp, result: p.data };
+  }
+
+  let response: Anthropic.Message;
+  let result: QualifyResult;
+  try {
+    let attemptResult = await attempt();
+    if (!attemptResult.ok) {
+      // One retry — clears transient empty/garbled tool outputs.
+      const retry = await attempt();
+      if (retry.ok) {
+        attemptResult = retry;
+      } else {
+        // Both attempts failed — log and fall back.
+        await persistActivity(session.id, {
+          session_id: session.id,
+          model: MODEL,
+          skill: SKILL,
+          prompt_version: PROMPT_VERSION,
+          trigger,
+          input: { messages_count: messages.length, retried: true },
+          output: (retry.response?.content ?? null) as unknown as Record<string, unknown> | null,
+          overall_confidence: null,
+          status: "validation_failed",
+          latency_ms: Date.now() - startedAt,
+          input_tokens: retry.response?.usage.input_tokens ?? null,
+          output_tokens: retry.response?.usage.output_tokens ?? null,
+          cost_cents: retry.response ? estimateCostCents(retry.response.usage) : null,
+          error_message: `${retry.detail} (after 1 retry)`,
+          actions_executed: [],
+          actions_drafted: [],
+          actions_skipped: [],
+        });
+        return fallbackReply(session.id, "Hold on. Let me catch up.");
+      }
+    }
+    response = attemptResult.response;
+    result = attemptResult.result;
   } catch (err) {
     const errorMessage =
       err instanceof Anthropic.APIError
@@ -537,58 +588,11 @@ export async function runInquiryAgent(
 
   const latencyMs = Date.now() - startedAt;
 
-  // ─── 4. Extract tool_use block ─────────────────────────────────
+  // attempt() already extracted + validated; `result` is set. Grab the
+  // raw tool block for the activity-log `output` field.
   const toolUseBlock = response.content.find(
     (c): c is Anthropic.ToolUseBlock => c.type === "tool_use" && c.name === "qualify_result",
-  );
-  if (!toolUseBlock) {
-    await persistActivity(session.id, {
-      session_id: session.id,
-      model: MODEL,
-      skill: SKILL,
-      prompt_version: PROMPT_VERSION,
-      trigger,
-      input: { messages_count: messages.length },
-      output: { content: response.content as unknown as Record<string, unknown> },
-      overall_confidence: null,
-      status: "validation_failed",
-      latency_ms: latencyMs,
-      input_tokens: response.usage.input_tokens,
-      output_tokens: response.usage.output_tokens,
-      cost_cents: estimateCostCents(response.usage),
-      error_message: "No tool_use block in Claude response despite forced tool_choice",
-      actions_executed: [],
-      actions_drafted: [],
-      actions_skipped: [],
-    });
-    return fallbackReply(session.id, "Hold on. Let me catch up.");
-  }
-
-  // ─── 5. Zod validate ───────────────────────────────────────────
-  const parsed = QualifyResultSchema.safeParse(toolUseBlock.input);
-  if (!parsed.success) {
-    await persistActivity(session.id, {
-      session_id: session.id,
-      model: MODEL,
-      skill: SKILL,
-      prompt_version: PROMPT_VERSION,
-      trigger,
-      input: { messages_count: messages.length },
-      output: toolUseBlock.input as Record<string, unknown>,
-      overall_confidence: null,
-      status: "validation_failed",
-      latency_ms: latencyMs,
-      input_tokens: response.usage.input_tokens,
-      output_tokens: response.usage.output_tokens,
-      cost_cents: estimateCostCents(response.usage),
-      error_message: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),
-      actions_executed: [],
-      actions_drafted: [],
-      actions_skipped: [],
-    });
-    return fallbackReply(session.id, "Hold on. Let me catch up.");
-  }
-  const result: QualifyResult = parsed.data;
+  )!;
 
   // ─── 6. Confidence-gate actions ────────────────────────────────
   const executed: ExecutedAction[] = [];
@@ -996,10 +1000,13 @@ async function ensureShareLink(
     }
   }
 
-  // Compute the quote — best-effort. If pricing fails we still create
-  // the inquiry without a snapshot; the /trip page will fall back to
-  // its existing live-quote path.
-  const quoteResult = await computeQuoteLive({ arrival, departure, guests, occasion });
+  // Compute the quote — best-effort, cache-only. We use computeQuote
+  // (not computeQuoteLive) here on purpose: a live PriceLabs backfill
+  // can take minutes on a cold cache and blocked one share mint for
+  // 610s. The cache is kept warm by the 4-hour cron, and the /trip
+  // page does its own live-quote fallback when it renders, so a null
+  // snapshot here is harmless.
+  const quoteResult = await computeQuote({ arrival, departure, guests, occasion });
   const quote = quoteResult.ok ? quoteResult.quote : null;
 
   const token = generateShareToken();
