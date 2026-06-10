@@ -399,6 +399,13 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  Rendered as tappable cards; picking one re-quotes that range. */
   const [alternates, setAlternates] = useState<AlternateRange[]>([]);
 
+  /** Post-price action state. The price reveal shows action buttons
+   *  (reserve / questions / share), not a budget-sentiment scale.
+   *  `reserve` opens an all-fields form; `reserved` is the confirmed
+   *  terminal state. */
+  const [priceAction, setPriceAction] = useState<"none" | "reserve" | "reserved">("none");
+  const [reserveBusy, setReserveBusy] = useState(false);
+
   const firstName = firstNameOf(contactName);
 
   useEffect(() => {
@@ -437,6 +444,8 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setPriceQuote(null);
       setPriceError(null);
       setAlternates([]);
+      setPriceAction("none");
+      setReserveBusy(false);
       setIntroReady(false);
       setAgentDriven(false);
     }, 0);
@@ -627,6 +636,59 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     // both manual picks and harness pre-fills the same way.
   };
 
+  /** Reserve flow: submit the all-fields form, soft-hold the dates,
+   *  notify Abe. The 5-minute-call scheduler is a follow-up; for now
+   *  the confirmation tells the guest Abe will reach out to lock it in. */
+  const canSubmitReserve = !!contactName.trim() && looksLikeEmail(contactEmail);
+  const handleSubmitReserve = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!canSubmitReserve || !harnessSessionId) return;
+    setReserveBusy(true);
+    try {
+      const res = await fetch("/api/inquiry-agent/reserve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: harnessSessionId,
+          name: contactName.trim(),
+          email: contactEmail.trim(),
+          phone: contactPhone.trim(),
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setPriceAction("reserved");
+      setHarnessMessages((prev) => [
+        ...prev,
+        {
+          role: "olivia",
+          body: `You're holding ${formatRangeShort(arrival, departure)} with nothing due now. Abe will reach out within 24 hours to lock it in. Talk soon, ${firstName || "and thanks"}.`,
+          ts: new Date().toISOString(),
+        },
+      ]);
+    } catch {
+      setHarnessMessages((prev) => [
+        ...prev,
+        {
+          role: "olivia",
+          body: "Something hiccuped holding that. Mind trying once more in a moment?",
+          ts: new Date().toISOString(),
+        },
+      ]);
+    } finally {
+      setReserveBusy(false);
+    }
+  };
+
+  /** Guest tapped "I have a few questions" at price reveal. Hand the
+   *  conversation to Olivia in diagnostic mode. */
+  const handlePriceQuestions = () => {
+    setAgentDriven(true);
+    void fireWidgetCommit(
+      "I've got a couple questions before I decide.",
+      "questions",
+    );
+  };
+
   /** Guest tapped a nearby open range after their first choice was
    *  booked. Swap in the new dates and re-run the quote effect by
    *  clearing the resolved price state. Stays on the pricing step. */
@@ -732,7 +794,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  surface Olivia's reply. */
   const firePostPriceTrigger = async (quote: PriceQuote) => {
     setIsWaitingForOlivia(true);
-    const body = `[EVENT:price_revealed] Price card just rendered. ${quote.nights} nights, ${quote.guests} guests, total ${(quote.totalCents / 100).toFixed(0)} dollars, per person ${(quote.perGuestCents / 100).toFixed(0)} dollars. The guest has just seen this and has not reacted yet.`;
+    const body = `[EVENT:price_revealed] Price card just rendered: ${quote.nights} nights, ${quote.guests} guests, total ${(quote.totalCents / 100).toFixed(0)} dollars, ${(quote.perGuestCents / 100).toFixed(0)} per person per night. Below your reply, the guest sees three buttons: "Reserve now, nothing due", "I have a few questions", and "Send to my group". Do NOT ask "how does it sit" or survey their budget. Tee up the buttons: one warm sentence anchoring the value (per person per night for the whole private home), then point them to holding the dates with nothing due now or asking you anything. Keep it to two sentences.`;
     try {
       const res = await fetch("/api/inquiry-agent/turn", {
         method: "POST",
@@ -1389,6 +1451,95 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     ${formatDollars(priceQuote.perGuestCents)} per guest
                   </div>
                 </div>
+              )}
+
+              {/* Action-forward price reveal. No budget-sentiment scale
+                  (that invites haggling) — lead with the lowest-risk
+                  commitment. Reserve is primary; questions opens Olivia's
+                  diagnostic chat; share reuses the link flow. */}
+              {priceQuote && priceAction === "none" && (
+                <div className={`${styles.priceActions} ${styles.fadeIn}`}>
+                  <button
+                    type="button"
+                    className={styles.reservePrimary}
+                    onClick={() => setPriceAction("reserve")}
+                  >
+                    Reserve now, nothing due
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.priceActionSecondary}
+                    onClick={handlePriceQuestions}
+                  >
+                    I have a few questions
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.priceActionSecondary}
+                    onClick={() => {
+                      setAgentDriven(true);
+                      void fireWidgetCommit("Can I send this to my group?", "share");
+                    }}
+                  >
+                    Send to my group
+                  </button>
+                </div>
+              )}
+
+              {/* Reserve all-fields form. Collects contact, soft-holds
+                  the dates, notifies Abe. */}
+              {priceQuote && priceAction === "reserve" && (
+                <form
+                  className={`${styles.contactForm} ${styles.fadeIn}`}
+                  onSubmit={handleSubmitReserve}
+                  aria-label="Reserve your dates"
+                >
+                  <div className={styles.reserveBlurb}>
+                    Hold {formatRangeShort(priceQuote.arrival, priceQuote.departure)} with nothing due now. Drop your info and Abe will reach out to lock it in.
+                  </div>
+                  <label className={styles.contactRow}>
+                    <span className={styles.contactLabel}>Name</span>
+                    <input
+                      type="text"
+                      className={styles.contactInput}
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      autoComplete="name"
+                      placeholder="Your name"
+                    />
+                  </label>
+                  <label className={styles.contactRow}>
+                    <span className={styles.contactLabel}>Email</span>
+                    <input
+                      type="email"
+                      className={styles.contactInput}
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      autoComplete="email"
+                      inputMode="email"
+                      placeholder="you@email.com"
+                    />
+                  </label>
+                  <label className={styles.contactRow}>
+                    <span className={styles.contactLabel}>Phone</span>
+                    <input
+                      type="tel"
+                      className={styles.contactInput}
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      autoComplete="tel"
+                      inputMode="tel"
+                      placeholder="(optional)"
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    className={styles.reservePrimary}
+                    disabled={!canSubmitReserve || reserveBusy}
+                  >
+                    {reserveBusy ? "Holding…" : "Hold my dates"}
+                  </button>
+                </form>
               )}
 
               {priceError && (

@@ -821,6 +821,76 @@
   margin-top: 2px;
 }
 
+/* Action-forward price reveal. Reserve is the primary commitment;
+   the rest are secondary. No budget-sentiment scale by design. */
+.priceActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.reservePrimary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  padding: 14px 22px;
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  color: #fff;
+  background-image: var(--jp-gradient-button);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--jp-transition), box-shadow var(--jp-transition), opacity var(--jp-transition);
+}
+
+.reservePrimary:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(212, 169, 48, 0.3);
+}
+
+.reservePrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.priceActionSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-full);
+  padding: 13px 22px;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--jp-text-primary);
+  background: var(--jp-bg-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--jp-transition), border-color var(--jp-transition);
+}
+
+.priceActionSecondary:hover {
+  border-color: var(--jp-border-hover);
+  background: var(--jp-gold-10);
+}
+
+.reserveBlurb {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--jp-text-secondary);
+  margin-bottom: 4px;
+}
+
 /* Alternate-dates widget — tappable cards shown when the requested
    nights are booked. Each row picks that range and re-quotes. */
 .altDates {
