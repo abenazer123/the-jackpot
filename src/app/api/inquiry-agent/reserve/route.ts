@@ -28,6 +28,10 @@ const ReserveSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   phone: z.string().optional().default(""),
+  // Optional second-step: the guest's chosen window for the lock-in
+  // call with Abe. When present, this is the "schedule" call that
+  // updates the existing reserve row.
+  call_window: z.string().optional(),
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -44,7 +48,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 400 },
     );
   }
-  const { session_id, name, email, phone } = parsed.data;
+  const { session_id, name, email, phone, call_window } = parsed.data;
+  const isScheduleStep = typeof call_window === "string" && call_window.length > 0;
 
   const supabase = supabaseServer();
   const { data: sessionRow, error: sErr } = await supabase
@@ -77,30 +82,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // Reuse the linked inquiry if one exists; otherwise create.
   let inquiryId = sessionRow.inquiry_id;
+  const reserveFields = {
+    name,
+    email,
+    phone: phone || "",
+    source: "chat_reserve",
+    reserved_at: now,
+    ...(isScheduleStep ? { reserve_call_window: call_window } : {}),
+  };
   if (inquiryId) {
-    await supabase
-      .from("inquiries")
-      .update({
-        name,
-        email,
-        phone: phone || "",
-        source: "chat_reserve",
-      })
-      .eq("id", inquiryId);
+    await supabase.from("inquiries").update(reserveFields).eq("id", inquiryId);
   } else {
     const { data, error } = await supabase
       .from("inquiries")
       .insert({
         arrival,
         departure,
-        email,
-        name,
-        phone: phone || "",
         guests,
         reason: occasion,
-        source: "chat_reserve",
         quote_snapshot: quote,
         quote_total_cents: quote?.totalCents ?? null,
+        ...reserveFields,
       })
       .select("id")
       .single();
@@ -124,12 +126,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .slice(-6)
     .map((m) => ({ role: m.role, body: m.body, ts: m.ts }));
 
+  const reason = isScheduleStep
+    ? `Call booked: ${name} is free "${call_window}" to lock in ${arrival} to ${departure} for ${guests}. Reach out then.`
+    : `Reserved with no payment, holding ${arrival} to ${departure} for ${guests}. Picking a call time next.`;
+
   await sendAbeNotification({
     sessionId: session_id,
-    reason: `Reserved with no payment, holding ${arrival} to ${departure} for ${guests}. Reach out to lock it in.`,
+    reason,
     urgency: "high",
     transcriptUrl: `${siteOrigin()}/admin/sessions/${session_id}`,
-    slots: { ...slots, name, email, phone },
+    slots: { ...slots, name, email, phone, reserve_call_window: call_window },
     signals: (sessionRow.signals ?? {}) as Record<string, unknown>,
     recentTranscript,
   });

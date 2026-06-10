@@ -18,8 +18,8 @@ import { useState, type FormEvent } from "react";
 import { InquiryChatThread } from "./InquiryChatThread";
 import styles from "./InquiryChat.module.css";
 
-type Intent = "share" | "check_dates" | "save_for_later" | "free_text";
-type ExpandedView = "check_dates" | "share" | null;
+type Intent = "share" | "check_dates" | "reserve" | "free_text";
+type ExpandedView = "check_dates" | "share" | "reserve" | null;
 
 interface InquiryChatProps {
   /** Fired when the guest picks a chip or sends a free-text message. */
@@ -59,6 +59,13 @@ export function InquiryChat({ onIntent }: InquiryChatProps) {
     onIntent?.("share");
     if (isMobileViewport()) {
       setExpanded("share");
+    }
+  };
+
+  const handleReserve = () => {
+    onIntent?.("reserve");
+    if (isMobileViewport()) {
+      setExpanded("reserve");
     }
   };
 
@@ -120,13 +127,13 @@ export function InquiryChat({ onIntent }: InquiryChatProps) {
           <button
             type="button"
             className={styles.chip}
-            onClick={() => onIntent?.("save_for_later")}
+            onClick={handleReserve}
             role="listitem"
           >
             <span className={styles.chipText}>
-              <span className={styles.chipTitle}>Save for later</span>
+              <span className={styles.chipTitle}>Reserve now, nothing due</span>
               <span className={styles.chipSub}>
-                I&apos;ll text you when you&apos;re ready
+                Hold your dates, no payment today
               </span>
             </span>
             <span className={styles.chipArrow} aria-hidden="true">
@@ -163,7 +170,9 @@ export function InquiryChat({ onIntent }: InquiryChatProps) {
       <InquiryChatThread
         open={expanded !== null}
         onClose={() => setExpanded(null)}
-        initialIntent={expanded === "share" ? "share" : null}
+        initialIntent={
+          expanded === "share" ? "share" : expanded === "reserve" ? "reserve" : null
+        }
       />
     </div>
   );

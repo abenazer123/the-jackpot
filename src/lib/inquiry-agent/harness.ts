@@ -274,8 +274,8 @@ const QUALIFY_RESULT_TOOL: Anthropic.Tool = {
                   properties: {
                     widget: {
                       type: "string",
-                      enum: ["date_picker", "contact_form", "group_occasion", "share_link"],
-                      description: "Which widget to render inline in the chat so the guest taps instead of types. `date_picker` = calendar for arrival/departure. `contact_form` = name/email/phone. `group_occasion` = guest count + occasion. `share_link` = mints a /trip URL. Use a widget WHENEVER you need structured data (dates, counts, occasion, contact). Never ask for those in prose.",
+                      enum: ["date_picker", "contact_form", "group_occasion", "share_link", "reserve_form"],
+                      description: "Which widget to render inline in the chat so the guest taps instead of types. `date_picker` = calendar for arrival/departure. `contact_form` = name/email/phone. `group_occasion` = guest count + occasion. `share_link` = mints a /trip URL. `reserve_form` = the no-payment hold form (used on the reserve path once you have dates + group + occasion). Use a widget WHENEVER you need structured data. Never ask for those in prose.",
                     },
                     payload: {
                       type: "object",
@@ -702,7 +702,8 @@ export async function runInquiryAgent(
       } else if (
         input.widget === "date_picker" ||
         input.widget === "contact_form" ||
-        input.widget === "group_occasion"
+        input.widget === "group_occasion" ||
+        input.widget === "reserve_form"
       ) {
         // Collection widgets render inline client-side from the
         // existing scripted components. No server work needed; just
