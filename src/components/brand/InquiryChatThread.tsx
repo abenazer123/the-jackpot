@@ -169,11 +169,25 @@ const OCCASION_FROM_HARNESS: Record<string, (typeof OCCASION_OPTIONS)[number]> =
 // guest is really weighing (another nice group rental) on purpose-built
 // + curated, since togetherness alone only beats a hotel.
 // See docs/price-card-value-brief-2026-06-10.md.
-const VALUE_HEADLINES = [
-  "Made for exactly this",
-  "Everyone together",
-  "And it’s handled",
-] as const;
+// The three pillars: #1 names the occasion (purpose-built/curated for
+// THEIR event), #2 is the private party stack (a bare rental can't
+// claim it; togetherness alone is table stakes), #3 is the real host
+// (concrete service, not the vague "it's handled").
+const OCCASION_WORD: Record<string, string> = {
+  Bachelorette: "bachelorette",
+  Bachelor: "bachelor weekend",
+  Wedding: "wedding weekend",
+  Other: "celebration",
+};
+
+function valueHeadlines(occasion: string): [string, string, string] {
+  const word = OCCASION_WORD[occasion] ?? "celebration";
+  return [
+    `Made for the ${word}`,
+    "The night out comes to you",
+    "A real host, not a lockbox",
+  ];
+}
 
 interface OccasionFraming {
   topline: string;
@@ -185,36 +199,36 @@ const VALUE_FRAMING: Record<string, OccasionFraming> = {
     topline:
       "The sendoff the bride actually remembers, the whole crew together for it.",
     proof: [
-      "Bar and parlor, hot tub, the courtyard built for photos. Set up before you arrive.",
-      "The whole crew with the bride, start to finish. No last call.",
-      "A host who knows the city, the photographer list, parking.",
+      "Composed for the weekend and set up before you arrive, down to the courtyard made for the photos.",
+      "Bar, cinema, hot tub, parlor. No tab, no closing time, no car home, no strangers.",
+      "Abe plans it with you, knows the city, sends the photographer list, and is there start to finish.",
     ],
   },
   Bachelor: {
     topline:
       "The kind of weekend the group still talks about, all of you under one roof.",
     proof: [
+      "The whole place dialed for the group and set up before you arrive.",
       "Bar, cinema, game room, hot tub. The night in that beats a night out.",
-      "The whole crew together. No tab, no closing time, no car home.",
-      "A host who knows the city, full kitchen, parking.",
+      "Abe knows the city’s spots and is on it start to finish, never a lockbox.",
     ],
   },
   Wedding: {
     topline:
       "The people who matter most, all in one place for the whole celebration.",
     proof: [
-      "Courtyard for the toasts, kitchen for the family meal, room to get ready.",
-      "Both sides under one roof. No scattering across hotels.",
-      "A host who knows the city, full kitchen and coffee bar, parking.",
+      "Room to get ready together and the courtyard for the toasts, set up before you arrive.",
+      "Parlor, bar, full kitchen for the family meal. The celebration on your terms.",
+      "Abe plans it with you, knows the city, and is there start to finish.",
     ],
   },
   default: {
     topline:
       "The difference between a trip you coordinate and a weekend you’re actually in.",
     proof: [
-      "Cinema, hot tub, bar and parlor, the courtyard with the fire pit. Set up before you arrive.",
-      "The whole place private. The night that doesn’t end at a hotel door.",
-      "A host who knows the city, full kitchen and coffee bar, parking.",
+      "Composed for the celebration and set up before you arrive.",
+      "Cinema, hot tub, bar and parlor, the courtyard with the fire pit. The night out comes to you.",
+      "Abe plans it with you, knows the city, and is there start to finish, not a lockbox.",
     ],
   },
 };
@@ -233,16 +247,18 @@ const STARS = "★★★★★";
 /** Vertical (9:12) media carousel for the price card. Placeholder for
  *  real stay videos; brand photos stand in for now. Horizontal
  *  scroll-snap; a play glyph signals these become video. */
-function MediaCarousel({ onOpen }: { onOpen?: () => void }) {
-  const items = BRAND_PHOTOS.slice(0, 5);
+const MEDIA_ITEMS = BRAND_PHOTOS.slice(0, 5);
+
+function MediaCarousel({ onOpen }: { onOpen?: (index: number) => void }) {
+  const items = MEDIA_ITEMS;
   return (
     <div className={styles.mediaCarousel} aria-label="From recent stays">
-      {items.map((p) => (
+      {items.map((p, i) => (
         <button
           type="button"
           className={styles.mediaItem}
           key={p.label}
-          onClick={onOpen}
+          onClick={() => onOpen?.(i)}
           aria-label={`Open ${p.label}`}
         >
           <Image
@@ -606,9 +622,13 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   // lock-in call. The call is the hold's guarantee mechanism.
   const [callDate, setCallDate] = useState("");
   const [callWindow, setCallWindow] = useState("");
-  // The lean price card defers the full home detail (videos, value
-  // proof, all reviews, breakdown) to a modal that keeps the CTA pinned.
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  // Lean price card: each value pillar expands inline (accordion), the
+  // breakdown is its own accordion, reviews reveal more in place, and a
+  // tapped video opens a fullscreen showcase. No single details modal.
+  const [openPillar, setOpenPillar] = useState<number | null>(null);
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
+  const [reviewsExpanded, setReviewsExpanded] = useState(false);
+  const [showcaseIndex, setShowcaseIndex] = useState<number | null>(null);
 
   const firstName = firstNameOf(contactName);
 
@@ -645,7 +665,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setReserveBusy(false);
       setCallDate("");
       setCallWindow("");
-      setDetailsOpen(false);
+      setOpenPillar(null);
+      setBreakdownOpen(false);
+      setReviewsExpanded(false);
+      setShowcaseIndex(null);
       setIntroReady(false);
       setAgentDriven(false);
     }, 0);
@@ -761,7 +784,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     }
     const obs = new IntersectionObserver(
       ([entry]) => setActionsInView(entry.isIntersecting),
-      { root, threshold: 0.4 },
+      // Fire as soon as the inline row nears the bottom (shrink the root
+      // bottom by the sticky bar's height) so the floating CTA hides
+      // before it can double up with the inline buttons.
+      { root, threshold: 0, rootMargin: "0px 0px -72px 0px" },
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -1656,60 +1682,149 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     </div>
                   )}
 
-                  <MediaCarousel onOpen={() => setDetailsOpen(true)} />
+                  <MediaCarousel onOpen={(i) => setShowcaseIndex(i)} />
 
-                  {/* Lean value: the three affordance headlines only.
-                      Proof, all reviews, and the breakdown live in the
-                      details modal so the card leads light. */}
+                  {/* Value pillars — each expands its proof inline. #1
+                      names the occasion, #2 the private party stack, #3
+                      the real host. */}
                   {(() => {
                     const framing =
                       VALUE_FRAMING[occasion] ?? VALUE_FRAMING.default;
+                    const heads = valueHeadlines(occasion);
                     return (
                       <div className={styles.priceValue}>
                         <div className={styles.priceValueTopline}>
                           {framing.topline}
                         </div>
-                        {VALUE_HEADLINES.map((head) => (
-                          <div className={styles.priceValueHeadLean} key={head}>
-                            <span
-                              className={styles.priceValueBullet}
-                              aria-hidden="true"
-                            >
-                              ✦
-                            </span>
-                            {head}
-                          </div>
-                        ))}
+                        {heads.map((head, i) => {
+                          const open = openPillar === i;
+                          return (
+                            <div className={styles.pillar} key={head}>
+                              <button
+                                type="button"
+                                className={styles.pillarHead}
+                                aria-expanded={open}
+                                onClick={() => setOpenPillar(open ? null : i)}
+                              >
+                                <span
+                                  className={styles.priceValueBullet}
+                                  aria-hidden="true"
+                                >
+                                  ✦
+                                </span>
+                                <span className={styles.pillarHeadText}>
+                                  {head}
+                                </span>
+                                <svg
+                                  className={styles.pillarChevron}
+                                  data-open={open ? "true" : undefined}
+                                  viewBox="0 0 24 24"
+                                  aria-hidden="true"
+                                >
+                                  <path d="M6 9l6 6 6-6" />
+                                </svg>
+                              </button>
+                              {open && (
+                                <div className={styles.pillarProof}>
+                                  {framing.proof[i]}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   })()}
 
+                  {/* One occasion-matched review up front; the rest
+                      reveal in place via "See more reviews". */}
                   {(() => {
                     const tag = OCCASION_TO_REVIEW_TAG[occasion] ?? null;
-                    const top = sortForOccasion(TESTIMONIALS, tag)[0];
-                    if (!top) return null;
+                    const all = sortForOccasion(TESTIMONIALS, tag);
+                    const shown = reviewsExpanded ? all : all.slice(0, 1);
+                    if (shown.length === 0) return null;
                     return (
                       <div className={styles.priceReviews}>
-                        <div className={styles.reviewCard}>
-                          <div className={styles.reviewStars} aria-hidden="true">
-                            {STARS}
+                        {shown.map((r) => (
+                          <div className={styles.reviewCard} key={r.id}>
+                            <div
+                              className={styles.reviewStars}
+                              aria-hidden="true"
+                            >
+                              {STARS}
+                            </div>
+                            <p className={styles.reviewQuote}>{r.quote}</p>
+                            <div className={styles.reviewMeta}>
+                              {r.name} · {r.occasion} · verified guest
+                            </div>
                           </div>
-                          <p className={styles.reviewQuote}>{top.quote}</p>
-                          <div className={styles.reviewMeta}>
-                            {top.name} · {top.occasion} · verified guest
-                          </div>
-                        </div>
+                        ))}
+                        {all.length > 1 && (
+                          <button
+                            type="button"
+                            className={styles.reviewsMore}
+                            onClick={() => setReviewsExpanded((v) => !v)}
+                          >
+                            {reviewsExpanded
+                              ? "Show fewer reviews"
+                              : `See more reviews (${all.length - 1})`}
+                          </button>
+                        )}
                       </div>
                     );
                   })()}
 
-                  <button
-                    type="button"
-                    className={styles.detailsOpenBtn}
-                    onClick={() => setDetailsOpen(true)}
-                  >
-                    See the home, all reviews + the breakdown
-                  </button>
+                  {/* Breakdown — its own dropdown so the card stays lean. */}
+                  <div className={styles.pillar}>
+                    <button
+                      type="button"
+                      className={styles.pillarHead}
+                      aria-expanded={breakdownOpen}
+                      onClick={() => setBreakdownOpen((v) => !v)}
+                    >
+                      <span className={styles.pillarHeadText}>
+                        Price breakdown
+                      </span>
+                      <svg
+                        className={styles.pillarChevron}
+                        data-open={breakdownOpen ? "true" : undefined}
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </button>
+                    {breakdownOpen && (
+                      <div className={styles.breakdownBody}>
+                        <div className={styles.priceCardRow}>
+                          <span>Nightly subtotal</span>
+                          <span>${formatDollars(priceQuote.subtotalCents)}</span>
+                        </div>
+                        {priceQuote.discountTotalCents > 0 && (
+                          <div className={styles.priceCardRow}>
+                            <span>Discount</span>
+                            <span>{`-$${formatDollars(priceQuote.discountTotalCents)}`}</span>
+                          </div>
+                        )}
+                        <div className={styles.priceCardRow}>
+                          <span>Cleaning</span>
+                          <span>${formatDollars(priceQuote.cleaningCents)}</span>
+                        </div>
+                        {priceQuote.taxEnabled && (
+                          <div className={styles.priceCardRow}>
+                            <span>Taxes</span>
+                            <span>${formatDollars(priceQuote.taxCents)}</span>
+                          </div>
+                        )}
+                        <div
+                          className={`${styles.priceCardRow} ${styles.priceCardTotal}`}
+                        >
+                          <span>Total</span>
+                          <span>${formatDollars(priceQuote.totalCents)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1930,7 +2045,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         {/* Floating Reserve CTA: hovers above the composer while the
             guest reads the long price card, then yields to the inline
             buttons once they scroll into view. */}
-        {priceQuote && priceAction === "none" && !actionsInView && !detailsOpen && (
+        {priceQuote && priceAction === "none" && !actionsInView && showcaseIndex === null && (
           <div className={styles.stickyCta}>
             <button
               type="button"
@@ -1972,141 +2087,74 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         </form>
       </div>
 
-      {/* Details modal — the full home: videos, value proof, all
-          reviews, and the breakdown. The CTA stays pinned at the bottom
-          so the guest never loses access to it. */}
-      {priceQuote && detailsOpen && (
-        <div
-          className={styles.detailsModal}
-          role="dialog"
-          aria-label="The home, reviews and price"
-        >
-          <div className={styles.detailsHeader}>
-            <span className={styles.detailsTitle}>
-              {formatRangeShort(priceQuote.arrival, priceQuote.departure)} ·{" "}
-              {priceQuote.guests} guests
+      {/* Media showcase — tapping a video opens a fullscreen viewer with
+          a corner close and the Reserve CTA hovering at the bottom, so
+          the guest can act straight from the highlight. */}
+      {priceQuote && showcaseIndex !== null && (
+        <div className={styles.showcase} role="dialog" aria-label="Stay highlights">
+          <button
+            type="button"
+            className={styles.showcaseClose}
+            onClick={() => setShowcaseIndex(null)}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+
+          <div className={styles.showcaseStage}>
+            <Image
+              src={MEDIA_ITEMS[showcaseIndex].src}
+              alt={MEDIA_ITEMS[showcaseIndex].alt}
+              fill
+              sizes="100vw"
+              className={styles.showcaseImg}
+            />
+            <span className={styles.showcasePlay} aria-hidden="true">
+              ▶
             </span>
+            <span className={styles.showcaseCaption}>
+              {MEDIA_ITEMS[showcaseIndex].label}
+            </span>
+
             <button
               type="button"
-              className={styles.detailsClose}
-              onClick={() => setDetailsOpen(false)}
-              aria-label="Close"
+              className={`${styles.showcaseNav} ${styles.showcaseNavPrev}`}
+              onClick={() =>
+                setShowcaseIndex((cur) =>
+                  cur === null
+                    ? null
+                    : (cur + MEDIA_ITEMS.length - 1) % MEDIA_ITEMS.length,
+                )
+              }
+              aria-label="Previous"
             >
-              ✕
+              ‹
+            </button>
+            <button
+              type="button"
+              className={`${styles.showcaseNav} ${styles.showcaseNavNext}`}
+              onClick={() =>
+                setShowcaseIndex((cur) =>
+                  cur === null ? null : (cur + 1) % MEDIA_ITEMS.length,
+                )
+              }
+              aria-label="Next"
+            >
+              ›
             </button>
           </div>
 
-          <div className={styles.detailsBody}>
-            <MediaCarousel />
-
-            {(() => {
-              const framing = VALUE_FRAMING[occasion] ?? VALUE_FRAMING.default;
-              return (
-                <div className={styles.priceValue}>
-                  <div className={styles.priceValueTopline}>
-                    {framing.topline}
-                  </div>
-                  {VALUE_HEADLINES.map((head, i) => (
-                    <div className={styles.priceValueRow} key={head}>
-                      <div className={styles.priceValueHead}>
-                        <span
-                          className={styles.priceValueBullet}
-                          aria-hidden="true"
-                        >
-                          ✦
-                        </span>
-                        {head}
-                      </div>
-                      <div className={styles.priceValueProof}>
-                        {framing.proof[i]}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-
-            {(() => {
-              const tag = OCCASION_TO_REVIEW_TAG[occasion] ?? null;
-              const all = sortForOccasion(TESTIMONIALS, tag);
-              return (
-                <div className={styles.priceReviews}>
-                  {all.map((r) => (
-                    <div className={styles.reviewCard} key={r.id}>
-                      <div className={styles.reviewStars} aria-hidden="true">
-                        {STARS}
-                      </div>
-                      <p className={styles.reviewQuote}>{r.quote}</p>
-                      <div className={styles.reviewMeta}>
-                        {r.name} · {r.occasion} · verified guest
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-
-            <div className={styles.priceCardDivider} />
-            <div className={styles.priceCardRow}>
-              <span>Nightly subtotal</span>
-              <span>${formatDollars(priceQuote.subtotalCents)}</span>
-            </div>
-            {priceQuote.discountTotalCents > 0 && (
-              <div className={styles.priceCardRow}>
-                <span>Discount</span>
-                <span>{`-$${formatDollars(priceQuote.discountTotalCents)}`}</span>
-              </div>
-            )}
-            <div className={styles.priceCardRow}>
-              <span>Cleaning</span>
-              <span>${formatDollars(priceQuote.cleaningCents)}</span>
-            </div>
-            {priceQuote.taxEnabled && (
-              <div className={styles.priceCardRow}>
-                <span>Taxes</span>
-                <span>${formatDollars(priceQuote.taxCents)}</span>
-              </div>
-            )}
-            <div className={`${styles.priceCardRow} ${styles.priceCardTotal}`}>
-              <span>Total</span>
-              <span>${formatDollars(priceQuote.totalCents)}</span>
-            </div>
-          </div>
-
-          <div className={styles.detailsFooter}>
+          <div className={styles.showcaseCta}>
             <button
               type="button"
               className={styles.reservePrimary}
               onClick={() => {
-                setDetailsOpen(false);
+                setShowcaseIndex(null);
                 setPriceAction("reserve");
               }}
             >
               Reserve now, nothing due
             </button>
-            <div className={styles.detailsFooterRow}>
-              <button
-                type="button"
-                className={styles.priceActionSecondary}
-                onClick={() => {
-                  setDetailsOpen(false);
-                  handlePriceQuestions();
-                }}
-              >
-                I have a few questions
-              </button>
-              <button
-                type="button"
-                className={styles.priceActionSecondary}
-                onClick={() => {
-                  setDetailsOpen(false);
-                  setAgentDriven(true);
-                  void fireWidgetCommit("Can I send this to my group?", "share");
-                }}
-              >
-                Send to my group
-              </button>
-            </div>
           </div>
         </div>
       )}

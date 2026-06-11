@@ -1068,6 +1068,193 @@
   flex: 1 1 0;
 }
 
+/* Value pillars + breakdown — tap a head to expand its detail inline. */
+.pillar {
+  display: flex;
+  flex-direction: column;
+}
+
+.pillarHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--jp-text-primary);
+}
+
+.pillarHeadText {
+  flex: 1 1 auto;
+}
+
+.pillarChevron {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--jp-text-secondary);
+  transition: transform 200ms ease;
+}
+
+.pillarChevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+
+.pillarProof {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--jp-text-secondary);
+  padding: 0 0 6px 19px;
+}
+
+.breakdownBody {
+  padding: 2px 0 4px;
+}
+
+.reviewsMore {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--jp-gold-deep);
+}
+
+.reviewsMore:hover {
+  text-decoration: underline;
+}
+
+/* Fullscreen media showcase — tapped video; warm-dark immersive
+   backdrop, corner close, side nav, Reserve hovering at the bottom. */
+.showcase {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(40, 28, 6, 0.94);
+  animation: threadIn 200ms ease-out both;
+}
+
+.showcaseStage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.showcaseImg {
+  object-fit: cover;
+}
+
+.showcasePlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(40, 28, 6, 0.5);
+  color: #ffffff;
+  font-size: 20px;
+  padding-left: 4px;
+}
+
+.showcaseCaption {
+  position: absolute;
+  left: 20px;
+  bottom: 96px;
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 19px;
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(40, 28, 6, 0.7);
+}
+
+.showcaseClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-size: 17px;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.showcaseNav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-size: 22px;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.showcaseNavPrev {
+  left: 12px;
+}
+
+.showcaseNavNext {
+  right: 12px;
+}
+
+.showcaseCta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 16px 18px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(
+    to top,
+    rgba(40, 28, 6, 0.9),
+    rgba(40, 28, 6, 0)
+  );
+}
+
+.showcaseCta .reservePrimary {
+  width: 100%;
+}
+
 /* 9:12 vertical media carousel — placeholder for stay videos. */
 .mediaCarousel {
   display: flex;
