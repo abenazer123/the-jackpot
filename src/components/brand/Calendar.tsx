@@ -60,6 +60,20 @@ const MONTHS = [
   "November",
   "December",
 ];
+const MONTHS_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 function isoFromParts(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -99,6 +113,9 @@ export function Calendar({
   // Only valid when hoverIso > rangeStart; hovering earlier cells does
   // nothing since they can't be a valid departure.
   const [hoverIso, setHoverIso] = useState<string | null>(null);
+  // Month dropdown: tapping the title swaps the day grid for a 12-month
+  // jump grid (the side arrows still step month by month).
+  const [monthOpen, setMonthOpen] = useState(false);
 
   // SSR guard — popover mode renders via portal to document.body, so the
   // static shell needs to bail during prerender. Inline mode is fine to
@@ -175,9 +192,23 @@ export function Calendar({
             <path d="M15 5l-7 7 7 7" />
           </svg>
         </button>
-        <span className={styles.title}>
+        <button
+          type="button"
+          className={styles.title}
+          onClick={() => setMonthOpen((o) => !o)}
+          aria-expanded={monthOpen}
+          aria-label="Jump to a month"
+        >
           {MONTHS[view.month]} {view.year}
-        </span>
+          <svg
+            className={styles.titleChevron}
+            data-open={monthOpen ? "true" : undefined}
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
         <button
           type="button"
           onClick={goNext}
@@ -190,7 +221,33 @@ export function Calendar({
         </button>
       </div>
 
-      <div className={styles.grid}>
+      {monthOpen && (
+        <div className={styles.monthGrid} role="listbox" aria-label="Month">
+          {MONTHS_SHORT.map((name, idx) => {
+            const lastDay = new Date(view.year, idx + 1, 0).getDate();
+            const monthEndIso = isoFromParts(view.year, idx, lastDay);
+            const disabled = monthEndIso < (min ?? today);
+            const isCurrent = idx === view.month;
+            return (
+              <button
+                key={name}
+                type="button"
+                className={styles.monthOption}
+                data-active={isCurrent ? "true" : undefined}
+                disabled={disabled}
+                onClick={() => {
+                  setView((v) => ({ ...v, month: idx }));
+                  setMonthOpen(false);
+                }}
+              >
+                {name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className={styles.grid} hidden={monthOpen}>
         {WEEKDAYS.map((w, i) => (
           <span key={`wd-${i}`} className={styles.weekday}>
             {w}

@@ -117,6 +117,13 @@
 }
 
 .title {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
   font-family: var(--jp-font-display);
   font-weight: 500;
   font-style: italic;
@@ -124,6 +131,78 @@
   line-height: 1;
   color: var(--jp-text-primary);
   text-align: center;
+  padding: 6px 8px;
+  border-radius: var(--jp-radius-full);
+  transition: color 200ms ease, background 200ms ease;
+}
+
+.title:hover {
+  color: var(--jp-gold);
+}
+
+.title:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
+}
+
+.titleChevron {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 200ms ease;
+}
+
+.titleChevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+
+.monthGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.monthOption {
+  padding: 12px 0;
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+  background: var(--jp-bg-primary);
+  color: var(--jp-text-primary);
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease;
+}
+
+.monthOption:hover:not(:disabled) {
+  border-color: var(--jp-gold);
+  background: var(--jp-gold-10);
+  color: var(--jp-gold-deep);
+}
+
+.monthOption[data-active="true"] {
+  border-color: var(--jp-gold);
+  background: var(--jp-gold-25);
+  color: var(--jp-gold-deep);
+}
+
+.monthOption:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.monthOption:focus-visible {
+  outline: 2px solid var(--jp-gold);
+  outline-offset: 2px;
 }
 
 .grid {
