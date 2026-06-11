@@ -38,6 +38,10 @@ import {
   type FormEvent,
 } from "react";
 
+import Image from "next/image";
+
+import { COVER_PHOTO } from "@/lib/property/photos";
+
 import { Calendar, todayIso } from "./Calendar";
 import styles from "./InquiryChatThread.module.css";
 
@@ -261,17 +265,25 @@ function looksLikeEmail(s: string): boolean {
 }
 
 /** Share-link widget. Surfaced when Olivia fires
- *  `show_widget: {widget: "share_link"}`. Gives the guest a shareable
- *  /trip URL with copy + native-share buttons. The harness mints the
- *  token + writes the inquiry row server-side; we just render. */
+ *  `show_widget: {widget: "share_link"}`. Renders a preview of the
+ *  /trip page the crew will open (mirrors the OG unfurl card: cover
+ *  photo, dates, per person per night) plus copy + native-share
+ *  buttons. The harness mints the token + writes the inquiry row
+ *  server-side; we just render. */
 function ShareLinkWidget({
   url,
   guestCount,
   occasion,
+  arrival,
+  departure,
+  totalCents,
 }: {
   url: string;
   guestCount: number;
   occasion: string;
+  arrival: string;
+  departure: string;
+  totalCents: number;
 }) {
   const [copied, setCopied] = useState(false);
   const canNativeShare =
@@ -299,8 +311,57 @@ function ShareLinkWidget({
     }
   };
 
+  // Mirror the /trip OG card so the preview matches what the crew
+  // actually unfurls in their group chat. Per person per night is the
+  // value hook; compute it from the quote the harness passed.
+  const dateRange = formatRangeShort(arrival, departure);
+  const nights =
+    arrival && departure
+      ? Math.max(
+          1,
+          Math.round(
+            (new Date(departure + "T00:00:00").getTime() -
+              new Date(arrival + "T00:00:00").getTime()) /
+              86_400_000,
+          ),
+        )
+      : 0;
+  const perPersonCents =
+    totalCents > 0 && guestCount > 0 && nights > 0
+      ? Math.round(totalCents / guestCount / nights)
+      : 0;
+  const metaParts: string[] = [];
+  if (perPersonCents > 0) {
+    metaParts.push(`$${Math.round(perPersonCents / 100)}/person/night`);
+  }
+  if (occasion) metaParts.push(`${occasion} weekend`);
+  const metaLine = metaParts.join(" · ") || "Sleeps 14 · 5BR · 3BA";
+
   return (
     <div className={`${styles.shareCard} ${styles.fadeIn}`}>
+      <div className={styles.sharePreview}>
+        <Image
+          src={COVER_PHOTO.src}
+          alt=""
+          fill
+          sizes="(max-width: 900px) 88vw, 360px"
+          className={styles.sharePreviewPhoto}
+        />
+        <div className={styles.sharePreviewScrim} aria-hidden="true" />
+        <div className={styles.sharePreviewContent}>
+          <span className={styles.sharePreviewKicker}>The Jackpot Chicago</span>
+          <span className={styles.sharePreviewDates}>
+            {dateRange || "Group home in Chicago"}
+          </span>
+          <span className={styles.sharePreviewMeta}>{metaLine}</span>
+        </div>
+      </div>
+
+      <p className={styles.sharePreviewNote}>
+        This is what your crew opens. They can see the place and vote on the
+        dates. Nothing due from anyone.
+      </p>
+
       <div className={styles.shareCardLabel}>For the crew</div>
       <div className={styles.shareCardUrl}>{url}</div>
       <div className={styles.shareCardButtons}>
@@ -1716,6 +1777,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                 url={String(w.payload.url ?? "")}
                 guestCount={Number(groupSize) || 0}
                 occasion={occasion}
+                arrival={arrival}
+                departure={departure}
+                totalCents={Number(w.payload.total_cents) || 0}
               />
             ) : null,
           )}
