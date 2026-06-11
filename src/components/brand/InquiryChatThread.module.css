@@ -801,6 +801,61 @@
   margin-top: 2px;
 }
 
+/* Value framing — the number sits on a pile of what the home affords
+   the group. Three affordance lines, occasion-flexed proof. */
+.priceValue {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.priceValueDivider {
+  height: 1px;
+  background: var(--jp-border-default);
+  margin: 14px 0 4px 0;
+}
+
+.priceValueTopline {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.3;
+  color: var(--jp-text-primary);
+  margin-bottom: 2px;
+}
+
+.priceValueRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.priceValueHead {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--jp-text-primary);
+}
+
+.priceValueBullet {
+  color: var(--jp-gold);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.priceValueProof {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--jp-text-secondary);
+  padding-left: 19px;
+}
+
 /* Action-forward price reveal. Reserve is the primary commitment;
    the rest are secondary. No budget-sentiment scale by design. */
 .priceActions {

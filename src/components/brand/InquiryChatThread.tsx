@@ -153,6 +153,63 @@ const OCCASION_FROM_HARNESS: Record<string, (typeof OCCASION_OPTIONS)[number]> =
   other: "Other",
 };
 
+// Value framing on the price card: ladder the home up to what it
+// AFFORDS the group, not a feature list. Three fixed affordance
+// headlines; the topline + proof points flex by occasion so the same
+// home reads as built for THEIR weekend. The lead beats the comp a
+// guest is really weighing (another nice group rental) on purpose-built
+// + curated, since togetherness alone only beats a hotel.
+// See docs/price-card-value-brief-2026-06-10.md.
+const VALUE_HEADLINES = [
+  "Made for exactly this",
+  "Everyone together",
+  "And it’s handled",
+] as const;
+
+interface OccasionFraming {
+  topline: string;
+  proof: readonly [string, string, string];
+}
+
+const VALUE_FRAMING: Record<string, OccasionFraming> = {
+  Bachelorette: {
+    topline:
+      "The sendoff the bride actually remembers, the whole crew together for it.",
+    proof: [
+      "The bar and parlor for the night in, the hot tub, the courtyard made for the photos. Composed for the weekend, set up before you arrive.",
+      "The whole crew with the bride start to finish, the night that doesn’t end at last call.",
+      "A host who knows the city, the photographer list, full kitchen, parking, slow mornings.",
+    ],
+  },
+  Bachelor: {
+    topline:
+      "The kind of weekend the group still talks about after, all of you under one roof.",
+    proof: [
+      "The bar and parlor, the cinema, the game room, the hot tub. The night in that beats a night out, set up before you arrive.",
+      "The whole crew together start to finish, no tab, no closing time, no car home.",
+      "A host who knows the city, full kitchen and coffee bar, parking, twelve minutes from Midway.",
+    ],
+  },
+  Wedding: {
+    topline:
+      "The people who matter most, all in one place for the whole celebration.",
+    proof: [
+      "The courtyard and parlor for the toasts, the kitchen for the family meal, room to get ready together. Set up before you arrive.",
+      "Both sides under one roof, a weekend that doesn’t scatter across hotels.",
+      "A host who knows the city, full kitchen and coffee bar, parking, slow mornings.",
+    ],
+  },
+  default: {
+    topline:
+      "The difference between a trip you coordinate and a weekend you’re actually in.",
+    proof: [
+      "A real cinema, a hot tub for the group, the stocked bar and parlor, the courtyard with the fire pit. Composed for the celebration, set up before you arrive.",
+      "The whole place private, beds for everyone, the night that doesn’t end at a hotel door.",
+      "A host who knows the city, full kitchen and coffee bar, parking, twelve minutes from Midway.",
+    ],
+  },
+};
+
 function addDaysIso(iso: string, days: number): string {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
@@ -1299,8 +1356,8 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                       O
                     </div>
                     <div className={styles.msgBubble}>
-                      Got it. {formatRangeLong(arrival, departure)}.
-                      Pulling availability + pricing now&hellip;
+                      {formatRangeLong(arrival, departure)}. Pulling
+                      availability and pricing now&hellip;
                     </div>
                   </div>
 
@@ -1411,7 +1468,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                 <span className={styles.successTick} aria-hidden="true">
                   &#10003;
                 </span>
-                Got it. The answer will land in your inbox too.
+                Saved. The answer will land in your inbox too.
               </div>
             </>
           )}
@@ -1565,8 +1622,38 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     <span>${formatDollars(priceQuote.totalCents)}</span>
                   </div>
                   <div className={styles.priceCardPerGuest}>
-                    ${formatDollars(priceQuote.perGuestCents)} per guest
+                    ${formatDollars(Math.round(priceQuote.perGuestCents / priceQuote.nights))} per
+                    guest, per night
                   </div>
+
+                  {(() => {
+                    const framing =
+                      VALUE_FRAMING[occasion] ?? VALUE_FRAMING.default;
+                    return (
+                      <div className={styles.priceValue}>
+                        <div className={styles.priceValueDivider} />
+                        <div className={styles.priceValueTopline}>
+                          {framing.topline}
+                        </div>
+                        {VALUE_HEADLINES.map((head, i) => (
+                          <div className={styles.priceValueRow} key={head}>
+                            <div className={styles.priceValueHead}>
+                              <span
+                                className={styles.priceValueBullet}
+                                aria-hidden="true"
+                              >
+                                ✦
+                              </span>
+                              {head}
+                            </div>
+                            <div className={styles.priceValueProof}>
+                              {framing.proof[i]}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
