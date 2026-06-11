@@ -181,6 +181,18 @@ function formatShort(iso: string): string {
   });
 }
 
+function weekdayShort(iso: string): string {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "short" });
+}
+
+/** Digits-only length check — phone is required wherever we capture
+ *  contact, so a present-but-junk value should still fail. */
+function looksLikePhone(s: string): boolean {
+  return s.replace(/\D/g, "").length >= 7;
+}
+
 function formatRangeShort(arrival: string, departure: string): string {
   if (!arrival || !departure) return "";
   return `${formatShort(arrival)} to ${formatShort(departure)}`;
@@ -473,8 +485,12 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  (reserve / questions / share), not a budget-sentiment scale.
    *  `reserve` opens an all-fields form; `reserved` is the confirmed
    *  terminal state. */
-  const [priceAction, setPriceAction] = useState<"none" | "reserve" | "schedule" | "reserved">("none");
+  const [priceAction, setPriceAction] = useState<"none" | "reserve" | "reserved">("none");
   const [reserveBusy, setReserveBusy] = useState(false);
+  // Reserve scheduler: the guest picks the day + window for Abe's
+  // lock-in call. The call is the hold's guarantee mechanism.
+  const [callDate, setCallDate] = useState("");
+  const [callWindow, setCallWindow] = useState("");
 
   const firstName = firstNameOf(contactName);
 
@@ -509,6 +525,8 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setAlternates([]);
       setPriceAction("none");
       setReserveBusy(false);
+      setCallDate("");
+      setCallWindow("");
       setIntroReady(false);
       setAgentDriven(false);
     }, 0);
@@ -692,14 +710,43 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     // both manual picks and harness pre-fills the same way.
   };
 
-  /** Reserve flow: submit the all-fields form, soft-hold the dates,
-   *  notify Abe. The 5-minute-call scheduler is a follow-up; for now
-   *  the confirmation tells the guest Abe will reach out to lock it in. */
-  const canSubmitReserve = !!contactName.trim() && looksLikeEmail(contactEmail);
+  // Reserve scheduler options. The hold IS scheduling Abe's lock-in
+  // call: pick a day (next five days) and a window. We only ask for
+  // contact we don't already have, and phone is required.
+  const CALL_DAYS = useMemo(
+    () =>
+      Array.from({ length: 5 }, (_, i) => {
+        const iso = addDaysIso(today, i);
+        return {
+          iso,
+          label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : weekdayShort(iso),
+          sub: formatShort(iso),
+        };
+      }),
+    [today],
+  );
+  const CALL_WINDOWS = ["Morning", "Afternoon", "Evening"];
+
+  const needsName = !contactName.trim();
+  const needsEmail = !looksLikeEmail(contactEmail);
+  const needsPhone = !looksLikePhone(contactPhone);
+  const canSubmitReserve =
+    !!contactName.trim() &&
+    looksLikeEmail(contactEmail) &&
+    looksLikePhone(contactPhone) &&
+    !!callDate &&
+    !!callWindow;
+
+  /** Reserve flow, single submit: collect only the contact we're
+   *  missing (phone required), book the day + window for Abe's call,
+   *  soft-hold the dates, notify Abe. The call is the guarantee. */
   const handleSubmitReserve = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!canSubmitReserve || !harnessSessionId) return;
     const epoch = sessionEpochRef.current;
+    const dayOpt = CALL_DAYS.find((d) => d.iso === callDate);
+    const dayText = dayOpt ? `${dayOpt.label}, ${dayOpt.sub}` : "";
+    const slotText = `${dayText} · ${callWindow}`;
     setReserveBusy(true);
     try {
       const res = await fetch("/api/inquiry-agent/reserve", {
@@ -710,19 +757,18 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
           name: contactName.trim(),
           email: contactEmail.trim(),
           phone: contactPhone.trim(),
+          call_window: slotText,
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       if (sessionEpochRef.current !== epoch) return;
-      // Move to the call-scheduling step. The call is the guarantee
-      // mechanism: we hold the calendar with nothing due, the quick
-      // call locks it in.
-      setPriceAction("schedule");
+      setPriceAction("reserved");
       setHarnessMessages((prev) => [
         ...prev,
+        { role: "user", body: slotText, ts: new Date().toISOString() },
         {
           role: "olivia",
-          body: `Done, ${firstName || "you"} are holding ${formatRangeShort(arrival, departure)} with nothing due. One last thing: since we block the calendar for you with no payment, Abe does a quick 5 minute call to lock it in. When are you free in the next 24 hours?`,
+          body: `Your weekend is on hold with nothing due. Abe will call you ${dayText} in the ${callWindow.toLowerCase()} to lock it in. Talk soon.`,
           ts: new Date().toISOString(),
         },
       ]);
@@ -740,59 +786,6 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       if (sessionEpochRef.current === epoch) setReserveBusy(false);
     }
   };
-
-  /** Step two of reserve: the guest picks a window for the lock-in
-   *  call with Abe. Saves it to the inquiry and notifies Abe with the
-   *  time. This is the guarantee mechanism. */
-  const handlePickCallWindow = async (window: string) => {
-    if (!harnessSessionId) return;
-    const epoch = sessionEpochRef.current;
-    setReserveBusy(true);
-    try {
-      await fetch("/api/inquiry-agent/reserve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: harnessSessionId,
-          name: contactName.trim(),
-          email: contactEmail.trim(),
-          phone: contactPhone.trim(),
-          call_window: window,
-        }),
-      });
-    } catch {
-      // The hold already landed on the first call; a failed schedule
-      // update shouldn't block the confirmation. Abe still got the
-      // reserve notification.
-    } finally {
-      if (sessionEpochRef.current === epoch) {
-        setReserveBusy(false);
-        setPriceAction("reserved");
-        setHarnessMessages((prev) => [
-          ...prev,
-          {
-            role: "user",
-            body: window,
-            ts: new Date().toISOString(),
-          },
-          {
-            role: "olivia",
-            body: `Perfect. Your dates are held and Abe will call you ${window.toLowerCase()} to lock it in. Talk soon.`,
-            ts: new Date().toISOString(),
-          },
-        ]);
-      }
-    }
-  };
-
-  // Call-window options for the reserve scheduler. Fixed labels keep it
-  // a one tap choice; Abe coordinates the exact time off the window.
-  const CALL_WINDOWS = [
-    "Today, evening",
-    "Tomorrow, morning",
-    "Tomorrow, afternoon",
-    "Tomorrow, evening",
-  ];
 
   /** Guest tapped "I have a few questions" at price reveal. Hand the
    *  conversation to Olivia in diagnostic mode. */
@@ -1127,7 +1120,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     }
   };
 
-  const canSaveContact = looksLikeEmail(contactEmail);
+  const canSaveContact = looksLikeEmail(contactEmail) && looksLikePhone(contactPhone);
   const handleSaveContact = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!canSaveContact) return;
@@ -1376,10 +1369,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     />
                   </label>
                   <label className={styles.contactRow}>
-                    <span className={styles.contactLabel}>
-                      Phone{" "}
-                      <span className={styles.contactOptional}>optional</span>
-                    </span>
+                    <span className={styles.contactLabel}>Phone</span>
                     <input
                       type="tel"
                       className={styles.contactInput}
@@ -1388,6 +1378,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                       autoComplete="tel"
                       inputMode="tel"
                       placeholder="(555) 123-4567"
+                      required
                     />
                   </label>
 
@@ -1646,84 +1637,6 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
             </>
           )}
 
-          {/* Reserve all-fields form. Renders on both paths: the
-              price-reveal "Reserve now" button and the State-1 reserve
-              chip (agent fires show_widget: reserve_form). Gated on
-              priceAction only, not step or priceQuote. */}
-          {priceAction === "reserve" && (
-            <form
-              className={`${styles.contactForm} ${styles.fadeIn}`}
-              onSubmit={handleSubmitReserve}
-              aria-label="Reserve your dates"
-            >
-              <div className={styles.reserveBlurb}>
-                {arrival && departure
-                  ? `Hold ${formatRangeShort(arrival, departure)} with nothing due now. Drop your info and we'll lock it in on a quick call.`
-                  : "Hold your dates with nothing due now. Drop your info and we'll lock it in on a quick call."}
-              </div>
-              <label className={styles.contactRow}>
-                <span className={styles.contactLabel}>Name</span>
-                <input
-                  type="text"
-                  className={styles.contactInput}
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  autoComplete="name"
-                  placeholder="Your name"
-                />
-              </label>
-              <label className={styles.contactRow}>
-                <span className={styles.contactLabel}>Email</span>
-                <input
-                  type="email"
-                  className={styles.contactInput}
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  autoComplete="email"
-                  inputMode="email"
-                  placeholder="you@email.com"
-                />
-              </label>
-              <label className={styles.contactRow}>
-                <span className={styles.contactLabel}>Phone</span>
-                <input
-                  type="tel"
-                  className={styles.contactInput}
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  autoComplete="tel"
-                  inputMode="tel"
-                  placeholder="(optional)"
-                />
-              </label>
-              <button
-                type="submit"
-                className={styles.reservePrimary}
-                disabled={!canSubmitReserve || reserveBusy}
-              >
-                {reserveBusy ? "Holding…" : "Hold my dates"}
-              </button>
-            </form>
-          )}
-
-          {/* Reserve step two: pick a window for the lock-in call with
-              Abe. The call is the guarantee mechanism. */}
-          {priceAction === "schedule" && (
-            <div className={`${styles.priceActions} ${styles.fadeIn}`}>
-              {CALL_WINDOWS.map((w) => (
-                <button
-                  key={w}
-                  type="button"
-                  className={styles.priceActionSecondary}
-                  disabled={reserveBusy}
-                  onClick={() => handlePickCallWindow(w)}
-                >
-                  {w}
-                </button>
-              ))}
-            </div>
-          )}
-
           {/* Harness layer — every composer send produces a user
               bubble + Olivia reply that renders here, after the
               scripted step content. Accumulates for the life of the
@@ -1761,6 +1674,106 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                 totalCents={Number(w.payload.total_cents) || 0}
               />
             ) : null,
+          )}
+
+          {/* Reserve = schedule Abe's lock-in call. Held with nothing
+              due; the call is the guarantee. Rendered after the messages
+              so an agent-surfaced reserve (or the price-reveal button)
+              lands inline at the bottom where the guest is looking. We
+              only ask for contact we don't already have; phone required. */}
+          {priceAction === "reserve" && (
+            <form
+              className={`${styles.contactForm} ${styles.fadeIn}`}
+              onSubmit={handleSubmitReserve}
+              aria-label="Hold your dates"
+            >
+              <div className={styles.reserveBlurb}>
+                {arrival && departure
+                  ? `Hold ${formatRangeShort(arrival, departure)} with nothing due now. Pick a time for Abe's quick call to lock it in.`
+                  : "Hold your dates with nothing due now. Pick a time for Abe's quick call to lock it in."}
+              </div>
+
+              {needsName && (
+                <label className={styles.contactRow}>
+                  <span className={styles.contactLabel}>Name</span>
+                  <input
+                    type="text"
+                    className={styles.contactInput}
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    autoComplete="name"
+                    placeholder="Your name"
+                  />
+                </label>
+              )}
+              {needsEmail && (
+                <label className={styles.contactRow}>
+                  <span className={styles.contactLabel}>Email</span>
+                  <input
+                    type="email"
+                    className={styles.contactInput}
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    autoComplete="email"
+                    inputMode="email"
+                    placeholder="you@email.com"
+                  />
+                </label>
+              )}
+              {needsPhone && (
+                <label className={styles.contactRow}>
+                  <span className={styles.contactLabel}>Phone</span>
+                  <input
+                    type="tel"
+                    className={styles.contactInput}
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    autoComplete="tel"
+                    inputMode="tel"
+                    placeholder="Best number for the call"
+                  />
+                </label>
+              )}
+
+              <div className={styles.schedLabel}>Pick a day for the call</div>
+              <div className={styles.schedDays}>
+                {CALL_DAYS.map((d) => (
+                  <button
+                    key={d.iso}
+                    type="button"
+                    className={styles.schedDay}
+                    data-active={callDate === d.iso ? "true" : undefined}
+                    onClick={() => setCallDate(d.iso)}
+                  >
+                    <span className={styles.schedDayLabel}>{d.label}</span>
+                    <span className={styles.schedDaySub}>{d.sub}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className={styles.schedLabel}>Time of day</div>
+              <div className={styles.schedWindows}>
+                {CALL_WINDOWS.map((w) => (
+                  <button
+                    key={w}
+                    type="button"
+                    className={styles.schedWindow}
+                    data-active={callWindow === w ? "true" : undefined}
+                    onClick={() => setCallWindow(w)}
+                  >
+                    {w}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="submit"
+                className={styles.reservePrimary}
+                disabled={!canSubmitReserve || reserveBusy}
+              >
+                {reserveBusy ? "Holding…" : "Hold my dates"}
+              </button>
+            </form>
           )}
 
           {isWaitingForOlivia && <OliviaTyping />}

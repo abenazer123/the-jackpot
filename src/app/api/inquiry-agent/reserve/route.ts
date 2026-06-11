@@ -27,7 +27,8 @@ const ReserveSchema = z.object({
   session_id: z.string(),
   name: z.string().min(1),
   email: z.string().email(),
-  phone: z.string().optional().default(""),
+  // Phone is required everywhere we capture a lead, not optional.
+  phone: z.string().min(7),
   // Optional second-step: the guest's chosen window for the lock-in
   // call with Abe. When present, this is the "schedule" call that
   // updates the existing reserve row.

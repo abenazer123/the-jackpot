@@ -989,7 +989,9 @@ async function ensureShareLink(
   const guests = typeof merged.guest_count === "number" ? merged.guest_count : null;
   const occasion = typeof merged.occasion === "string" ? merged.occasion : null;
 
-  if (!arrival || !departure || !email || !name || !guests || !occasion) {
+  // Phone is required everywhere we capture a lead, including the share
+  // path, so the share link only mints once we can actually reach them.
+  if (!arrival || !departure || !email || !name || !phone || !guests || !occasion) {
     return { ok: false, error: "missing_required_slots" };
   }
 

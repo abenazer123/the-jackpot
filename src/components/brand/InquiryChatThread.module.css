@@ -871,6 +871,105 @@
   margin-bottom: 4px;
 }
 
+/* Reserve scheduler — pick the day + window for Abe's lock-in call. */
+.schedLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+  margin: 6px 0 2px 0;
+}
+
+.schedDays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.schedDay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 64px;
+  padding: 8px 12px;
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+  background: var(--jp-bg-primary);
+  color: var(--jp-text-primary);
+  cursor: pointer;
+  transition:
+    background var(--jp-transition),
+    border-color var(--jp-transition),
+    color var(--jp-transition);
+}
+
+.schedDay:hover {
+  border-color: var(--jp-border-hover);
+  background: var(--jp-gold-10);
+}
+
+.schedDay[data-active="true"] {
+  border-color: var(--jp-gold);
+  background: var(--jp-gold-25);
+  color: var(--jp-gold-deep);
+}
+
+.schedDayLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.schedDaySub {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--jp-text-secondary);
+}
+
+.schedDay[data-active="true"] .schedDaySub {
+  color: var(--jp-gold-deep);
+}
+
+.schedWindows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.schedWindow {
+  flex: 1 1 0;
+  min-width: 88px;
+  padding: 9px 14px;
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-full);
+  background: var(--jp-bg-primary);
+  color: var(--jp-text-primary);
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background var(--jp-transition),
+    border-color var(--jp-transition),
+    color var(--jp-transition);
+}
+
+.schedWindow:hover {
+  border-color: var(--jp-border-hover);
+  background: var(--jp-gold-10);
+}
+
+.schedWindow[data-active="true"] {
+  border-color: var(--jp-gold);
+  background: var(--jp-gold-25);
+  color: var(--jp-gold-deep);
+}
+
 /* Alternate-dates widget — tappable cards shown when the requested
    nights are booked. Each row picks that range and re-quotes. */
 .altDates {
