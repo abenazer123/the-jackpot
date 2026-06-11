@@ -233,12 +233,18 @@ const STARS = "★★★★★";
 /** Vertical (9:12) media carousel for the price card. Placeholder for
  *  real stay videos; brand photos stand in for now. Horizontal
  *  scroll-snap; a play glyph signals these become video. */
-function MediaCarousel() {
+function MediaCarousel({ onOpen }: { onOpen?: () => void }) {
   const items = BRAND_PHOTOS.slice(0, 5);
   return (
     <div className={styles.mediaCarousel} aria-label="From recent stays">
       {items.map((p) => (
-        <div className={styles.mediaItem} key={p.label}>
+        <button
+          type="button"
+          className={styles.mediaItem}
+          key={p.label}
+          onClick={onOpen}
+          aria-label={`Open ${p.label}`}
+        >
           <Image
             src={p.src}
             alt={p.alt}
@@ -250,7 +256,7 @@ function MediaCarousel() {
             ▶
           </span>
           <span className={styles.mediaCaption}>{p.label}</span>
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -600,6 +606,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   // lock-in call. The call is the hold's guarantee mechanism.
   const [callDate, setCallDate] = useState("");
   const [callWindow, setCallWindow] = useState("");
+  // The lean price card defers the full home detail (videos, value
+  // proof, all reviews, breakdown) to a modal that keeps the CTA pinned.
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const firstName = firstNameOf(contactName);
 
@@ -636,6 +645,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setReserveBusy(false);
       setCallDate("");
       setCallWindow("");
+      setDetailsOpen(false);
       setIntroReady(false);
       setAgentDriven(false);
     }, 0);
@@ -1646,8 +1656,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     </div>
                   )}
 
-                  <MediaCarousel />
+                  <MediaCarousel onOpen={() => setDetailsOpen(true)} />
 
+                  {/* Lean value: the three affordance headlines only.
+                      Proof, all reviews, and the breakdown live in the
+                      details modal so the card leads light. */}
                   {(() => {
                     const framing =
                       VALUE_FRAMING[occasion] ?? VALUE_FRAMING.default;
@@ -1656,75 +1669,47 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                         <div className={styles.priceValueTopline}>
                           {framing.topline}
                         </div>
-                        {VALUE_HEADLINES.map((head, i) => (
-                          <div className={styles.priceValueRow} key={head}>
-                            <div className={styles.priceValueHead}>
-                              <span
-                                className={styles.priceValueBullet}
-                                aria-hidden="true"
-                              >
-                                ✦
-                              </span>
-                              {head}
-                            </div>
-                            <div className={styles.priceValueProof}>
-                              {framing.proof[i]}
-                            </div>
+                        {VALUE_HEADLINES.map((head) => (
+                          <div className={styles.priceValueHeadLean} key={head}>
+                            <span
+                              className={styles.priceValueBullet}
+                              aria-hidden="true"
+                            >
+                              ✦
+                            </span>
+                            {head}
                           </div>
                         ))}
                       </div>
                     );
                   })()}
 
-                  {/* Occasion-matched social proof — real verified guest
-                      reviews, reordered to the guest's occasion. */}
                   {(() => {
                     const tag = OCCASION_TO_REVIEW_TAG[occasion] ?? null;
-                    const matched = sortForOccasion(TESTIMONIALS, tag).slice(0, 2);
-                    if (matched.length === 0) return null;
+                    const top = sortForOccasion(TESTIMONIALS, tag)[0];
+                    if (!top) return null;
                     return (
                       <div className={styles.priceReviews}>
-                        {matched.map((r) => (
-                          <div className={styles.reviewCard} key={r.id}>
-                            <div className={styles.reviewStars} aria-hidden="true">
-                              {STARS}
-                            </div>
-                            <p className={styles.reviewQuote}>{r.quote}</p>
-                            <div className={styles.reviewMeta}>
-                              {r.name} · {r.occasion} · verified guest
-                            </div>
+                        <div className={styles.reviewCard}>
+                          <div className={styles.reviewStars} aria-hidden="true">
+                            {STARS}
                           </div>
-                        ))}
+                          <p className={styles.reviewQuote}>{top.quote}</p>
+                          <div className={styles.reviewMeta}>
+                            {top.name} · {top.occasion} · verified guest
+                          </div>
+                        </div>
                       </div>
                     );
                   })()}
 
-                  {/* The math, demoted to detail below the value. */}
-                  <div className={styles.priceCardDivider} />
-                  <div className={styles.priceCardRow}>
-                    <span>Nightly subtotal</span>
-                    <span>${formatDollars(priceQuote.subtotalCents)}</span>
-                  </div>
-                  {priceQuote.discountTotalCents > 0 && (
-                    <div className={styles.priceCardRow}>
-                      <span>Discount</span>
-                      <span>{`-$${formatDollars(priceQuote.discountTotalCents)}`}</span>
-                    </div>
-                  )}
-                  <div className={styles.priceCardRow}>
-                    <span>Cleaning</span>
-                    <span>${formatDollars(priceQuote.cleaningCents)}</span>
-                  </div>
-                  {priceQuote.taxEnabled && (
-                    <div className={styles.priceCardRow}>
-                      <span>Taxes</span>
-                      <span>${formatDollars(priceQuote.taxCents)}</span>
-                    </div>
-                  )}
-                  <div className={`${styles.priceCardRow} ${styles.priceCardTotal}`}>
-                    <span>Total</span>
-                    <span>${formatDollars(priceQuote.totalCents)}</span>
-                  </div>
+                  <button
+                    type="button"
+                    className={styles.detailsOpenBtn}
+                    onClick={() => setDetailsOpen(true)}
+                  >
+                    See the home, all reviews + the breakdown
+                  </button>
                 </div>
               )}
 
@@ -1945,7 +1930,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         {/* Floating Reserve CTA: hovers above the composer while the
             guest reads the long price card, then yields to the inline
             buttons once they scroll into view. */}
-        {priceQuote && priceAction === "none" && !actionsInView && (
+        {priceQuote && priceAction === "none" && !actionsInView && !detailsOpen && (
           <div className={styles.stickyCta}>
             <button
               type="button"
@@ -1986,6 +1971,145 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
           </button>
         </form>
       </div>
+
+      {/* Details modal — the full home: videos, value proof, all
+          reviews, and the breakdown. The CTA stays pinned at the bottom
+          so the guest never loses access to it. */}
+      {priceQuote && detailsOpen && (
+        <div
+          className={styles.detailsModal}
+          role="dialog"
+          aria-label="The home, reviews and price"
+        >
+          <div className={styles.detailsHeader}>
+            <span className={styles.detailsTitle}>
+              {formatRangeShort(priceQuote.arrival, priceQuote.departure)} ·{" "}
+              {priceQuote.guests} guests
+            </span>
+            <button
+              type="button"
+              className={styles.detailsClose}
+              onClick={() => setDetailsOpen(false)}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className={styles.detailsBody}>
+            <MediaCarousel />
+
+            {(() => {
+              const framing = VALUE_FRAMING[occasion] ?? VALUE_FRAMING.default;
+              return (
+                <div className={styles.priceValue}>
+                  <div className={styles.priceValueTopline}>
+                    {framing.topline}
+                  </div>
+                  {VALUE_HEADLINES.map((head, i) => (
+                    <div className={styles.priceValueRow} key={head}>
+                      <div className={styles.priceValueHead}>
+                        <span
+                          className={styles.priceValueBullet}
+                          aria-hidden="true"
+                        >
+                          ✦
+                        </span>
+                        {head}
+                      </div>
+                      <div className={styles.priceValueProof}>
+                        {framing.proof[i]}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {(() => {
+              const tag = OCCASION_TO_REVIEW_TAG[occasion] ?? null;
+              const all = sortForOccasion(TESTIMONIALS, tag);
+              return (
+                <div className={styles.priceReviews}>
+                  {all.map((r) => (
+                    <div className={styles.reviewCard} key={r.id}>
+                      <div className={styles.reviewStars} aria-hidden="true">
+                        {STARS}
+                      </div>
+                      <p className={styles.reviewQuote}>{r.quote}</p>
+                      <div className={styles.reviewMeta}>
+                        {r.name} · {r.occasion} · verified guest
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            <div className={styles.priceCardDivider} />
+            <div className={styles.priceCardRow}>
+              <span>Nightly subtotal</span>
+              <span>${formatDollars(priceQuote.subtotalCents)}</span>
+            </div>
+            {priceQuote.discountTotalCents > 0 && (
+              <div className={styles.priceCardRow}>
+                <span>Discount</span>
+                <span>{`-$${formatDollars(priceQuote.discountTotalCents)}`}</span>
+              </div>
+            )}
+            <div className={styles.priceCardRow}>
+              <span>Cleaning</span>
+              <span>${formatDollars(priceQuote.cleaningCents)}</span>
+            </div>
+            {priceQuote.taxEnabled && (
+              <div className={styles.priceCardRow}>
+                <span>Taxes</span>
+                <span>${formatDollars(priceQuote.taxCents)}</span>
+              </div>
+            )}
+            <div className={`${styles.priceCardRow} ${styles.priceCardTotal}`}>
+              <span>Total</span>
+              <span>${formatDollars(priceQuote.totalCents)}</span>
+            </div>
+          </div>
+
+          <div className={styles.detailsFooter}>
+            <button
+              type="button"
+              className={styles.reservePrimary}
+              onClick={() => {
+                setDetailsOpen(false);
+                setPriceAction("reserve");
+              }}
+            >
+              Reserve now, nothing due
+            </button>
+            <div className={styles.detailsFooterRow}>
+              <button
+                type="button"
+                className={styles.priceActionSecondary}
+                onClick={() => {
+                  setDetailsOpen(false);
+                  handlePriceQuestions();
+                }}
+              >
+                I have a few questions
+              </button>
+              <button
+                type="button"
+                className={styles.priceActionSecondary}
+                onClick={() => {
+                  setDetailsOpen(false);
+                  setAgentDriven(true);
+                  void fireWidgetCommit("Can I send this to my group?", "share");
+                }}
+              >
+                Send to my group
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

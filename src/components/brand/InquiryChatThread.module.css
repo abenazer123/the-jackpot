@@ -952,6 +952,122 @@
   color: var(--jp-text-secondary);
 }
 
+/* Lean card: affordance headline with no proof line under it. */
+.priceValueHeadLean {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--jp-text-primary);
+  margin: 5px 0;
+}
+
+/* "See the home + all" — opens the details modal. */
+.detailsOpenBtn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-full);
+  background: var(--jp-bg-primary);
+  color: var(--jp-text-primary);
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background var(--jp-transition),
+    border-color var(--jp-transition);
+}
+
+.detailsOpenBtn:hover {
+  border-color: var(--jp-gold);
+  background: var(--jp-gold-10);
+}
+
+/* Details modal — full home, reviews, breakdown; CTA pinned at bottom. */
+.detailsModal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: var(--jp-bg-primary);
+  animation: threadIn 240ms ease-out both;
+}
+
+.detailsHeader {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--jp-border-default);
+}
+
+.detailsTitle {
+  font-family: var(--jp-font-display);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--jp-text-primary);
+}
+
+.detailsClose {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  background: transparent;
+  color: var(--jp-text-secondary);
+  font-size: 17px;
+  cursor: pointer;
+  transition:
+    background var(--jp-transition),
+    color var(--jp-transition);
+}
+
+.detailsClose:hover {
+  background: var(--jp-gold-10);
+  color: var(--jp-text-primary);
+}
+
+.detailsBody {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+}
+
+.detailsFooter {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--jp-border-default);
+  background: var(--jp-bg-primary);
+}
+
+.detailsFooter .reservePrimary {
+  width: 100%;
+}
+
+.detailsFooterRow {
+  display: flex;
+  gap: 8px;
+}
+
+.detailsFooterRow .priceActionSecondary {
+  flex: 1 1 0;
+}
+
 /* 9:12 vertical media carousel — placeholder for stay videos. */
 .mediaCarousel {
   display: flex;
@@ -962,6 +1078,9 @@
   padding-bottom: 4px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  /* In a flex-column parent (the details modal) an aspect-ratio-sized
+     row collapses to 0 unless we stop it from shrinking. */
+  flex-shrink: 0;
 }
 
 .mediaCarousel::-webkit-scrollbar {
