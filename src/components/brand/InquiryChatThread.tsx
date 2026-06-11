@@ -22,9 +22,12 @@
  * accumulates as you'd expect from any real chat thread. New blocks
  * fade in via .fadeIn rather than landing all at once.
  *
- * Lifecycle mirrors BookingBottomSheet — native <dialog> with
- * showModal()/close() driven by the `open` prop. Focus trap, ESC, and
- * body scroll lock all come from the platform.
+ * Renders as a full-page surface on its own route (/chat/session), not
+ * a modal over the marketing page, so there is no background to scroll.
+ * The `open` prop is passed true on mount; the existing open-keyed
+ * effects (reset, drip-feed, intent-fire, the epoch guard) run once when
+ * the page mounts. `onClose` is wired to a back control that routes to
+ * /chat.
  */
 
 "use client";
@@ -411,7 +414,6 @@ function OliviaTyping() {
 }
 
 export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatThreadProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   const [arrival, setArrival] = useState("");
@@ -475,16 +477,6 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   const [reserveBusy, setReserveBusy] = useState(false);
 
   const firstName = firstNameOf(contactName);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
-    } else if (!open && dialog.open) {
-      dialog.close();
-    }
-  }, [open]);
 
   // Reset local state every time the dialog opens so a guest who backs
   // out and re-enters starts fresh. Deferred via 0ms setTimeout to stay
@@ -673,13 +665,6 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     ];
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [step]);
-
-  const handleDialogClick = useCallback(
-    (e: React.MouseEvent<HTMLDialogElement>) => {
-      if (e.target === dialogRef.current) onClose();
-    },
-    [onClose],
-  );
 
   const today = todayIso();
   const minDeparture = useMemo(
@@ -1182,13 +1167,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     : "Good news. ";
 
   return (
-    <dialog
-      ref={dialogRef}
-      className={styles.dialog}
-      onClose={onClose}
-      onClick={handleDialogClick}
-      aria-label="Chat with Olivia"
-    >
+    <div className={styles.page} aria-label="Chat with Olivia">
       <div className={styles.sheet}>
         <div className={styles.header}>
           <button
@@ -1816,6 +1795,6 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
           </button>
         </form>
       </div>
-    </dialog>
+    </div>
   );
 }

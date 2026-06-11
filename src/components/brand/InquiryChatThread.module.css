@@ -10,41 +10,21 @@
  * (just at full-viewport, which is intentional for this round).
  */
 
-.dialog {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--jp-text-primary);
-  margin: 0;
-  overflow: hidden;
-}
-
-.dialog[open] {
-  /* Fullscreen modal. position: fixed + inset: 0 overrides the user-
-     agent stylesheet that would otherwise center the dialog and leave
-     whitespace around it. */
+.page {
+  /* Full-page chat surface. Lives on its own route (/chat/session), so
+     there is no background page to scroll behind it. The messages
+     region is the only scroll container; the composer stays pinned at
+     the bottom. */
   display: flex;
   flex-direction: column;
-  justify-content: stretch;
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  max-width: 100vw;
+  color: var(--jp-text-primary);
+  width: 100%;
   /* 100vh on mobile Safari is "tall viewport" — includes the URL bar
-     even when it isn't visible — so the composer at the bottom gets
-     pushed below the visible area. dvh is the dynamic viewport unit
-     that follows the actual visible chrome. Fallback to vh for older
-     browsers that don't know dvh. */
+     even when it isn't visible. dvh follows the actual visible chrome
+     so the composer stays above the keyboard. Fallback to vh. */
   height: 100vh;
   height: 100dvh;
-  max-height: 100vh;
-  max-height: 100dvh;
-}
-
-.dialog::backdrop {
-  background: var(--jp-backdrop);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  overflow: hidden;
 }
 
 /* Sheet — full-viewport surface that slides up on open. Bottom padding
@@ -62,8 +42,8 @@
 }
 
 @keyframes threadIn {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

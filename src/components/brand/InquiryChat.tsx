@@ -14,29 +14,20 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 
-import { InquiryChatThread } from "./InquiryChatThread";
 import styles from "./InquiryChat.module.css";
 
 type Intent = "share" | "check_dates" | "reserve" | "free_text";
-type ExpandedView = "check_dates" | "share" | "reserve" | null;
 
 interface InquiryChatProps {
   /** Fired when the guest picks a chip or sends a free-text message. */
   onIntent?: (intent: Intent, payload?: string) => void;
 }
 
-// Matches the mobile breakpoint used elsewhere (HeroSection, DateField,
-// HeroChatSection). Guarded for SSR — server renders treat as desktop so
-// the dialog never auto-opens.
-function isMobileViewport(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(max-width: 900px)").matches;
-}
-
 export function InquiryChat({ onIntent }: InquiryChatProps) {
+  const router = useRouter();
   const [draft, setDraft] = useState("");
-  const [expanded, setExpanded] = useState<ExpandedView>(null);
   const canSend = draft.trim().length > 0;
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -44,29 +35,22 @@ export function InquiryChat({ onIntent }: InquiryChatProps) {
     if (!canSend) return;
     onIntent?.("free_text", draft.trim());
     setDraft("");
+    router.push("/chat/session");
   };
 
   const handleCheckDates = () => {
     onIntent?.("check_dates");
-    // Desktop interaction is deferred — only expand on mobile for this
-    // round. >900px taps stay no-ops while we design the desktop variant.
-    if (isMobileViewport()) {
-      setExpanded("check_dates");
-    }
+    router.push("/chat/session");
   };
 
   const handleShare = () => {
     onIntent?.("share");
-    if (isMobileViewport()) {
-      setExpanded("share");
-    }
+    router.push("/chat/session?intent=share");
   };
 
   const handleReserve = () => {
     onIntent?.("reserve");
-    if (isMobileViewport()) {
-      setExpanded("reserve");
-    }
+    router.push("/chat/session?intent=reserve");
   };
 
   return (
@@ -166,14 +150,6 @@ export function InquiryChat({ onIntent }: InquiryChatProps) {
       <p className={styles.fallback}>
         <a href="/book">Or use the booking form instead &rarr;</a>
       </p>
-
-      <InquiryChatThread
-        open={expanded !== null}
-        onClose={() => setExpanded(null)}
-        initialIntent={
-          expanded === "share" ? "share" : expanded === "reserve" ? "reserve" : null
-        }
-      />
     </div>
   );
 }
