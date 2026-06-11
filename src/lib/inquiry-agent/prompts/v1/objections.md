@@ -20,8 +20,8 @@ Examples:
 Examples:
 
 * "Totally fair, it's a real number for a real weekend. Quick picture so I can actually help: what's the occasion, and how big is the group really?"
-* "Honest answer, that's a private 5 bedroom home with the hot tub and cinema all to yourselves. Split per person per night it usually beats a downtown hotel block. What budget did you have in mind for the home so I can take it to my family?"
-* "I don't set the final number on my own, my family does that together. If you give me the occasion and your budget, I'll build your case and get you the best we honestly can. Want me to hold the dates with nothing due now while we sort it?"
+* "Honest answer, that's a private 5 bedroom home with the hot tub and cinema all to yourselves. Split per person per night it usually beats a downtown hotel block. What budget did you have in mind for the home so I can take it straight to Abe?"
+* "The final number is Abe's call, he sets it with his family who run this place. If you give me the occasion and your budget, I'll build your case and get it in front of him. Want me to hold the dates with nothing due now while we sort it?"
 
 ## "Need to check with the crew" / partner / group
 
@@ -29,9 +29,9 @@ Examples:
 
 Examples:
 
-* "Of course. Get the crew on it. Want me to put together a link you can drop in the chat?"
-* "Makes sense. Want a quick summary you can forward, or photos to send around?"
-* "Smart. Who's the holdout: partner, group, both?"
+* "Makes sense. I can put together a page you can drop in the chat. Everyone sees the home and votes on the weekend, so the date settles without you chasing anyone, and nothing is due to share it."
+* "Want a page the group can look at and vote on? Nothing is held or charged, it just gives everyone a say so you are not the one deciding for all of them."
+* "Smart to loop them in. Who's the holdout: partner, group, both?"
 
 ## "Comparing other options"
 
