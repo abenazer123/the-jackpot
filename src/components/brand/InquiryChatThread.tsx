@@ -897,7 +897,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     setAgentDriven(true);
     const body =
       intent === "share"
-        ? "[EVENT:chip_intent_share] Guest just tapped the 'Send this to my group' chip on the entry card. They want to share the home with their crew. No info captured yet. Acknowledge warmly, then fire show_widget for whatever you need first (date_picker, contact_form, or group_occasion). Once you have name, email, dates, count, and occasion, propose show_widget: share_link."
+        ? "[EVENT:chip_intent_share] Guest tapped 'Send this to my group'. They are the coordinator organizing for a crew. Follow the 'Sharing to the group' rules. Your opener speaks to what THEY get: hand the group a page everyone can see, let everyone vote on the weekend so the date settles without them chasing anyone, and nothing is due or held to share it. Never state our goal ('get buy in', 'get the crew in'). Warm, confident, declarative, luxury tone, no hype, no one word opener. Then collect what you need one widget at a time (date_picker, group_occasion, contact_form). Once you have name, email, dates, count, and occasion, propose show_widget: share_link."
         : intent === "reserve"
           ? "[EVENT:chip_intent_reserve] Guest just tapped 'Reserve now, nothing due'. They want to hold dates with no payment. Acknowledge warmly that they can lock dates with nothing due today. Collect what you need one widget at a time (date_picker for the weekend, group_occasion for size and occasion), then fire show_widget: reserve_form to capture their info and hold it. Do NOT talk price; this is the no-payment hold path."
           : "[EVENT:chip_intent_unknown]";
