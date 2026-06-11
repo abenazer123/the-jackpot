@@ -484,6 +484,7 @@ function OliviaTyping() {
 
 export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatThreadProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const priceCardRef = useRef<HTMLDivElement>(null);
 
   const [arrival, setArrival] = useState("");
   const [departure, setDeparture] = useState("");
@@ -619,7 +620,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       body.scrollTop = body.scrollHeight;
     });
     return () => window.cancelAnimationFrame(id);
-  }, [step, checkingPhase, availablePhase, harnessMessages.length, isWaitingForOlivia, priceQuote, introReady]);
+  }, [step, checkingPhase, availablePhase, harnessMessages.length, isWaitingForOlivia, introReady]);
 
   // Fetch the real quote when the conversation enters the pricing
   // step. While it's in flight the existing "Pulling pricing now…"
@@ -668,16 +669,22 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     };
   }, [step, arrival, departure, groupSize, occasion, priceQuote, priceError]);
 
-  // Once the price card has rendered, fire a synthetic "system" turn
-  // through the harness so Olivia composes her first post-price
-  // bubble ("How does that sit?", etc.). Runs at most once per quote.
-  const postPriceTriggeredRef = useRef(false);
+  // On price reveal, anchor the scroll to the TOP of the price card so
+  // the guest reads the value framing first, instead of being yanked to
+  // the bottom (buttons). Runs once per quote. The card now carries the
+  // value + buttons, so there is no separate post-price chat bubble.
+  const priceAnchoredRef = useRef(false);
   useEffect(() => {
-    if (!priceQuote) return;
-    if (postPriceTriggeredRef.current) return;
-    postPriceTriggeredRef.current = true;
-    void firePostPriceTrigger(priceQuote);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!priceQuote) {
+      priceAnchoredRef.current = false;
+      return;
+    }
+    if (priceAnchoredRef.current) return;
+    priceAnchoredRef.current = true;
+    const id = window.requestAnimationFrame(() => {
+      priceCardRef.current?.scrollIntoView({ block: "start" });
+    });
+    return () => window.cancelAnimationFrame(id);
   }, [priceQuote]);
 
   // When the dialog opens with an entry-chip intent (e.g. "Send this
@@ -862,8 +869,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     setDeparture(alt.departure);
     setAlternates([]);
     setPriceError(null);
-    setPriceQuote(null);
-    postPriceTriggeredRef.current = false; // let the opener fire for the new quote
+    setPriceQuote(null); // clearing re-arms the price-card scroll anchor
   };
 
   const canConfirmDates =
@@ -950,56 +956,6 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       applyHarnessResponse(await res.json(), epoch);
     } catch {
       // Silent on intent-fire failure — guest can just type something.
-    } finally {
-      if (sessionEpochRef.current === epoch) setIsWaitingForOlivia(false);
-    }
-  };
-
-  /** Fire a synthetic "system" turn so Olivia composes the first
-   *  post-price bubble. Unlike a guest send, we do NOT add the
-   *  trigger message to local harnessMessages — the guest didn't
-   *  type anything, so there's no user bubble to render. We only
-   *  surface Olivia's reply. */
-  const firePostPriceTrigger = async (quote: PriceQuote) => {
-    const epoch = sessionEpochRef.current;
-    setIsWaitingForOlivia(true);
-    const body = `[EVENT:price_revealed] Price card just rendered: ${quote.nights} nights, ${quote.guests} guests, total ${(quote.totalCents / 100).toFixed(0)} dollars, ${(quote.perGuestCents / 100).toFixed(0)} per person per night. Below your reply, the guest sees three buttons: "Reserve now, nothing due", "I have a few questions", and "Send to my group". Do NOT ask "how does it sit" or survey their budget. Tee up the buttons: one warm sentence anchoring the value (per person per night for the whole private home), then point them to holding the dates with nothing due now or asking you anything. Keep it to two sentences.`;
-    try {
-      const res = await fetch("/api/inquiry-agent/turn", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: harnessSessionId,
-          message: { role: "system", body, ts: new Date().toISOString() },
-          client_context: {
-            phase: "post_price",
-            slots: {
-              arrival,
-              departure,
-              guest_count: Number.parseInt(groupSize, 10),
-              occasion,
-              quote_total_cents: quote.totalCents,
-            },
-            viewport: "mobile",
-          },
-        }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: {
-        session_id: string;
-        messages: HarnessMessage[];
-        widgets?: Array<{ type: string; payload: Record<string, unknown> }>;
-      } = await res.json();
-      if (sessionEpochRef.current !== epoch) return;
-      if (!harnessSessionId) setHarnessSessionId(data.session_id);
-      setHarnessMessages((prev) => [...prev, ...data.messages]);
-      if (data.widgets && data.widgets.length) {
-        setHarnessWidgets((prev) => [...prev, ...data.widgets!]);
-      }
-    } catch {
-      // Silent on trigger failure — guest still sees the price card,
-      // they can just type something and Olivia will pick up from
-      // there. No need for a visible error.
     } finally {
       if (sessionEpochRef.current === epoch) setIsWaitingForOlivia(false);
     }
@@ -1581,7 +1537,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
               )}
 
               {priceQuote && (
-                <div className={`${styles.priceCard} ${styles.fadeIn}`}>
+                <div
+                  className={`${styles.priceCard} ${styles.fadeIn}`}
+                  ref={priceCardRef}
+                >
                   <div className={styles.priceCardLabel}>Your weekend</div>
                   <div className={styles.priceCardRange}>
                     {formatRangeShort(priceQuote.arrival, priceQuote.departure)}
