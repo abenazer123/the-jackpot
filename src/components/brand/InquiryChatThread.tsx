@@ -86,6 +86,10 @@ interface PriceQuote {
   totalCents: number;
   perGuestCents: number;
   discountTotalCents: number;
+  /** What the group saves booking direct vs the same stay on a booking
+   *  platform (their service fee). Computed server-side from the
+   *  airbnb_fee_bps pricing config; 0 when unset. */
+  savedVsAirbnbCents?: number;
 }
 
 /** Nearby open range offered when requested dates are booked. */
@@ -1616,6 +1620,16 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     {priceQuote.nights} {priceQuote.nights === 1 ? "night" : "nights"}
                   </div>
 
+                  {(priceQuote.savedVsAirbnbCents ?? 0) > 0 && (
+                    <div className={styles.savingsTag}>
+                      <span className={styles.savingsPill}>Book direct</span>
+                      <span>
+                        Saves the group $
+                        {formatDollars(priceQuote.savedVsAirbnbCents ?? 0)} vs Airbnb
+                      </span>
+                    </div>
+                  )}
+
                   <MediaCarousel />
 
                   {(() => {
@@ -1724,7 +1738,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
 
               {priceError === "unavailable" && alternates.length > 0 && (
                 <div className={`${styles.altDates} ${styles.fadeIn}`}>
-                  <div className={styles.altDatesLabel}>Closest open weekends</div>
+                  <div className={styles.altDatesLabel}>
+                    Closest open weekends · tap one for the real number
+                  </div>
                   {alternates.map((alt) => (
                     <button
                       key={alt.arrival}

@@ -888,6 +888,31 @@
   margin-top: 4px;
 }
 
+/* Book-direct savings — the platform service fee they skip by booking
+   with us. Real figure from the quote, not a fabricated comparison. */
+.savingsTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 12.5px;
+  color: var(--jp-gold-deep);
+}
+
+.savingsPill {
+  font-family: var(--jp-font-body);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #ffffff;
+  background-image: var(--jp-gradient-button);
+  padding: 4px 9px;
+  border-radius: var(--jp-radius-full);
+}
+
 /* 9:12 vertical media carousel — placeholder for stay videos. */
 .mediaCarousel {
   display: flex;
@@ -1192,6 +1217,10 @@
   font-weight: 500;
   font-size: 15px;
   color: var(--jp-gold-deep);
+  /* Don't reveal alternate prices up front — blur them so picking a
+     range is what surfaces the real number, not a price-shopping list. */
+  filter: blur(5px);
+  user-select: none;
 }
 
 /* Share-link widget — surfaced when Olivia fires the share path.
