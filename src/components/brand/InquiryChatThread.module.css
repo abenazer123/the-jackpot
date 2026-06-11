@@ -856,6 +856,110 @@
   padding-left: 19px;
 }
 
+/* Hero number — lead with per guest, per night (the small honest unit),
+   total stays visible just below. */
+.priceHero {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.priceHeroNum {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 38px;
+  line-height: 1;
+  color: var(--jp-gold-deep);
+}
+
+.priceHeroUnit {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--jp-text-secondary);
+}
+
+.priceHeroTotal {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 12.5px;
+  color: var(--jp-text-secondary);
+  margin-top: 4px;
+}
+
+/* 9:12 vertical media carousel — placeholder for stay videos. */
+.mediaCarousel {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  margin: 16px 0 4px 0;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mediaCarousel::-webkit-scrollbar {
+  display: none;
+}
+
+.mediaItem {
+  position: relative;
+  flex: 0 0 auto;
+  width: 108px;
+  aspect-ratio: 9 / 12;
+  border-radius: var(--jp-radius-md);
+  overflow: hidden;
+  scroll-snap-align: start;
+  background: var(--jp-gold-10);
+}
+
+.mediaImg {
+  object-fit: cover;
+}
+
+.mediaPlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(40, 28, 6, 0.42);
+  color: #ffffff;
+  font-size: 10px;
+  padding-left: 2px;
+}
+
+.mediaCaption {
+  position: absolute;
+  left: 7px;
+  bottom: 6px;
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(40, 28, 6, 0.6);
+}
+
+/* Floating Reserve CTA — pinned above the composer while the guest
+   reads the long card, so the primary action is always reachable. */
+.stickyCta {
+  padding: 10px 16px 10px;
+  background: var(--jp-bg-primary);
+  box-shadow: 0 -10px 20px -10px rgba(122, 96, 48, 0.22);
+}
+
+.stickyCta .reservePrimary {
+  width: 100%;
+}
+
 /* Action-forward price reveal. Reserve is the primary commitment;
    the rest are secondary. No budget-sentiment scale by design. */
 .priceActions {

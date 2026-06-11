@@ -43,7 +43,7 @@ import {
 
 import Image from "next/image";
 
-import { COVER_PHOTO } from "@/lib/property/photos";
+import { BRAND_PHOTOS, COVER_PHOTO } from "@/lib/property/photos";
 
 import { Calendar, todayIso } from "./Calendar";
 import styles from "./InquiryChatThread.module.css";
@@ -176,39 +176,65 @@ const VALUE_FRAMING: Record<string, OccasionFraming> = {
     topline:
       "The sendoff the bride actually remembers, the whole crew together for it.",
     proof: [
-      "The bar and parlor for the night in, the hot tub, the courtyard made for the photos. Composed for the weekend, set up before you arrive.",
-      "The whole crew with the bride start to finish, the night that doesn’t end at last call.",
-      "A host who knows the city, the photographer list, full kitchen, parking, slow mornings.",
+      "Bar and parlor, hot tub, the courtyard built for photos. Set up before you arrive.",
+      "The whole crew with the bride, start to finish. No last call.",
+      "A host who knows the city, the photographer list, parking.",
     ],
   },
   Bachelor: {
     topline:
-      "The kind of weekend the group still talks about after, all of you under one roof.",
+      "The kind of weekend the group still talks about, all of you under one roof.",
     proof: [
-      "The bar and parlor, the cinema, the game room, the hot tub. The night in that beats a night out, set up before you arrive.",
-      "The whole crew together start to finish, no tab, no closing time, no car home.",
-      "A host who knows the city, full kitchen and coffee bar, parking, twelve minutes from Midway.",
+      "Bar, cinema, game room, hot tub. The night in that beats a night out.",
+      "The whole crew together. No tab, no closing time, no car home.",
+      "A host who knows the city, full kitchen, parking.",
     ],
   },
   Wedding: {
     topline:
       "The people who matter most, all in one place for the whole celebration.",
     proof: [
-      "The courtyard and parlor for the toasts, the kitchen for the family meal, room to get ready together. Set up before you arrive.",
-      "Both sides under one roof, a weekend that doesn’t scatter across hotels.",
-      "A host who knows the city, full kitchen and coffee bar, parking, slow mornings.",
+      "Courtyard for the toasts, kitchen for the family meal, room to get ready.",
+      "Both sides under one roof. No scattering across hotels.",
+      "A host who knows the city, full kitchen and coffee bar, parking.",
     ],
   },
   default: {
     topline:
       "The difference between a trip you coordinate and a weekend you’re actually in.",
     proof: [
-      "A real cinema, a hot tub for the group, the stocked bar and parlor, the courtyard with the fire pit. Composed for the celebration, set up before you arrive.",
-      "The whole place private, beds for everyone, the night that doesn’t end at a hotel door.",
-      "A host who knows the city, full kitchen and coffee bar, parking, twelve minutes from Midway.",
+      "Cinema, hot tub, bar and parlor, the courtyard with the fire pit. Set up before you arrive.",
+      "The whole place private. The night that doesn’t end at a hotel door.",
+      "A host who knows the city, full kitchen and coffee bar, parking.",
     ],
   },
 };
+
+/** Vertical (9:12) media carousel for the price card. Placeholder for
+ *  real stay videos; brand photos stand in for now. Horizontal
+ *  scroll-snap; a play glyph signals these become video. */
+function MediaCarousel() {
+  const items = BRAND_PHOTOS.slice(0, 5);
+  return (
+    <div className={styles.mediaCarousel} aria-label="From recent stays">
+      {items.map((p) => (
+        <div className={styles.mediaItem} key={p.label}>
+          <Image
+            src={p.src}
+            alt={p.alt}
+            fill
+            sizes="150px"
+            className={styles.mediaImg}
+          />
+          <span className={styles.mediaPlay} aria-hidden="true">
+            ▶
+          </span>
+          <span className={styles.mediaCaption}>{p.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function addDaysIso(iso: string, days: number): string {
   const [y, m, d] = iso.split("-").map(Number);
@@ -485,6 +511,11 @@ function OliviaTyping() {
 export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatThreadProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const priceCardRef = useRef<HTMLDivElement>(null);
+  const actionsRowRef = useRef<HTMLDivElement>(null);
+  // True once the inline price-reveal action row scrolls into view. The
+  // floating Reserve CTA shows only while it's false, so the primary
+  // action stays reachable through the long card, then "locks" inline.
+  const [actionsInView, setActionsInView] = useState(false);
 
   const [arrival, setArrival] = useState("");
   const [departure, setDeparture] = useState("");
@@ -686,6 +717,25 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     });
     return () => window.cancelAnimationFrame(id);
   }, [priceQuote]);
+
+  // Watch the inline action row: while it's out of view, a floating
+  // Reserve CTA hovers above the composer so the primary action is
+  // always reachable through the long card; when it scrolls into view
+  // the floating one hides and the inline buttons take over.
+  useEffect(() => {
+    const el = actionsRowRef.current;
+    const root = bodyRef.current;
+    if (!el || !root) {
+      setActionsInView(false);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      ([entry]) => setActionsInView(entry.isIntersecting),
+      { root, threshold: 0.4 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [priceQuote, priceAction]);
 
   // When the dialog opens with an entry-chip intent (e.g. "Send this
   // to my group"), fire a one-shot system event so Olivia composes the
@@ -1551,46 +1601,28 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     {priceQuote.guests} {priceQuote.guests === 1 ? "guest" : "guests"}
                   </div>
 
-                  <div className={styles.priceCardDivider} />
+                  {/* Hero: lead with the small honest unit. The group
+                      total stays visible just below for transparency. */}
+                  <div className={styles.priceHero}>
+                    <span className={styles.priceHeroNum}>
+                      ${formatDollars(Math.round(priceQuote.perGuestCents / priceQuote.nights))}
+                    </span>
+                    <span className={styles.priceHeroUnit}>
+                      per guest, per night
+                    </span>
+                  </div>
+                  <div className={styles.priceHeroTotal}>
+                    ${formatDollars(priceQuote.totalCents)} for the whole group,{" "}
+                    {priceQuote.nights} {priceQuote.nights === 1 ? "night" : "nights"}
+                  </div>
 
-                  <div className={styles.priceCardRow}>
-                    <span>Nightly subtotal</span>
-                    <span>${formatDollars(priceQuote.subtotalCents)}</span>
-                  </div>
-                  {priceQuote.discountTotalCents > 0 && (
-                    <div className={styles.priceCardRow}>
-                      <span>Discount</span>
-                      <span>{`-$${formatDollars(priceQuote.discountTotalCents)}`}</span>
-                    </div>
-                  )}
-                  <div className={styles.priceCardRow}>
-                    <span>Cleaning</span>
-                    <span>${formatDollars(priceQuote.cleaningCents)}</span>
-                  </div>
-                  {priceQuote.taxEnabled && (
-                    <div className={styles.priceCardRow}>
-                      <span>Taxes</span>
-                      <span>${formatDollars(priceQuote.taxCents)}</span>
-                    </div>
-                  )}
-
-                  <div className={styles.priceCardDivider} />
-
-                  <div className={`${styles.priceCardRow} ${styles.priceCardTotal}`}>
-                    <span>Total</span>
-                    <span>${formatDollars(priceQuote.totalCents)}</span>
-                  </div>
-                  <div className={styles.priceCardPerGuest}>
-                    ${formatDollars(Math.round(priceQuote.perGuestCents / priceQuote.nights))} per
-                    guest, per night
-                  </div>
+                  <MediaCarousel />
 
                   {(() => {
                     const framing =
                       VALUE_FRAMING[occasion] ?? VALUE_FRAMING.default;
                     return (
                       <div className={styles.priceValue}>
-                        <div className={styles.priceValueDivider} />
                         <div className={styles.priceValueTopline}>
                           {framing.topline}
                         </div>
@@ -1613,6 +1645,33 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                       </div>
                     );
                   })()}
+
+                  {/* The math, demoted to detail below the value. */}
+                  <div className={styles.priceCardDivider} />
+                  <div className={styles.priceCardRow}>
+                    <span>Nightly subtotal</span>
+                    <span>${formatDollars(priceQuote.subtotalCents)}</span>
+                  </div>
+                  {priceQuote.discountTotalCents > 0 && (
+                    <div className={styles.priceCardRow}>
+                      <span>Discount</span>
+                      <span>{`-$${formatDollars(priceQuote.discountTotalCents)}`}</span>
+                    </div>
+                  )}
+                  <div className={styles.priceCardRow}>
+                    <span>Cleaning</span>
+                    <span>${formatDollars(priceQuote.cleaningCents)}</span>
+                  </div>
+                  {priceQuote.taxEnabled && (
+                    <div className={styles.priceCardRow}>
+                      <span>Taxes</span>
+                      <span>${formatDollars(priceQuote.taxCents)}</span>
+                    </div>
+                  )}
+                  <div className={`${styles.priceCardRow} ${styles.priceCardTotal}`}>
+                    <span>Total</span>
+                    <span>${formatDollars(priceQuote.totalCents)}</span>
+                  </div>
                 </div>
               )}
 
@@ -1621,7 +1680,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                   commitment. Reserve is primary; questions opens Olivia's
                   diagnostic chat; share reuses the link flow. */}
               {priceQuote && priceAction === "none" && (
-                <div className={`${styles.priceActions} ${styles.fadeIn}`}>
+                <div
+                  className={`${styles.priceActions} ${styles.fadeIn}`}
+                  ref={actionsRowRef}
+                >
                   <button
                     type="button"
                     className={styles.reservePrimary}
@@ -1824,6 +1886,21 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
 
           {isWaitingForOlivia && <OliviaTyping />}
         </div>
+
+        {/* Floating Reserve CTA: hovers above the composer while the
+            guest reads the long price card, then yields to the inline
+            buttons once they scroll into view. */}
+        {priceQuote && priceAction === "none" && !actionsInView && (
+          <div className={styles.stickyCta}>
+            <button
+              type="button"
+              className={styles.reservePrimary}
+              onClick={() => setPriceAction("reserve")}
+            >
+              Reserve now, nothing due
+            </button>
+          </div>
+        )}
 
         <form className={styles.composer} onSubmit={handleSubmitDraft}>
           <input
