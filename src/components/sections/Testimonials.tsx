@@ -27,7 +27,7 @@ import styles from "./Testimonials.module.css";
 
 type Platform = "airbnb" | "vrbo";
 
-interface Testimonial {
+export interface Testimonial {
   id: string;
   quote: string;
   name: string;
@@ -40,7 +40,7 @@ const AIRBNB_REVIEWS_URL =
   "https://www.airbnb.com/rooms/1517776645045787467/reviews";
 const VRBO_REVIEWS_URL = "https://www.vrbo.com/4913261";
 
-const TESTIMONIALS: ReadonlyArray<Testimonial> = [
+export const TESTIMONIALS: ReadonlyArray<Testimonial> = [
   {
     id: "christine",
     quote:
@@ -115,7 +115,7 @@ const TESTIMONIALS: ReadonlyArray<Testimonial> = [
   },
 ];
 
-function sortForOccasion(
+export function sortForOccasion(
   reviews: ReadonlyArray<Testimonial>,
   occasion: OccasionId | null,
 ): Testimonial[] {

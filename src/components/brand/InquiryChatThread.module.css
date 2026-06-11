@@ -913,6 +913,45 @@
   border-radius: var(--jp-radius-full);
 }
 
+/* Occasion-matched guest reviews — real verified social proof. */
+.priceReviews {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.reviewCard {
+  padding: 12px 14px;
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+}
+
+.reviewStars {
+  color: var(--jp-gold);
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+}
+
+.reviewQuote {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--jp-text-primary);
+  margin: 0 0 6px 0;
+}
+
+.reviewMeta {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  color: var(--jp-text-secondary);
+}
+
 /* 9:12 vertical media carousel — placeholder for stay videos. */
 .mediaCarousel {
   display: flex;

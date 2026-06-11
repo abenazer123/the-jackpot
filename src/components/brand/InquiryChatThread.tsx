@@ -44,6 +44,11 @@ import {
 import Image from "next/image";
 
 import { BRAND_PHOTOS, COVER_PHOTO } from "@/lib/property/photos";
+import {
+  TESTIMONIALS,
+  sortForOccasion,
+} from "@/components/sections/Testimonials";
+import type { OccasionId } from "@/components/brand/OccasionProvider";
 
 import { Calendar, todayIso } from "./Calendar";
 import styles from "./InquiryChatThread.module.css";
@@ -213,6 +218,17 @@ const VALUE_FRAMING: Record<string, OccasionFraming> = {
     ],
   },
 };
+
+/** Map the chat's occasion options to the review relevance tags so we
+ *  can surface occasion-matched social proof on the price card. */
+const OCCASION_TO_REVIEW_TAG: Record<string, OccasionId | null> = {
+  Bachelorette: "bachelorette",
+  Bachelor: "bachelorette",
+  Wedding: "wedding",
+  Other: null,
+};
+
+const STARS = "★★★★★";
 
 /** Vertical (9:12) media carousel for the price card. Placeholder for
  *  real stay videos; brand photos stand in for now. Horizontal
@@ -1653,6 +1669,29 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                             </div>
                             <div className={styles.priceValueProof}>
                               {framing.proof[i]}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Occasion-matched social proof — real verified guest
+                      reviews, reordered to the guest's occasion. */}
+                  {(() => {
+                    const tag = OCCASION_TO_REVIEW_TAG[occasion] ?? null;
+                    const matched = sortForOccasion(TESTIMONIALS, tag).slice(0, 2);
+                    if (matched.length === 0) return null;
+                    return (
+                      <div className={styles.priceReviews}>
+                        {matched.map((r) => (
+                          <div className={styles.reviewCard} key={r.id}>
+                            <div className={styles.reviewStars} aria-hidden="true">
+                              {STARS}
+                            </div>
+                            <p className={styles.reviewQuote}>{r.quote}</p>
+                            <div className={styles.reviewMeta}>
+                              {r.name} · {r.occasion} · verified guest
                             </div>
                           </div>
                         ))}
