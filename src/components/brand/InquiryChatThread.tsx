@@ -244,6 +244,17 @@ const OCCASION_TO_REVIEW_TAG: Record<string, OccasionId | null> = {
 
 const STARS = "★★★★★";
 
+// The reveal's advancing status line — promises the price is coming
+// (without the figure) and signals finite, intentional progress, so the
+// drip reads as an unveil, not a stall. Indexed by revealStage (0..4).
+const REVEAL_STATUS = [
+  "Pulling your weekend together…",
+  "Here’s the place itself.",
+  "What it’s made for.",
+  "What your crew says.",
+  "And your number.",
+];
+
 /** Vertical (9:12) media carousel for the price card. Placeholder for
  *  real stay videos; brand photos stand in for now. Horizontal
  *  scroll-snap; a play glyph signals these become video. */
@@ -607,6 +618,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   // real quote (renders the price card) or as an error (renders a
   // fallback bubble + notify_abe).
   const [priceQuote, setPriceQuote] = useState<PriceQuote | null>(null);
+  // Staged value-first reveal: 0 header+teaser, 1 dream+photos, 2
+  // pillars, 3 review, 4 the number, 5 breakdown+CTAs. So the value is
+  // read before the price lands.
+  const [revealStage, setRevealStage] = useState(0);
   const [priceError, setPriceError] = useState<string | null>(null);
   /** Nearby open ranges returned alongside an `unavailable` quote.
    *  Rendered as tappable cards; picking one re-quotes that range. */
@@ -757,19 +772,55 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   // the guest reads the value framing first, instead of being yanked to
   // the bottom (buttons). Runs once per quote. The card now carries the
   // value + buttons, so there is no separate post-price chat bubble.
-  const priceAnchoredRef = useRef(false);
+  const revealTimersRef = useRef<number[]>([]);
+  const prefersReducedMotion = () =>
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Let an impatient guest jump straight to the number — the drip is a
+  // gift to the patient, never a tax on the rest.
+  const skipReveal = () => {
+    revealTimersRef.current.forEach((t) => window.clearTimeout(t));
+    revealTimersRef.current = [];
+    setRevealStage(5);
+  };
   useEffect(() => {
     if (!priceQuote) {
-      priceAnchoredRef.current = false;
+      setRevealStage(0);
       return;
     }
-    if (priceAnchoredRef.current) return;
-    priceAnchoredRef.current = true;
+    if (prefersReducedMotion()) {
+      setRevealStage(5);
+      return;
+    }
+    setRevealStage(0);
+    revealTimersRef.current = [
+      window.setTimeout(() => setRevealStage(1), 500),
+      window.setTimeout(() => setRevealStage(2), 1000),
+      window.setTimeout(() => setRevealStage(3), 1500),
+      window.setTimeout(() => setRevealStage(4), 2100),
+      window.setTimeout(() => setRevealStage(5), 2600),
+    ];
+    return () => revealTimersRef.current.forEach((t) => window.clearTimeout(t));
+  }, [priceQuote]);
+
+  // Follow the reveal — ease the newest content into view as each stage
+  // lands (anchors the card on first reveal, then trails the drip).
+  useEffect(() => {
+    if (!priceQuote) return;
+    const body = bodyRef.current;
+    if (!body) return;
     const id = window.requestAnimationFrame(() => {
-      priceCardRef.current?.scrollIntoView({ block: "start" });
+      if (revealStage === 0) {
+        priceCardRef.current?.scrollIntoView({ block: "start" });
+      } else {
+        body.scrollTo({
+          top: body.scrollHeight,
+          behavior: prefersReducedMotion() ? "auto" : "smooth",
+        });
+      }
     });
     return () => window.cancelAnimationFrame(id);
-  }, [priceQuote]);
+  }, [revealStage, priceQuote]);
 
   // Watch the inline action row: while it's out of view, a floating
   // Reserve CTA hovers above the composer so the primary action is
@@ -1642,197 +1693,245 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                 </div>
               )}
 
-              {priceQuote && (
-                <div
-                  className={`${styles.priceCard} ${styles.fadeIn}`}
-                  ref={priceCardRef}
-                >
-                  <div className={styles.priceCardLabel}>Your weekend</div>
-                  <div className={styles.priceCardRange}>
-                    {formatRangeShort(priceQuote.arrival, priceQuote.departure)}
-                  </div>
-                  <div className={styles.priceCardMeta}>
-                    {priceQuote.nights} {priceQuote.nights === 1 ? "night" : "nights"}
-                    {" · "}
-                    {priceQuote.guests} {priceQuote.guests === 1 ? "guest" : "guests"}
-                  </div>
-
-                  {/* Hero: lead with the small honest unit. The group
-                      total stays visible just below for transparency. */}
-                  <div className={styles.priceHero}>
-                    <span className={styles.priceHeroNum}>
-                      ${formatDollars(Math.round(priceQuote.perGuestCents / priceQuote.nights))}
-                    </span>
-                    <span className={styles.priceHeroUnit}>
-                      per guest, per night
-                    </span>
-                  </div>
-                  <div className={styles.priceHeroTotal}>
-                    ${formatDollars(priceQuote.totalCents)} for the whole group,{" "}
-                    {priceQuote.nights} {priceQuote.nights === 1 ? "night" : "nights"}
-                  </div>
-
-                  {(priceQuote.savedVsAirbnbCents ?? 0) > 0 && (
-                    <div className={styles.savingsTag}>
-                      <span className={styles.savingsPill}>Book direct</span>
-                      <span>
-                        Saves the group $
-                        {formatDollars(priceQuote.savedVsAirbnbCents ?? 0)} vs Airbnb
-                      </span>
-                    </div>
-                  )}
-
-                  <MediaCarousel onOpen={(i) => setShowcaseIndex(i)} />
-
-                  {/* Value pillars — each expands its proof inline. #1
-                      names the occasion, #2 the private party stack, #3
-                      the real host. */}
-                  {(() => {
-                    const framing =
-                      VALUE_FRAMING[occasion] ?? VALUE_FRAMING.default;
-                    const heads = valueHeadlines(occasion);
-                    return (
-                      <div className={styles.priceValue}>
-                        <div className={styles.priceValueTopline}>
-                          {framing.topline}
-                        </div>
-                        {heads.map((head, i) => {
-                          const open = openPillar === i;
-                          return (
-                            <div className={styles.pillar} key={head}>
-                              <button
-                                type="button"
-                                className={styles.pillarHead}
-                                aria-expanded={open}
-                                onClick={() => setOpenPillar(open ? null : i)}
-                              >
-                                <span
-                                  className={styles.priceValueBullet}
-                                  aria-hidden="true"
-                                >
-                                  ✦
-                                </span>
-                                <span className={styles.pillarHeadText}>
-                                  {head}
-                                </span>
-                                <svg
-                                  className={styles.pillarChevron}
-                                  data-open={open ? "true" : undefined}
-                                  viewBox="0 0 24 24"
-                                  aria-hidden="true"
-                                >
-                                  <path d="M6 9l6 6 6-6" />
-                                </svg>
-                              </button>
-                              {open && (
-                                <div className={styles.pillarProof}>
-                                  {framing.proof[i]}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+              {priceQuote &&
+                (() => {
+                  const framing =
+                    VALUE_FRAMING[occasion] ?? VALUE_FRAMING.default;
+                  const heads = valueHeadlines(occasion);
+                  const tag = OCCASION_TO_REVIEW_TAG[occasion] ?? null;
+                  const allReviews = sortForOccasion(TESTIMONIALS, tag);
+                  const shownReviews = reviewsExpanded
+                    ? allReviews
+                    : allReviews.slice(0, 1);
+                  const perNight = Math.round(
+                    priceQuote.perGuestCents / priceQuote.nights,
+                  );
+                  return (
+                    <div
+                      className={`${styles.priceCard} ${styles.fadeIn}`}
+                      ref={priceCardRef}
+                      onClick={() => {
+                        if (revealStage < 5) skipReveal();
+                      }}
+                    >
+                      <div className={styles.priceCardLabel}>Your weekend</div>
+                      <div className={styles.priceCardRange}>
+                        {formatRangeShort(priceQuote.arrival, priceQuote.departure)}
                       </div>
-                    );
-                  })()}
+                      <div className={styles.priceCardMeta}>
+                        {priceQuote.nights}{" "}
+                        {priceQuote.nights === 1 ? "night" : "nights"}
+                        {" · "}
+                        {priceQuote.guests}{" "}
+                        {priceQuote.guests === 1 ? "guest" : "guests"}
+                      </div>
 
-                  {/* One occasion-matched review up front; the rest
-                      reveal in place via "See more reviews". */}
-                  {(() => {
-                    const tag = OCCASION_TO_REVIEW_TAG[occasion] ?? null;
-                    const all = sortForOccasion(TESTIMONIALS, tag);
-                    const shown = reviewsExpanded ? all : all.slice(0, 1);
-                    if (shown.length === 0) return null;
-                    return (
-                      <div className={styles.priceReviews}>
-                        {shown.map((r) => (
-                          <div className={styles.reviewCard} key={r.id}>
-                            <div
-                              className={styles.reviewStars}
-                              aria-hidden="true"
-                            >
-                              {STARS}
-                            </div>
-                            <p className={styles.reviewQuote}>{r.quote}</p>
-                            <div className={styles.reviewMeta}>
-                              {r.name} · {r.occasion} · verified guest
-                            </div>
+                      {/* Advancing status — promises the number is coming
+                          (no figure), signals finite progress, and is the
+                          skip affordance. Replaces the static teaser +
+                          the generic typing dots. */}
+                      {revealStage < 5 && (
+                        <div className={styles.priceTeaser} aria-hidden="true">
+                          {REVEAL_STATUS[Math.min(revealStage, 4)]}
+                          <span className={styles.priceTeaserSkip}>
+                            {" "}· tap to skip
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Stage 1: the dream + the photos. */}
+                      {revealStage >= 1 && (
+                        <div className={styles.fadeIn}>
+                          <div className={styles.priceValueTopline}>
+                            {framing.topline}
                           </div>
-                        ))}
-                        {all.length > 1 && (
+                          <MediaCarousel
+                            onOpen={(i) => setShowcaseIndex(i)}
+                          />
+                        </div>
+                      )}
+
+                      {/* Stage 2: the value pillars (expand inline). */}
+                      {revealStage >= 2 && (
+                        <div className={`${styles.priceValue} ${styles.fadeIn}`}>
+                          {heads.map((head, i) => {
+                            const open = openPillar === i;
+                            return (
+                              <div className={styles.pillar} key={head}>
+                                <button
+                                  type="button"
+                                  className={styles.pillarHead}
+                                  aria-expanded={open}
+                                  onClick={() =>
+                                    setOpenPillar(open ? null : i)
+                                  }
+                                >
+                                  <span
+                                    className={styles.priceValueBullet}
+                                    aria-hidden="true"
+                                  >
+                                    ✦
+                                  </span>
+                                  <span className={styles.pillarHeadText}>
+                                    {head}
+                                  </span>
+                                  <svg
+                                    className={styles.pillarChevron}
+                                    data-open={open ? "true" : undefined}
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                  >
+                                    <path d="M6 9l6 6 6-6" />
+                                  </svg>
+                                </button>
+                                {open && (
+                                  <div className={styles.pillarProof}>
+                                    {framing.proof[i]}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Stage 3: one occasion-matched review. */}
+                      {revealStage >= 3 && shownReviews.length > 0 && (
+                        <div className={`${styles.priceReviews} ${styles.fadeIn}`}>
+                          {shownReviews.map((r) => (
+                            <div className={styles.reviewCard} key={r.id}>
+                              <div
+                                className={styles.reviewStars}
+                                aria-hidden="true"
+                              >
+                                {STARS}
+                              </div>
+                              <p className={styles.reviewQuote}>{r.quote}</p>
+                              <div className={styles.reviewMeta}>
+                                {r.name} · {r.occasion} · verified guest
+                              </div>
+                            </div>
+                          ))}
+                          {allReviews.length > 1 && (
+                            <button
+                              type="button"
+                              className={styles.reviewsMore}
+                              onClick={() => setReviewsExpanded((v) => !v)}
+                            >
+                              {reviewsExpanded
+                                ? "Show fewer reviews"
+                                : `See more reviews (${allReviews.length - 1})`}
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Stage 4: the number, now that the value's landed. */}
+                      {revealStage >= 4 && (
+                        <div
+                          className={`${styles.priceNumber} ${styles.fadeIn}`}
+                          role="status"
+                          aria-live="polite"
+                        >
+                          <div className={styles.priceHero}>
+                            <span className={styles.priceHeroNum}>
+                              ${formatDollars(perNight)}
+                            </span>
+                            <span className={styles.priceHeroUnit}>
+                              per guest, per night
+                            </span>
+                          </div>
+                          <div className={styles.priceHeroTotal}>
+                            ${formatDollars(priceQuote.totalCents)} for the whole
+                            group, {priceQuote.nights}{" "}
+                            {priceQuote.nights === 1 ? "night" : "nights"}
+                          </div>
+                          {(priceQuote.savedVsAirbnbCents ?? 0) > 0 && (
+                            <div className={styles.savingsTag}>
+                              <span className={styles.savingsPill}>
+                                Book direct
+                              </span>
+                              <span>
+                                Saves the group $
+                                {formatDollars(priceQuote.savedVsAirbnbCents ?? 0)}{" "}
+                                vs Airbnb
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Stage 5: the breakdown dropdown. */}
+                      {revealStage >= 5 && (
+                        <div className={`${styles.pillar} ${styles.fadeIn}`}>
                           <button
                             type="button"
-                            className={styles.reviewsMore}
-                            onClick={() => setReviewsExpanded((v) => !v)}
+                            className={styles.pillarHead}
+                            aria-expanded={breakdownOpen}
+                            onClick={() => setBreakdownOpen((v) => !v)}
                           >
-                            {reviewsExpanded
-                              ? "Show fewer reviews"
-                              : `See more reviews (${all.length - 1})`}
+                            <span className={styles.pillarHeadText}>
+                              Price breakdown
+                            </span>
+                            <svg
+                              className={styles.pillarChevron}
+                              data-open={breakdownOpen ? "true" : undefined}
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                            >
+                              <path d="M6 9l6 6 6-6" />
+                            </svg>
                           </button>
-                        )}
-                      </div>
-                    );
-                  })()}
+                          {breakdownOpen && (
+                            <div className={styles.breakdownBody}>
+                              <div className={styles.priceCardRow}>
+                                <span>Nightly subtotal</span>
+                                <span>
+                                  ${formatDollars(priceQuote.subtotalCents)}
+                                </span>
+                              </div>
+                              {priceQuote.discountTotalCents > 0 && (
+                                <div className={styles.priceCardRow}>
+                                  <span>Discount</span>
+                                  <span>{`-$${formatDollars(priceQuote.discountTotalCents)}`}</span>
+                                </div>
+                              )}
+                              <div className={styles.priceCardRow}>
+                                <span>Cleaning</span>
+                                <span>
+                                  ${formatDollars(priceQuote.cleaningCents)}
+                                </span>
+                              </div>
+                              {priceQuote.taxEnabled && (
+                                <div className={styles.priceCardRow}>
+                                  <span>Taxes</span>
+                                  <span>
+                                    ${formatDollars(priceQuote.taxCents)}
+                                  </span>
+                                </div>
+                              )}
+                              <div
+                                className={`${styles.priceCardRow} ${styles.priceCardTotal}`}
+                              >
+                                <span>Total</span>
+                                <span>
+                                  ${formatDollars(priceQuote.totalCents)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                  {/* Breakdown — its own dropdown so the card stays lean. */}
-                  <div className={styles.pillar}>
-                    <button
-                      type="button"
-                      className={styles.pillarHead}
-                      aria-expanded={breakdownOpen}
-                      onClick={() => setBreakdownOpen((v) => !v)}
-                    >
-                      <span className={styles.pillarHeadText}>
-                        Price breakdown
-                      </span>
-                      <svg
-                        className={styles.pillarChevron}
-                        data-open={breakdownOpen ? "true" : undefined}
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path d="M6 9l6 6 6-6" />
-                      </svg>
-                    </button>
-                    {breakdownOpen && (
-                      <div className={styles.breakdownBody}>
-                        <div className={styles.priceCardRow}>
-                          <span>Nightly subtotal</span>
-                          <span>${formatDollars(priceQuote.subtotalCents)}</span>
-                        </div>
-                        {priceQuote.discountTotalCents > 0 && (
-                          <div className={styles.priceCardRow}>
-                            <span>Discount</span>
-                            <span>{`-$${formatDollars(priceQuote.discountTotalCents)}`}</span>
-                          </div>
-                        )}
-                        <div className={styles.priceCardRow}>
-                          <span>Cleaning</span>
-                          <span>${formatDollars(priceQuote.cleaningCents)}</span>
-                        </div>
-                        {priceQuote.taxEnabled && (
-                          <div className={styles.priceCardRow}>
-                            <span>Taxes</span>
-                            <span>${formatDollars(priceQuote.taxCents)}</span>
-                          </div>
-                        )}
-                        <div
-                          className={`${styles.priceCardRow} ${styles.priceCardTotal}`}
-                        >
-                          <span>Total</span>
-                          <span>${formatDollars(priceQuote.totalCents)}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  );
+                })()}
 
               {/* Action-forward price reveal. No budget-sentiment scale
                   (that invites haggling) — lead with the lowest-risk
                   commitment. Reserve is primary; questions opens Olivia's
                   diagnostic chat; share reuses the link flow. */}
-              {priceQuote && priceAction === "none" && (
+              {priceQuote && priceAction === "none" && revealStage >= 5 && (
                 <div
                   className={`${styles.priceActions} ${styles.fadeIn}`}
                   ref={actionsRowRef}
@@ -2045,7 +2144,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         {/* Floating Reserve CTA: hovers above the composer while the
             guest reads the long price card, then yields to the inline
             buttons once they scroll into view. */}
-        {priceQuote && priceAction === "none" && !actionsInView && showcaseIndex === null && (
+        {priceQuote && priceAction === "none" && revealStage >= 5 && !actionsInView && showcaseIndex === null && (
           <div className={styles.stickyCta}>
             <button
               type="button"

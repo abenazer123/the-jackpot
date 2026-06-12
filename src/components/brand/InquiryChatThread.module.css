@@ -856,13 +856,37 @@
   padding-left: 19px;
 }
 
+/* Teaser — the promise shown before the value drips in (no figure). */
+.priceTeaser {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--jp-text-primary);
+  margin-top: 8px;
+}
+
+.priceTeaserSkip {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--jp-text-secondary);
+  opacity: 0.8;
+}
+
+/* The number block, revealed after the value has landed. */
+.priceNumber {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--jp-border-default);
+}
+
 /* Hero number — lead with per guest, per night (the small honest unit),
    total stays visible just below. */
 .priceHero {
   display: flex;
   align-items: baseline;
   gap: 7px;
-  margin-top: 12px;
+  margin-top: 0;
 }
 
 .priceHeroNum {
@@ -884,7 +908,7 @@
   font-family: var(--jp-font-body);
   font-weight: 400;
   font-size: 12.5px;
-  color: var(--jp-text-secondary);
+  color: var(--jp-text-primary);
   margin-top: 4px;
 }
 
@@ -949,7 +973,7 @@
   font-weight: 500;
   font-size: 11px;
   letter-spacing: 0.3px;
-  color: var(--jp-text-secondary);
+  color: var(--jp-text-primary);
 }
 
 /* Lean card: affordance headline with no proof line under it. */
@@ -1079,6 +1103,7 @@
   align-items: center;
   gap: 8px;
   width: 100%;
+  min-height: 44px;
   padding: 7px 0;
   border: 0;
   background: transparent;
@@ -1126,6 +1151,9 @@
 
 .reviewsMore {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   margin-top: 2px;
   padding: 4px 0;
   border: 0;
