@@ -1453,6 +1453,60 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     ? `Good news, ${firstName}. `
     : "Good news. ";
 
+  // Item 3: context-aware CTA priority. Q2 (deciding power) sets which
+  // action leads. Someone who said "I'll lock it in" gets Reserve first;
+  // someone running it by the crew or gathering for whoever decides gets
+  // "Get the group on board" first, with reserve demoted. Q1 (search
+  // stage) softens the reserve subcopy for early-stage browsers. The
+  // order + wording flex across every Q1 x Q2 combination.
+  const ctaActions: {
+    key: "reserve" | "share" | "questions";
+    label: string;
+    sub: string | null;
+  }[] = (() => {
+    const groupDecision =
+      decisionPower === "crew" || decisionPower === "relay";
+    const exploring = searchStage === "starting";
+    const reserve = {
+      key: "reserve" as const,
+      label: "Reserve now, nothing due",
+      // The free, nothing-due hold is the anti-drop-off move, so it
+      // always carries a reassurance line, even when share leads and
+      // reserve is demoted. Wording flexes to the guest's stage.
+      sub: groupDecision
+        ? "Hold the dates while they decide. Free, nothing due."
+        : exploring
+          ? "Lock the dates while you think. Nothing due now."
+          : "Locks your weekend now. Nothing due, no card needed.",
+    };
+    const share = {
+      key: "share" as const,
+      label: groupDecision ? "Get the group on board" : "Send to my group",
+      sub: groupDecision
+        ? "Share the place and the price so they can weigh in."
+        : null,
+    };
+    const questions = {
+      key: "questions" as const,
+      label: "I have a few questions",
+      sub: null,
+    };
+    return groupDecision
+      ? [share, reserve, questions]
+      : [reserve, questions, share];
+  })();
+
+  const runCtaAction = (key: "reserve" | "share" | "questions") => {
+    if (key === "reserve") {
+      setPriceAction("reserve");
+    } else if (key === "questions") {
+      handlePriceQuestions();
+    } else {
+      setAgentDriven(true);
+      void fireWidgetCommit("Can I send this to my group?", "share");
+    }
+  };
+
   return (
     <div className={styles.page} aria-label="Chat with Olivia">
       <div className={styles.sheet}>
@@ -2159,30 +2213,24 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                   className={`${styles.priceActions} ${styles.fadeIn}`}
                   ref={actionsRowRef}
                 >
-                  <button
-                    type="button"
-                    className={styles.reservePrimary}
-                    onClick={() => setPriceAction("reserve")}
-                  >
-                    Reserve now, nothing due
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.priceActionSecondary}
-                    onClick={handlePriceQuestions}
-                  >
-                    I have a few questions
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.priceActionSecondary}
-                    onClick={() => {
-                      setAgentDriven(true);
-                      void fireWidgetCommit("Can I send this to my group?", "share");
-                    }}
-                  >
-                    Send to my group
-                  </button>
+                  {ctaActions.map((a, i) => (
+                    <div key={a.key} className={styles.ctaItem}>
+                      <button
+                        type="button"
+                        className={
+                          i === 0
+                            ? styles.reservePrimary
+                            : styles.priceActionSecondary
+                        }
+                        onClick={() => runCtaAction(a.key)}
+                      >
+                        {a.label}
+                      </button>
+                      {a.sub && (i === 0 || a.key === "reserve") && (
+                        <p className={styles.ctaSub}>{a.sub}</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -2372,9 +2420,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
             <button
               type="button"
               className={styles.reservePrimary}
-              onClick={() => setPriceAction("reserve")}
+              onClick={() => runCtaAction(ctaActions[0].key)}
             >
-              Reserve now, nothing due
+              {ctaActions[0].label}
             </button>
           </div>
         )}

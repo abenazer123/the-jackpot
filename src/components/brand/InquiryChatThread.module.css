@@ -1508,6 +1508,9 @@
 
 .stickyCta .reservePrimary {
   width: 100%;
+  /* The sticky pill mirrors whichever action is primary; a longer label
+     like "Get the group on board" must stay on one line. */
+  white-space: nowrap;
 }
 
 /* Action-forward price reveal. Reserve is the primary commitment;
@@ -1517,6 +1520,26 @@
   flex-direction: column;
   gap: 8px;
   margin: 10px 0;
+}
+
+/* Each CTA is a button plus an optional subcopy line (shown under the
+   primary action). The subcopy uses primary olive, not secondary, so
+   small supporting text still clears WCAG AA. */
+.ctaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ctaSub {
+  margin: 0;
+  padding: 0 10px;
+  text-align: center;
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--jp-text-primary);
 }
 
 .reservePrimary {

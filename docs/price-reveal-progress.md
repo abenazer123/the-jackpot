@@ -5,8 +5,8 @@ Spec: `docs/price-reveal-redesign-brief-2026-06-12.md`. Build order: (1) value-f
 ## Checklist
 - [x] **1. Value-first slow reveal** — DONE (re-tested at mobile, regression fixed, signed off)
 - [x] **2. Qualify-during-calculating beat** — DONE (built, persistence verified in DB, audited + fixed, signed off)
-- [ ] 3. Context-aware CTA engine ← NEXT
-- [ ] 4. Honest scarcity
+- [x] **3. Context-aware CTA engine** — DONE (both branches verified live at mobile, audited + fixed, signed off)
+- [ ] 4. Honest scarcity ← NEXT
 - [ ] Final full-funnel audit
 
 ## Log
@@ -37,3 +37,11 @@ Spec: `docs/price-reveal-redesign-brief-2026-06-12.md`. Build order: (1) value-f
 - **Audit session (Alex + head-of-design).** Both independently flagged the same P1: the "Adding taxes and city fees" progress label was a fabricated claim (advanced on tap count, not real work) — a trust killer before the price. **Fixed:** relabeled to honest input-based states ("Reading your dates" → "Sizing it for your group" → "Finalizing your number"), verified live. Also fixed: small uppercase label contrast → AA primary olive (design P3); focus moves to Q2 heading on swap (design a11y).
 - **Pushed back / escalated to Abe (their input, not verdict):** Alex's "make Q2 optional," "reframe Q1 chips away from 'just starting to look,'" "reverse the question order," and "soften the lead-in" all contradict Abe's explicit, recent design (he hand-wrote the questions, chose stage→power order, and Q2's data feeds item 3's CTA engine — optional Q2 would starve it). Kept Abe's design; surfaced these as conversion bets for his call. Retention fallback (move taps post-price) already documented in the brief.
 - Verdict: **item 2 DONE.** Test artifacts (3 LOOPTEST sessions + 2 inquiries) cleaned up. Next: item 3 (context-aware CTA engine) — the signals it needs are now captured + persisted.
+
+### Pass 4 (2026-06-12) — item 3 build + audit + sign-off
+- **Built the context-aware CTA engine** (`ctaActions` + `runCtaAction`): the price-reveal CTAs reorder + reword by the qualify answers. Q2 "I'll lock it in" -> Reserve primary (gold), then questions, then share. Q2 "run it by the crew" / "gathering for whoever's deciding" -> "Get the group on board" primary (gold) + share subcopy, Reserve demoted to outline secondary. Q1 "Just starting" softens the reserve line. The sticky floating CTA mirrors the primary.
+- **Verified BOTH branches live in Chrome (mobile):** (a) Q1 starting x Q2 crew -> "Get the group on board" gold primary with "Share the place and the price so they can weigh in.", Reserve demoted to outline. (b) Q1 starting x Q2 lock -> "Reserve now, nothing due" gold primary with "Lock the dates while you think. Nothing due now." Confirmed the primary flips on Q2 and the reserve copy softens on Q1. tsc/build/lint clean; eval 10/10.
+- **Audit session (Alex + head-of-design).**
+  - **Fixed (applied):** reserve now carries a "nothing due" reassurance subcopy in EVERY state, not just for explorers (Alex's highest-leverage point P1.2/P1.3) — including a hold-protection line when it's demoted in the group case ("Hold the dates while they decide. Free, nothing due."). Subcopy font 12.5px -> 13px (design, off-scale value). Sticky CTA `white-space: nowrap` so "Get the group on board" can't wrap (design P2.4). Subcopy already primary-olive for AA (design confirmed).
+  - **Flagged to Abe (genuine but his call / out of scope):** (1) relay persona ("gathering for whoever's deciding") arguably needs a forwardable proposal rather than a vote-style trip page — a share-flow change, not the CTA; (2) preserve the "relay" signal distinctly instead of folding it into `crew`; (3) Alex's "Q1=ready should override Q2 to lead Reserve" — contradicts the Q2-drives design; (4) design head's "make the third action a text link" hierarchy change — touches the pre-existing 3-button structure. None block the engine; recorded for a future pass.
+- Verdict: **item 3 DONE.** Test artifacts cleaned up. Next: item 4 (honest scarcity).
