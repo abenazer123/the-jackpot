@@ -842,7 +842,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [priceQuote, priceAction]);
+    // revealStage included so the observer re-attaches when the inline
+    // action row finally mounts at the end of the staged reveal.
+  }, [priceQuote, priceAction, revealStage]);
 
   // When the dialog opens with an entry-chip intent (e.g. "Send this
   // to my group"), fire a one-shot system event so Olivia composes the
