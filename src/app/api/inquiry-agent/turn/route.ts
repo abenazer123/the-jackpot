@@ -67,7 +67,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         user_agent: userAgent,
         ip,
         slots: turn.client_context.slots ?? {},
-        signals: {},
+        signals: turn.client_context.signals ?? {},
         transcript: [],
       })
       .select()
@@ -122,12 +122,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let advanceToPricing = false;
 
   if (isWidgetConfirm) {
-    // Phase 1: acknowledge the commit without calling Claude. Widget
-    // commit semantics (advancing phase, writing the typed slot) are a
-    // Phase 2 concern — for now we just record the token.
+    // Acknowledge the commit without calling Claude. Persist whatever
+    // the scripted widget has captured so far (contact, trip basics,
+    // qualify signals) by merging the client_context into the session.
+    // This is how the no-intent "Check dates & price" flow records its
+    // lead and lets a later reserve attach to a real session.
+    slotsUpdate = (turn.client_context.slots ?? {}) as Partial<ExtractedSlots>;
+    signalsUpdate = (turn.client_context.signals ?? {}) as Partial<Signals>;
     oliviaReply = {
       role: "olivia",
-      body: "(widget commit recorded. Phase 2 will handle widget semantics)",
+      body: "(widget commit recorded)",
       ts: new Date().toISOString(),
     };
   } else {

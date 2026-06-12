@@ -33,6 +33,10 @@ const ReserveSchema = z.object({
   // call with Abe. When present, this is the "schedule" call that
   // updates the existing reserve row.
   call_window: z.string().optional(),
+  // Qualify-beat answers captured at the price reveal. Folded into the
+  // session signals so Abe sees the guest's stage + deciding power.
+  decision_timeline: z.string().optional(),
+  decision_makers: z.string().optional(),
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -49,7 +53,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 400 },
     );
   }
-  const { session_id, name, email, phone, call_window } = parsed.data;
+  const {
+    session_id,
+    name,
+    email,
+    phone,
+    call_window,
+    decision_timeline,
+    decision_makers,
+  } = parsed.data;
   const isScheduleStep = typeof call_window === "string" && call_window.length > 0;
 
   const supabase = supabaseServer();
@@ -61,6 +73,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (sErr || !sessionRow) {
     return NextResponse.json({ error: "session_not_found" }, { status: 404 });
   }
+
+  // Merge the qualify-beat signals into the session's existing signals.
+  const existingSignals = (sessionRow.signals ?? {}) as Record<string, unknown>;
+  const mergedSignals: Record<string, unknown> = { ...existingSignals };
+  if (decision_timeline) mergedSignals.decision_timeline = decision_timeline;
+  if (decision_makers) mergedSignals.decision_makers = decision_makers;
+  const signalsChanged =
+    JSON.stringify(mergedSignals) !== JSON.stringify(existingSignals);
 
   const slots = (sessionRow.slots ?? {}) as Record<string, unknown>;
   const arrival = typeof slots.arrival === "string" ? slots.arrival : null;
@@ -116,7 +136,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     inquiryId = data.id;
     await supabase
       .from("inquiry_session")
-      .update({ inquiry_id: inquiryId, last_activity_at: now })
+      .update({
+        inquiry_id: inquiryId,
+        last_activity_at: now,
+        ...(signalsChanged ? { signals: mergedSignals } : {}),
+      })
+      .eq("id", session_id);
+  }
+
+  // Persist the qualify signals on the reuse path too (the create path
+  // already folded them into the update above).
+  if (inquiryId && signalsChanged && sessionRow.inquiry_id) {
+    await supabase
+      .from("inquiry_session")
+      .update({ signals: mergedSignals, last_activity_at: now })
       .eq("id", session_id);
   }
 
@@ -137,7 +170,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     urgency: "high",
     transcriptUrl: `${siteOrigin()}/admin/sessions/${session_id}`,
     slots: { ...slots, name, email, phone, reserve_call_window: call_window },
-    signals: (sessionRow.signals ?? {}) as Record<string, unknown>,
+    signals: mergedSignals,
     recentTranscript,
   });
 

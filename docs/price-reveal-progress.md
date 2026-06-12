@@ -4,8 +4,8 @@ Spec: `docs/price-reveal-redesign-brief-2026-06-12.md`. Build order: (1) value-f
 
 ## Checklist
 - [x] **1. Value-first slow reveal** — DONE (re-tested at mobile, regression fixed, signed off)
-- [ ] 2. Qualify-during-calculating beat ← NEXT
-- [ ] 3. Context-aware CTA engine
+- [x] **2. Qualify-during-calculating beat** — DONE (built, persistence verified in DB, audited + fixed, signed off)
+- [ ] 3. Context-aware CTA engine ← NEXT
 - [ ] 4. Honest scarcity
 - [ ] Final full-funnel audit
 
@@ -29,3 +29,11 @@ Spec: `docs/price-reveal-redesign-brief-2026-06-12.md`. Build order: (1) value-f
 - **Re-audit:** done on my own judgment this round (round-1 fixes comprehensively resolved the Alex + design P1/P2 punch-list; re-test confirmed behavior; the one new issue, the double button, is now fixed). Skipped a second dual-agent audit to conserve budget — flagged to Abe.
 - Verdict: **item 1 DONE.** Next: item 2 (qualify-during-calculating beat).
 - Chrome tooling note: window resize + Save-button advance were intermittent this pass (worked via element-ref click + retry). Testing is reliable but slower than ideal.
+
+### Pass 3 (2026-06-12) — item 2 build + critical leak fix + audit + sign-off
+- **Built the qualify beat:** after group+occasion Continue, a warm card asks two single-tap questions one at a time, with a gold progress bar that advances on each tap and an honest status label. Q1 "Where are you in the hunt?" (starting/awhile/ready → `decision_timeline`), Q2 "Once you've got the number, what's the move?" (lock/crew/relay → `decision_makers`). Both gate the price reveal so the taps "summon" the number. Reduced-motion + focus-on-swap handled.
+- **CRITICAL pre-existing leak found + fixed (Abe approved "fix it now"):** the no-intent "Check dates & price" funnel never minted a session, so the contact "Saved" message was cosmetic, **Reserve silently no-opped (no lead reached Abe)**, and signals couldn't persist. Fix: a silent `commitScripted` fires the no-LLM widget-confirm `/turn` on each scripted step (dates/contact/trip) and before reserve, minting the session and syncing slots; the widget-confirm branch now merges `client_context.slots`/`signals` on create AND update; `client_context` carries `signals`; reserve always commits first so it records the weekend actually picked (caught + fixed a stale-date bug on the alternate path).
+- **Verified in Chrome (mobile, full flow) + in the DB:** session minted, `signals: {decision_timeline, decision_makers}` persisted exactly per the Q1/Q2 mapping, inquiry created with `source=chat_reserve` + correct (alternate) dates + call window. tsc/build/lint clean; eval 10/10.
+- **Audit session (Alex + head-of-design).** Both independently flagged the same P1: the "Adding taxes and city fees" progress label was a fabricated claim (advanced on tap count, not real work) — a trust killer before the price. **Fixed:** relabeled to honest input-based states ("Reading your dates" → "Sizing it for your group" → "Finalizing your number"), verified live. Also fixed: small uppercase label contrast → AA primary olive (design P3); focus moves to Q2 heading on swap (design a11y).
+- **Pushed back / escalated to Abe (their input, not verdict):** Alex's "make Q2 optional," "reframe Q1 chips away from 'just starting to look,'" "reverse the question order," and "soften the lead-in" all contradict Abe's explicit, recent design (he hand-wrote the questions, chose stage→power order, and Q2's data feeds item 3's CTA engine — optional Q2 would starve it). Kept Abe's design; surfaced these as conversion bets for his call. Retention fallback (move taps post-price) already documented in the brief.
+- Verdict: **item 2 DONE.** Test artifacts (3 LOOPTEST sessions + 2 inquiries) cleaned up. Next: item 3 (context-aware CTA engine) — the signals it needs are now captured + persisted.

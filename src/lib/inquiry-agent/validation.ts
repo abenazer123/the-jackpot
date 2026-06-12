@@ -379,11 +379,15 @@ export const TurnRequestSchema = z.object({
     .object({
       phase: z.string(),
       slots: z.record(z.string(), z.unknown()).optional().default({}),
+      // Signals the scripted widgets capture directly (e.g. the qualify
+      // beat's decision_timeline / decision_makers). Merged into the
+      // session on a widget-confirm commit, no LLM extraction needed.
+      signals: z.record(z.string(), z.unknown()).optional().default({}),
       viewport: z.enum(["mobile", "desktop"]).optional(),
       utm: z.record(z.string(), z.unknown()).nullable().optional(),
     })
     .optional()
-    .default({ phase: "state1", slots: {} }),
+    .default({ phase: "state1", slots: {}, signals: {} }),
 });
 
 export const TurnWidgetSchema = z.object({

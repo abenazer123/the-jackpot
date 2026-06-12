@@ -588,6 +588,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   // stays in place; harness messages render below the scripted content,
   // accumulating across the dialog's lifetime.
   const [harnessSessionId, setHarnessSessionId] = useState<string | null>(null);
+  /** Mirror of harnessSessionId readable synchronously, so back-to-back
+   *  silent commits in the scripted flow don't each mint a duplicate
+   *  session before a re-render lands the state. */
+  const harnessSessionIdRef = useRef<string | null>(null);
   const [harnessMessages, setHarnessMessages] = useState<HarnessMessage[]>([]);
   /** Increments every time the dialog opens (or the entry intent
    *  changes). Async harness calls capture the epoch at fire time and
@@ -622,6 +626,101 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   // pillars, 3 review, 4 the number, 5 breakdown+CTAs. So the value is
   // read before the price lands.
   const [revealStage, setRevealStage] = useState(0);
+  // Qualify-during-calculating beat: two single-tap questions answered
+  // while the number is "calculated", framed as tailoring. Q1 = where
+  // they are in the hunt (drives decision_timeline + reveal tone), Q2 =
+  // their deciding power (drives the CTA priority in item 3).
+  const [searchStage, setSearchStage] = useState(""); // "starting" | "awhile" | "ready"
+  const [decisionPower, setDecisionPower] = useState(""); // "lock" | "crew" | "relay"
+  // Both taps answered. Gates the price reveal (the taps summon it) and
+  // drives the context-aware CTA priority.
+  const qualifyDone = !!searchStage && !!decisionPower;
+  /** Move focus to the second qualify question when it replaces the
+   *  first, so keyboard / screen-reader users aren't stranded on a chip
+   *  that just unmounted. */
+  const qualifyQ2Ref = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (searchStage && !decisionPower) qualifyQ2Ref.current?.focus();
+  }, [searchStage, decisionPower]);
+  /** Map the two qualify answers to the existing session signals so they
+   *  ride along in client_context (and the reserve body). Q1 maps to
+   *  decision_timeline, Q2 to decision_makers (relay folds into crew,
+   *  with the raw answer kept client-side to drive the CTA). */
+  const qualifySignals = (): Record<string, string> => {
+    const timeline: Record<string, string> = {
+      starting: "flexible",
+      awhile: "this_month",
+      ready: "immediate",
+    };
+    const deciders: Record<string, string> = {
+      lock: "solo",
+      crew: "crew",
+      relay: "crew",
+    };
+    const out: Record<string, string> = {};
+    if (searchStage && timeline[searchStage])
+      out.decision_timeline = timeline[searchStage];
+    if (decisionPower && deciders[decisionPower])
+      out.decision_makers = deciders[decisionPower];
+    return out;
+  };
+
+  /** The current scripted-widget state as a client_context slot bundle. */
+  const currentSlots = (): Record<string, unknown> => {
+    const slots: Record<string, unknown> = {};
+    if (arrival) slots.arrival = arrival;
+    if (departure) slots.departure = departure;
+    if (contactName) slots.name = contactName;
+    if (contactEmail) slots.email = contactEmail;
+    if (contactPhone) slots.phone = contactPhone;
+    if (groupSize)
+      slots.guest_count = Number.parseInt(groupSize, 10) || groupSize;
+    if (occasion) slots.occasion = occasion;
+    return slots;
+  };
+
+  /** Silently mint or update the session as the guest taps through the
+   *  no-intent "Check dates & price" flow (which never goes agentDriven,
+   *  so a normal turn never fires). Uses the no-LLM widget-confirm branch
+   *  so no Olivia bubble appears and the scripted UX is untouched. This
+   *  is what makes the contact "Saved" promise true and gives a later
+   *  reserve a real session to attach to. Fire-and-forget from the step
+   *  handlers; awaited at reserve so a hold always lands a lead. Returns
+   *  the session id (existing or freshly minted), or null on failure. */
+  const commitScripted = async (label: string): Promise<string | null> => {
+    const epoch = sessionEpochRef.current;
+    const existing = harnessSessionIdRef.current;
+    try {
+      const res = await fetch("/api/inquiry-agent/turn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: existing,
+          message: {
+            role: "system",
+            body: `[COMMIT: ${label}]`,
+            ts: new Date().toISOString(),
+          },
+          client_context: {
+            phase: stepToPhase(step),
+            slots: currentSlots(),
+            signals: qualifySignals(),
+            viewport: "mobile",
+          },
+        }),
+      });
+      if (!res.ok) return existing;
+      const data = (await res.json()) as { session_id?: string };
+      const id = data.session_id ?? existing;
+      if (id) harnessSessionIdRef.current = id;
+      if (sessionEpochRef.current === epoch && id && !harnessSessionId) {
+        setHarnessSessionId(id);
+      }
+      return id;
+    } catch {
+      return existing;
+    }
+  };
   const [priceError, setPriceError] = useState<string | null>(null);
   /** Nearby open ranges returned alongside an `unavailable` quote.
    *  Rendered as tappable cards; picking one re-quotes that range. */
@@ -670,12 +769,15 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setGroupSize("");
       setOccasion("");
       setHarnessSessionId(null);
+      harnessSessionIdRef.current = null;
       setHarnessMessages([]);
       setHarnessWidgets([]);
       setIsWaitingForOlivia(false);
       setPriceQuote(null);
       setPriceError(null);
       setAlternates([]);
+      setSearchStage("");
+      setDecisionPower("");
       setPriceAction("none");
       setReserveBusy(false);
       setCallDate("");
@@ -784,7 +886,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     setRevealStage(5);
   };
   useEffect(() => {
-    if (!priceQuote) {
+    // Hold the reveal until both the quote has landed AND the two
+    // qualify taps are done. The taps "summon" the number, so the drip
+    // can't start playing behind the questions.
+    if (!priceQuote || !qualifyDone) {
       setRevealStage(0);
       return;
     }
@@ -801,7 +906,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       window.setTimeout(() => setRevealStage(5), 2600),
     ];
     return () => revealTimersRef.current.forEach((t) => window.clearTimeout(t));
-  }, [priceQuote]);
+  }, [priceQuote, qualifyDone]);
 
   // Follow the reveal — ease the newest content into view as each stage
   // lands (anchors the card on first reveal, then trails the drip).
@@ -965,22 +1070,29 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  soft-hold the dates, notify Abe. The call is the guarantee. */
   const handleSubmitReserve = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!canSubmitReserve || !harnessSessionId) return;
+    if (!canSubmitReserve) return;
     const epoch = sessionEpochRef.current;
     const dayOpt = CALL_DAYS.find((d) => d.iso === callDate);
     const dayText = dayOpt ? `${dayOpt.label}, ${dayOpt.sub}` : "";
     const slotText = `${dayText} · ${callWindow}`;
     setReserveBusy(true);
     try {
+      // Always commit first: this mints the session in the no-intent
+      // scripted flow AND syncs the latest slots (e.g. an alternate date
+      // the guest picked after the first quote) so the hold records the
+      // weekend they actually reserved, not a stale one.
+      const sid = await commitScripted("reserve");
+      if (!sid) throw new Error("no_session");
       const res = await fetch("/api/inquiry-agent/reserve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          session_id: harnessSessionId,
+          session_id: sid,
           name: contactName.trim(),
           email: contactEmail.trim(),
           phone: contactPhone.trim(),
           call_window: slotText,
+          ...qualifySignals(),
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1042,6 +1154,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       void fireWidgetCommit(`I picked my dates: ${label}.`, label);
       return;
     }
+    void commitScripted("dates");
     setCheckingPhase(0);
     setStep("checking");
   };
@@ -1138,6 +1251,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     // a different session.
     if (sessionEpochRef.current !== epoch) return;
     if (!harnessSessionId) setHarnessSessionId(data.session_id);
+    harnessSessionIdRef.current = data.session_id;
     setHarnessMessages((prev) => [...prev, ...data.messages]);
     if (data.extracted_slots) applyHarnessSlots(data.extracted_slots);
 
@@ -1203,7 +1317,12 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         body: JSON.stringify({
           session_id: harnessSessionId,
           message: userMsg,
-          client_context: { phase: stepToPhase(step), slots, viewport: "mobile" },
+          client_context: {
+            phase: stepToPhase(step),
+            slots,
+            signals: qualifySignals(),
+            viewport: "mobile",
+          },
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1266,6 +1385,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
           client_context: {
             phase: stepToPhase(step),
             slots,
+            signals: qualifySignals(),
             viewport: "mobile",
           },
         }),
@@ -1301,6 +1421,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       void fireWidgetCommit(`Here's my info: ${summary}.`, summary);
       return;
     }
+    void commitScripted("contact");
     setAvailablePhase(0);
     setStep("available");
   };
@@ -1315,6 +1436,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       );
       return;
     }
+    void commitScripted("trip");
     setStep("pricing");
   };
 
@@ -1678,7 +1800,105 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                 </div>
               )}
 
-              {!priceQuote && !priceError && (
+              {/* Qualify-during-calculating beat. Two single-tap
+                  questions answered while the number is "calculated",
+                  framed as tailoring. Each tap advances the progress so
+                  answering feels like summoning the price. The quote
+                  fetches in the background; the reveal waits for both. */}
+              {!qualifyDone && !priceError && (
+                <div className={`${styles.qualify} ${styles.fadeIn}`}>
+                  <p className={styles.qualifyLead}>
+                    Pulling your real number. Two quick taps so it&rsquo;s
+                    accurate.
+                  </p>
+
+                  <div
+                    className={styles.qualifyProgress}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <span className={styles.qualifyTrack} aria-hidden="true">
+                      <span
+                        className={styles.qualifyFill}
+                        data-step={searchStage ? (decisionPower ? 3 : 2) : 1}
+                      />
+                    </span>
+                    <span className={styles.qualifyProgressLabel}>
+                      {!searchStage
+                        ? "Reading your dates"
+                        : !decisionPower
+                          ? "Sizing it for your group"
+                          : "Finalizing your number"}
+                    </span>
+                  </div>
+
+                  {!searchStage ? (
+                    <div className={styles.qualifyQ} key="q1">
+                      <p className={styles.qualifyQLabel}>
+                        Where are you in the hunt?
+                      </p>
+                      <div className={styles.qualifyChips}>
+                        <button
+                          type="button"
+                          className={styles.qualifyChip}
+                          onClick={() => setSearchStage("starting")}
+                        >
+                          Just starting to look
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.qualifyChip}
+                          onClick={() => setSearchStage("awhile")}
+                        >
+                          Been at it a while
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.qualifyChip}
+                          onClick={() => setSearchStage("ready")}
+                        >
+                          Ready to lock something in
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={styles.qualifyQ} key="q2">
+                      <p
+                        className={styles.qualifyQLabel}
+                        ref={qualifyQ2Ref}
+                        tabIndex={-1}
+                      >
+                        Once you&rsquo;ve got the number, what&rsquo;s the move?
+                      </p>
+                      <div className={styles.qualifyChips}>
+                        <button
+                          type="button"
+                          className={styles.qualifyChip}
+                          onClick={() => setDecisionPower("lock")}
+                        >
+                          I&rsquo;ll lock it in
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.qualifyChip}
+                          onClick={() => setDecisionPower("crew")}
+                        >
+                          I&rsquo;ll run it by the crew
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.qualifyChip}
+                          onClick={() => setDecisionPower("relay")}
+                        >
+                          I&rsquo;m gathering for whoever&rsquo;s deciding
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {qualifyDone && !priceQuote && !priceError && (
                 <div
                   className={`${styles.checking} ${styles.fadeIn}`}
                   role="status"
@@ -1690,12 +1910,13 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     <span className={styles.checkingDot} />
                   </span>
                   <span className={styles.checkingText}>
-                    Pulling pricing now&hellip;
+                    Finalizing your number&hellip;
                   </span>
                 </div>
               )}
 
               {priceQuote &&
+                qualifyDone &&
                 (() => {
                   const framing =
                     VALUE_FRAMING[occasion] ?? VALUE_FRAMING.default;
