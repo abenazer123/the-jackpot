@@ -1103,7 +1103,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         { role: "user", body: slotText, ts: new Date().toISOString() },
         {
           role: "olivia",
-          body: `Your weekend is on hold with nothing due. Abe will call you ${dayText} in the ${callWindow.toLowerCase()} to lock it in. Talk soon.`,
+          body: `Your weekend is on hold, nothing due. We hold it 7 days so the next group gets a fair shot, and Abe will call you ${dayText} in the ${callWindow.toLowerCase()} to lock it in. Talk soon.`,
           ts: new Date().toISOString(),
         },
       ]);
@@ -2324,6 +2324,15 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                 {arrival && departure
                   ? `Hold ${formatRangeShort(arrival, departure)} with nothing due now. Pick a time for Abe's quick call to lock it in.`
                   : "Hold your dates with nothing due now. Pick a time for Abe's quick call to lock it in."}
+              </div>
+              {/* Honest scarcity: a single home means one group per date.
+                  True, not a fake timer. */}
+              <div className={styles.reserveScarcity}>
+                <span className={styles.reserveScarcityMark} aria-hidden="true">
+                  ✦
+                </span>
+                One home, one group per date. The hold is yours while you two
+                talk.
               </div>
 
               {needsName && (

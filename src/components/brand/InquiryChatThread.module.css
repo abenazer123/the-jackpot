@@ -1603,6 +1603,26 @@
   margin-bottom: 4px;
 }
 
+/* Honest-scarcity note under the reserve blurb. Primary olive so the
+   small line clears WCAG AA; the ✦ is the brand's gold bullet glyph. */
+.reserveScarcity {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--jp-text-primary);
+  margin-bottom: 12px;
+}
+
+.reserveScarcityMark {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--jp-gold-deep);
+}
+
 /* Reserve scheduler — pick the day + window for Abe's lock-in call. */
 .schedLabel {
   font-family: var(--jp-font-body);

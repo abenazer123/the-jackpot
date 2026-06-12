@@ -6,8 +6,8 @@ Spec: `docs/price-reveal-redesign-brief-2026-06-12.md`. Build order: (1) value-f
 - [x] **1. Value-first slow reveal** — DONE (re-tested at mobile, regression fixed, signed off)
 - [x] **2. Qualify-during-calculating beat** — DONE (built, persistence verified in DB, audited + fixed, signed off)
 - [x] **3. Context-aware CTA engine** — DONE (both branches verified live at mobile, audited + fixed, signed off)
-- [ ] 4. Honest scarcity ← NEXT
-- [ ] Final full-funnel audit
+- [x] **4. Honest scarcity** — DONE (held-date courtesy + "one home, one group per date", verified live)
+- [ ] Final full-funnel audit ← running
 
 ## Log
 ### Pass 1 (2026-06-12) — item 1 build + audit round 1
@@ -45,3 +45,8 @@ Spec: `docs/price-reveal-redesign-brief-2026-06-12.md`. Build order: (1) value-f
   - **Fixed (applied):** reserve now carries a "nothing due" reassurance subcopy in EVERY state, not just for explorers (Alex's highest-leverage point P1.2/P1.3) — including a hold-protection line when it's demoted in the group case ("Hold the dates while they decide. Free, nothing due."). Subcopy font 12.5px -> 13px (design, off-scale value). Sticky CTA `white-space: nowrap` so "Get the group on board" can't wrap (design P2.4). Subcopy already primary-olive for AA (design confirmed).
   - **Flagged to Abe (genuine but his call / out of scope):** (1) relay persona ("gathering for whoever's deciding") arguably needs a forwardable proposal rather than a vote-style trip page — a share-flow change, not the CTA; (2) preserve the "relay" signal distinctly instead of folding it into `crew`; (3) Alex's "Q1=ready should override Q2 to lead Reserve" — contradicts the Q2-drives design; (4) design head's "make the third action a text link" hierarchy change — touches the pre-existing 3-button structure. None block the engine; recorded for a future pass.
 - Verdict: **item 3 DONE.** Test artifacts cleaned up. Next: item 4 (honest scarcity).
+
+### Pass 5 (2026-06-12) — item 4 build + verification
+- **Built honest scarcity, two true statements, no fake timers/counts:** (1) a scheduler line under the reserve blurb, "✦ One home, one group per date. The hold is yours while you two talk." (gold ✦ bullet, primary-olive text for AA); (2) the reserve confirmation now adds the held-date courtesy: "Your weekend is on hold, nothing due. We hold it 7 days so the next group gets a fair shot, and Abe will call you [day] in the [window] to lock it in." Deliberately did NOT add an "X weekends left" count (no real availability data; fabricating it would break the no-invention rule).
+- **Verified live in Chrome (mobile):** the scarcity line renders on the reserve scheduler; the 7-day courtesy renders in the confirmation bubble. Also confirmed in the same run the item-3 decisive reserve sub ("Locks your weekend now. Nothing due, no card needed."). tsc/build/lint clean; eval 10/10.
+- Verdict: **item 4 DONE.** Running the final full-funnel audit next.
