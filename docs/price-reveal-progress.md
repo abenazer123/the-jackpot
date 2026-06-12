@@ -7,7 +7,7 @@ Spec: `docs/price-reveal-redesign-brief-2026-06-12.md`. Build order: (1) value-f
 - [x] **2. Qualify-during-calculating beat** — DONE (built, persistence verified in DB, audited + fixed, signed off)
 - [x] **3. Context-aware CTA engine** — DONE (both branches verified live at mobile, audited + fixed, signed off)
 - [x] **4. Honest scarcity** — DONE (held-date courtesy + "one home, one group per date", verified live)
-- [ ] Final full-funnel audit ← running
+- [x] **Final full-funnel audit** — DONE (Alex: "ship it"; design: fixed the in-scope P1s, flagged a systematic AA-contrast call)
 
 ## Log
 ### Pass 1 (2026-06-12) — item 1 build + audit round 1
@@ -50,3 +50,17 @@ Spec: `docs/price-reveal-redesign-brief-2026-06-12.md`. Build order: (1) value-f
 - **Built honest scarcity, two true statements, no fake timers/counts:** (1) a scheduler line under the reserve blurb, "✦ One home, one group per date. The hold is yours while you two talk." (gold ✦ bullet, primary-olive text for AA); (2) the reserve confirmation now adds the held-date courtesy: "Your weekend is on hold, nothing due. We hold it 7 days so the next group gets a fair shot, and Abe will call you [day] in the [window] to lock it in." Deliberately did NOT add an "X weekends left" count (no real availability data; fabricating it would break the no-invention rule).
 - **Verified live in Chrome (mobile):** the scarcity line renders on the reserve scheduler; the 7-day courtesy renders in the confirmation bubble. Also confirmed in the same run the item-3 decisive reserve sub ("Locks your weekend now. Nothing due, no card needed."). tsc/build/lint clean; eval 10/10.
 - Verdict: **item 4 DONE.** Running the final full-funnel audit next.
+
+### Pass 6 (2026-06-12) — final full-funnel audit + close-out
+- **Alex (conversion): "Ship it."** The funnel captures the lead early, sells value before price, routes by who's deciding. Two leaks raised, both deferred (out of scope / contradict the gate design, flagged below): (1) no guest-facing hold confirmation text/email on reserve success (reserve only notifies Abe) — his single highest-leverage *next* move, a new notification integration; (2) the qualify beat is a hard gate with no "just show me the number" escape (kept per Abe's design; retention fallback already documented).
+- **Head-of-design (craft):** narrative/voice/motion strong; flagged real brand-rule items. **Fixed in-scope:** sub-44px tap targets on the reserve scheduler day + window chips (added min-height 44px on `.schedDay`/`.schedWindow`); straight apostrophes -> curly in guest-facing copy (`priceErrorMessage` codes + the contact echo bubble).
+- **Flagged to Abe (his design-system call, NOT done unilaterally):** `--jp-text-secondary` (#a08840, ~3.2:1 on linen) is used as small body text in ~17 funnel labels (priceCardMeta/priceCardLabel, reserveBlurb, checking pill, schedLabel/schedDaySub, altDatesLabel, share labels, etc.), which fails the AA body-text rule. This is pre-existing, established styling; the fix approach (promote to primary olive vs darken the token vs bump size/weight) is a system-wide decision, so it needs Abe rather than a mid-loop wholesale recolor. New elements added this round already use AA-compliant primary olive.
+- tsc/build/lint clean; eval 10/10.
+
+## Status: ALL FOUR ITEMS + FINAL AUDIT COMPLETE. Loop ended.
+
+## Open follow-ups for Abe (flagged across the passes, none blocking)
+- **Conversion:** guest-facing hold confirmation (text/email) on reserve — Alex's top next lever; relay/coordinator persona could get a forwardable proposal vs a vote page (+ preserve the `relay` signal distinctly); "Q1=ready overrides Q2 to lead Reserve"; make Q2 optional / add a qualify escape hatch.
+- **Craft/brand:** the systematic `--jp-text-secondary` AA-contrast decision; third CTA as a text link; reserve the subcopy slot height to avoid cross-guest layout shift; motion-token consolidation (blockFadeIn/qualifyQIn/threadIn durations).
+- **From item-2 audit:** reframe the "just starting to look" chip; reverse the qualify question order; soften the "so it's accurate" lead-in.
+- **Pre-existing (earlier passes):** hero reserve CTA; real stay videos (carousel placeholders); post-vote handoff on the trip page; `/trip` + `/book` static-copy dash cleanup.

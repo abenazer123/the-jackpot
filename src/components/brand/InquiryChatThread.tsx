@@ -390,13 +390,13 @@ function priceErrorMessage(code: string, hasAlternates = false): string {
   switch (code) {
     case "out_of_window":
     case "cache_empty":
-      return "Hmm. I can't pull a real number for those dates right this second. Let me flag Abe to text you a quote in the next few minutes. Want me to do that?";
+      return "Hmm. I can’t pull a real number for those dates right this second. Let me flag Abe to text you a quote in the next few minutes. Want me to do that?";
     case "unavailable":
       return hasAlternates
         ? "Those exact nights are taken. Here are the closest open weekends I can pull a real number for."
-        : "Those exact nights are taken, and I'm not seeing close open weekends right now. Want me to flag Abe to find you something?";
+        : "Those exact nights are taken, and I’m not seeing close open weekends right now. Want me to flag Abe to find you something?";
     case "sub_floor":
-      return "We're a 2 night minimum. Want me to bump the stay by a night so we can get you a real number?";
+      return "We’re a 2 night minimum. Want me to bump the stay by a night so we can get you a real number?";
     case "max_guests":
       return "We cap at 14 guests on a single booking. Could the group come down to 14, or split into two weekends?";
     default:
@@ -1418,7 +1418,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     if (!canSaveContact) return;
     if (agentDriven) {
       const summary = formatContactSummary(contactName, contactEmail, contactPhone);
-      void fireWidgetCommit(`Here's my info: ${summary}.`, summary);
+      void fireWidgetCommit(`Here’s my info: ${summary}.`, summary);
       return;
     }
     void commitScripted("contact");
