@@ -437,7 +437,7 @@ export async function runInquiryAgent(
       if (isHumanRequest) {
         const recentTranscript = session.transcript
           .filter((m) => m.role === "user" || m.role === "olivia")
-          .slice(-6)
+          .slice(-20)
           .map((m) => ({ role: m.role, body: m.body, ts: m.ts }));
         const emailResult = await sendAbeNotification({
           sessionId: session.id,
@@ -447,6 +447,7 @@ export async function runInquiryAgent(
           slots: session.slots as Record<string, unknown>,
           signals: session.signals as Record<string, unknown>,
           recentTranscript,
+          phase: session.phase,
         });
         executedActions.push({
           tool: "notify_abe",
@@ -729,7 +730,7 @@ export async function runInquiryAgent(
       } as Record<string, unknown>;
       const recentTranscript = session.transcript
         .filter((m) => m.role === "user" || m.role === "olivia")
-        .slice(-6)
+        .slice(-20)
         .map((m) => ({ role: m.role, body: m.body, ts: m.ts }));
 
       const input = action.input as {
@@ -752,6 +753,7 @@ export async function runInquiryAgent(
         slots: merged,
         signals: session.signals as Record<string, unknown>,
         recentTranscript,
+        phase: session.phase,
       });
 
       action.result = emailResult.ok

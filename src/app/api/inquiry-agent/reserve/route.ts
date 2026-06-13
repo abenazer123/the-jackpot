@@ -139,13 +139,24 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // One session update covers both the create and reuse paths: link the
   // inquiry, move the session to `awaiting_abe` (a hot lead holding
   // dates, which the abandonment sweep deliberately skips), bump
-  // activity, and fold in the qualify signals.
+  // activity, fold in the qualify signals, and persist the held quote +
+  // call window into the session slots so any LATER notify_abe (e.g. the
+  // guest pings again) still carries the price and the booked window.
+  const mergedSlots: Record<string, unknown> = {
+    ...slots,
+    name,
+    email,
+    phone,
+    ...(quote?.totalCents != null ? { quote_total_cents: quote.totalCents } : {}),
+    ...(isScheduleStep ? { reserve_call_window: call_window } : {}),
+  };
   await supabase
     .from("inquiry_session")
     .update({
       inquiry_id: inquiryId,
       phase: "awaiting_abe",
       last_activity_at: now,
+      slots: mergedSlots,
       ...(signalsChanged ? { signals: mergedSignals } : {}),
     })
     .eq("id", session_id);
@@ -154,7 +165,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   type TMsg = { role: string; body: string; ts: string };
   const recentTranscript = ((sessionRow.transcript ?? []) as TMsg[])
     .filter((m) => m.role === "user" || m.role === "olivia")
-    .slice(-6)
+    .slice(-20)
     .map((m) => ({ role: m.role, body: m.body, ts: m.ts }));
 
   const reason = isScheduleStep
@@ -176,6 +187,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     },
     signals: mergedSignals,
     recentTranscript,
+    phase: "awaiting_abe",
   });
 
   return NextResponse.json({ ok: true, inquiry_id: inquiryId });

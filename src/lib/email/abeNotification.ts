@@ -33,7 +33,27 @@ export interface AbeNotificationInput {
   signals: Record<string, unknown>;
   /** Last N transcript messages (most recent last). */
   recentTranscript: Array<{ role: string; body: string; ts: string }>;
+  /** Session phase at the moment we fired — i.e. how far the guest got
+   *  before flagging you. Drives the "Reached" drop-off line. */
+  phase?: string | null;
 }
+
+/** How far the guest got, in plain words. The drop-off signal: a thin
+ *  email on a `state1` session means they asked for you before there was
+ *  anything to report; a `post_price` one means they saw the number. */
+const PHASE_LABEL: Record<string, string> = {
+  state1: "Picking dates",
+  state1_to_checking: "Picking dates",
+  checking: "Checking availability",
+  available: "Saw the dates are open",
+  pricing: "At the price reveal",
+  post_price: "Saw the price",
+  awaiting_abe: "Reserved, holding dates",
+  abandoned: "Went quiet",
+  booked: "Booked",
+  disqualified: "Not a fit",
+  handoff_complete: "Handed to you",
+};
 
 const URGENCY_LABEL: Record<AbeNotificationUrgency, { emoji: string; label: string }> = {
   low: { emoji: "🔔", label: "Heads up" },
@@ -156,8 +176,35 @@ function renderTranscript(
     .join("");
 }
 
+/** The most recent thing the guest actually typed (skips Olivia's
+ *  lines). Used in the drop-off line so Abe sees their last words at a
+ *  glance without scrolling the thread. */
+function lastGuestLine(
+  msgs: AbeNotificationInput["recentTranscript"],
+): string | null {
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    if (msgs[i].role === "user") {
+      const body = msgs[i].body.trim();
+      if (body) return body.length > 120 ? body.slice(0, 117) + "…" : body;
+    }
+  }
+  return null;
+}
+
+/** "Reached: <phase> · Last: "<quote>"" — the drop-off summary. Returns
+ *  empty when we have neither piece. */
+function dropoffLine(p: AbeNotificationInput): string {
+  const parts: string[] = [];
+  const reached = p.phase ? (PHASE_LABEL[p.phase] ?? p.phase) : null;
+  if (reached) parts.push(`Reached: ${reached}`);
+  const last = lastGuestLine(p.recentTranscript);
+  if (last) parts.push(`Last from guest: “${last}”`);
+  return parts.join("  ·  ");
+}
+
 function renderHtml(p: AbeNotificationInput): string {
   const urgency = URGENCY_LABEL[p.urgency];
+  const dropoff = dropoffLine(p);
 
   return `
 <!DOCTYPE html>
@@ -170,6 +217,11 @@ function renderHtml(p: AbeNotificationInput): string {
       <tr><td style="padding:24px 32px 0;">
         <div style="font-family:'Outfit',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#7a6030;background:#fbf6ea;border:1px solid #f0e4cc;border-radius:10px;padding:14px 18px;">
           ${urgency.emoji} <strong style="font-weight:600;">${urgency.label}.</strong> ${escape(p.reason)}
+          ${
+            dropoff
+              ? `<div style="margin-top:8px;font-size:13px;color:#a08840;">${escape(dropoff)}</div>`
+              : ""
+          }
         </div>
       </td></tr>
 
@@ -207,8 +259,10 @@ function renderText(p: AbeNotificationInput): string {
   const thread = p.recentTranscript
     .map((m) => `${m.role.toUpperCase()}: ${m.body}`)
     .join("\n\n");
+  const dropoff = dropoffLine(p);
   return [
     `${urgency.emoji} ${urgency.label}. ${p.reason}`,
+    dropoff,
     "",
     slotLines,
     "",

@@ -745,6 +745,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     if (groupSize)
       slots.guest_count = Number.parseInt(groupSize, 10) || groupSize;
     if (occasion) slots.occasion = occasion;
+    // Persist the revealed number into the session so a later notify_abe
+    // (guest asks for Abe after seeing the price) carries the quote.
+    if (priceQuote) slots.quote_total_cents = priceQuote.totalCents;
     return slots;
   };
 
@@ -828,6 +831,21 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qualifyDone]);
+
+  // The qualify commit above may fire before the quote resolves (cold
+  // PriceLabs fetch). Once the number lands, persist it into the session
+  // exactly once so a later notify_abe carries the price the guest saw.
+  const pricePersistedRef = useRef(false);
+  useEffect(() => {
+    if (!qualifyDone || !priceQuote) {
+      if (!qualifyDone) pricePersistedRef.current = false;
+      return;
+    }
+    if (pricePersistedRef.current) return;
+    pricePersistedRef.current = true;
+    void commitScripted("price");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qualifyDone, priceQuote]);
 
   const [priceError, setPriceError] = useState<string | null>(null);
   /** Nearby open ranges returned alongside an `unavailable` quote.
