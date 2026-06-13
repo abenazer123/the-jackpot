@@ -157,7 +157,7 @@
   flex: 1;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 20px 16px 12px;
+  padding: 20px 16px 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -446,11 +446,12 @@
 
 .qualifySparkle {
   position: absolute;
-  color: var(--jp-gold);
+  color: var(--jp-gold-deep);
   line-height: 1;
   opacity: 0;
-  transform: scale(0.6);
+  transform: scale(0.4);
   will-change: transform, opacity;
+  text-shadow: 0 0 6px rgba(212, 169, 48, 0.45);
   animation-name: qualifyTwinkle;
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out;
@@ -460,23 +461,24 @@
   0%,
   100% {
     opacity: 0;
-    transform: scale(0.6) rotate(0deg);
+    transform: scale(0.4) rotate(0deg);
   }
   50% {
-    opacity: 0.65;
-    transform: scale(1) rotate(18deg);
+    opacity: 0.95;
+    transform: scale(1.1) rotate(20deg);
   }
 }
 
 .qualifyBubble {
   position: absolute;
-  bottom: -8px;
+  bottom: -10px;
   border-radius: 50%;
   background: radial-gradient(
-    circle at 30% 30%,
-    rgba(255, 248, 230, 0.95),
-    var(--jp-gold-25)
+    circle at 32% 28%,
+    rgba(255, 252, 242, 0.98),
+    var(--jp-gold) 75%
   );
+  box-shadow: 0 0 5px rgba(212, 169, 48, 0.4);
   opacity: 0;
   will-change: transform, opacity;
   animation-name: qualifyRise;
@@ -487,14 +489,14 @@
 @keyframes qualifyRise {
   0% {
     opacity: 0;
-    transform: translateY(0) scale(0.8);
+    transform: translate(0, 0) scale(0.7);
   }
   20% {
-    opacity: 0.85;
+    opacity: 0.9;
   }
   100% {
     opacity: 0;
-    transform: translateY(-96px) scale(1);
+    transform: translate(var(--drift, 0), -120px) scale(1.05);
   }
 }
 
@@ -2031,6 +2033,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
   border: 1px solid var(--jp-border-default);
   border-radius: var(--jp-radius-full);
   padding: 9px 18px;
@@ -2040,6 +2043,7 @@
   letter-spacing: 0.3px;
   color: var(--jp-text-primary);
   background: var(--jp-bg-primary);
+  text-decoration: none;
   cursor: pointer;
   transition:
     background var(--jp-transition),
@@ -2074,6 +2078,44 @@
   background-image: var(--jp-gradient-button);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(212, 169, 48, 0.28);
+}
+
+/* Hovering trip-page actions: a 3-up bar that stays above the composer
+   the whole time the trip widget is up. */
+.stickyShare {
+  display: flex;
+  gap: 8px;
+}
+
+.stickyShareBtn {
+  flex: 1 1 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-full);
+  padding: 10px 12px;
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  color: var(--jp-text-primary);
+  background: var(--jp-bg-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.stickyShareBtn:hover {
+  border-color: var(--jp-border-hover);
+  background: var(--jp-gold-10);
+}
+
+.stickyShareBtnPrimary {
+  border: 0;
+  color: #ffffff;
+  background-image: var(--jp-gradient-button);
 }
 
 .optionsContinue {

@@ -964,7 +964,7 @@ function estimateCostCents(usage: Anthropic.Usage): number {
  *  if a row already exists, re-fetches the token instead of creating
  *  a duplicate. Skips when the required slot data isn't there yet.
  */
-async function ensureShareLink(
+export async function ensureShareLink(
   session: InquirySessionRow,
   slotsUpdateThisTurn: Partial<ExtractedSlots>,
 ): Promise<

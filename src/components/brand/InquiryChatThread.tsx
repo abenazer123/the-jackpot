@@ -277,21 +277,28 @@ const CALC_HEADLINES = [
  *  sparkles + rising champagne bubbles; other occasions get the calmer
  *  sparkle field for now. */
 const QUALIFY_SPARKLES = [
-  { left: 7, top: 16, size: 11, delay: 0, dur: 2.6 },
-  { left: 88, top: 12, size: 14, delay: 0.7, dur: 3.0 },
-  { left: 72, top: 58, size: 8, delay: 1.2, dur: 2.3 },
-  { left: 20, top: 66, size: 12, delay: 0.35, dur: 2.9 },
-  { left: 47, top: 7, size: 9, delay: 1.6, dur: 2.7 },
-  { left: 93, top: 70, size: 8, delay: 0.95, dur: 2.5 },
-  { left: 34, top: 38, size: 7, delay: 2.0, dur: 3.2 },
-  { left: 62, top: 82, size: 10, delay: 0.5, dur: 2.4 },
+  { left: 6, top: 14, size: 18, delay: 0, dur: 2.2 },
+  { left: 90, top: 10, size: 22, delay: 0.5, dur: 2.6 },
+  { left: 80, top: 30, size: 13, delay: 1.1, dur: 2.0 },
+  { left: 16, top: 40, size: 14, delay: 0.3, dur: 2.4 },
+  { left: 95, top: 52, size: 16, delay: 1.4, dur: 2.3 },
+  { left: 70, top: 70, size: 12, delay: 0.8, dur: 2.1 },
+  { left: 9, top: 78, size: 17, delay: 1.7, dur: 2.7 },
+  { left: 88, top: 86, size: 14, delay: 0.45, dur: 2.2 },
+  { left: 40, top: 90, size: 12, delay: 1.2, dur: 2.5 },
+  { left: 56, top: 6, size: 13, delay: 1.9, dur: 2.3 },
+  { left: 30, top: 60, size: 11, delay: 0.65, dur: 2.0 },
+  { left: 50, top: 46, size: 10, delay: 2.1, dur: 2.6 },
 ];
 const QUALIFY_BUBBLES = [
-  { left: 13, size: 6, delay: 0, dur: 4.4 },
-  { left: 31, size: 4, delay: 1.5, dur: 5.2 },
-  { left: 56, size: 7, delay: 0.8, dur: 4.7 },
-  { left: 79, size: 5, delay: 2.2, dur: 5.5 },
-  { left: 91, size: 4, delay: 1.1, dur: 4.9 },
+  { left: 10, size: 10, delay: 0, dur: 4.0, drift: 6 },
+  { left: 26, size: 7, delay: 1.3, dur: 4.8, drift: -5 },
+  { left: 44, size: 12, delay: 0.6, dur: 4.3, drift: 8 },
+  { left: 60, size: 8, delay: 2.0, dur: 5.0, drift: -7 },
+  { left: 74, size: 11, delay: 0.9, dur: 4.5, drift: 5 },
+  { left: 86, size: 7, delay: 1.6, dur: 4.9, drift: -6 },
+  { left: 95, size: 9, delay: 0.3, dur: 4.2, drift: 4 },
+  { left: 36, size: 6, delay: 2.4, dur: 5.2, drift: -4 },
 ];
 
 /** Vertical (9:12) media carousel for the price card. Placeholder for
@@ -490,6 +497,11 @@ function ShareLinkWidget({
   };
 
   const handleShare = async () => {
+    if (!canNativeShare) {
+      // Desktop / no Web Share: copying the link is the share.
+      void handleCopy();
+      return;
+    }
     const title = "The Jackpot Chicago";
     const text = occasion
       ? `${occasion} for ${guestCount || ""} at The Jackpot. Take a look:`
@@ -534,6 +546,8 @@ function ShareLinkWidget({
           src={COVER_PHOTO.src}
           alt=""
           fill
+          priority
+          placeholder="blur"
           sizes="(max-width: 900px) 88vw, 360px"
           className={styles.sharePreviewPhoto}
         />
@@ -555,6 +569,14 @@ function ShareLinkWidget({
       <div className={styles.shareCardLabel}>For the crew</div>
       <div className={styles.shareCardUrl}>{url}</div>
       <div className={styles.shareCardButtons}>
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className={styles.shareCardBtn}
+        >
+          Open the page
+        </a>
         <button
           type="button"
           className={styles.shareCardBtn}
@@ -563,15 +585,13 @@ function ShareLinkWidget({
         >
           {copied ? "Copied" : "Copy link"}
         </button>
-        {canNativeShare && (
-          <button
-            type="button"
-            className={`${styles.shareCardBtn} ${styles.shareCardBtnPrimary}`}
-            onClick={handleShare}
-          >
-            Send it
-          </button>
-        )}
+        <button
+          type="button"
+          className={`${styles.shareCardBtn} ${styles.shareCardBtnPrimary}`}
+          onClick={handleShare}
+        >
+          {canNativeShare ? "Send it" : "Share"}
+        </button>
       </div>
     </div>
   );
@@ -845,6 +865,15 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  terminal state. */
   const [priceAction, setPriceAction] = useState<"none" | "reserve" | "reserved">("none");
   const [reserveBusy, setReserveBusy] = useState(false);
+  // Share-to-group: minted directly (no LLM turn) the moment the guest
+  // taps "Send to my group" at the price reveal, so the trip widget
+  // shows fast. null until minted.
+  const [shareData, setShareData] = useState<{
+    url: string;
+    totalCents: number;
+  } | null>(null);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   // Reserve scheduler: the guest picks the day + window for Abe's
   // lock-in call. The call is the hold's guarantee mechanism.
   const [callDate, setCallDate] = useState("");
@@ -894,6 +923,8 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setSearchStage("");
       setDecisionPower("");
       setPriceAction("none");
+      setShareData(null);
+      setShareBusy(false);
       setReserveBusy(false);
       setCallDate("");
       setCallWindow("");
@@ -936,7 +967,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       body.scrollTop = body.scrollHeight;
     });
     return () => window.cancelAnimationFrame(id);
-  }, [step, checkingPhase, availablePhase, harnessMessages.length, isWaitingForOlivia, introReady]);
+    // searchStage / decisionPower: the qualify beat grows when Q1 -> Q2
+    // swaps, so re-scroll or the last chip hides under the composer.
+    // priceAction / shareData: the reserve + share widgets change height.
+  }, [step, checkingPhase, availablePhase, harnessMessages.length, isWaitingForOlivia, introReady, searchStage, decisionPower, qualifyDone, priceAction, shareData]);
 
   // Fetch the real quote when the conversation enters the pricing
   // step. While it's in flight the existing "Pulling pricing now…"
@@ -1001,10 +1035,12 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     setRevealStage(5);
   };
   useEffect(() => {
-    // Hold the reveal until both the quote has landed AND the two
-    // qualify taps are done. The taps "summon" the number, so the drip
-    // can't start playing behind the questions.
-    if (!priceQuote || !qualifyDone) {
+    // Start the value drip the moment both qualify taps are in. It does
+    // NOT wait for the quote: the value (dream, photos, pillars, review)
+    // shows immediately, and only the number itself holds for the quote.
+    // So a slow PriceLabs fetch never leaves the guest staring at a
+    // spinner after answering.
+    if (!qualifyDone) {
       setRevealStage(0);
       return;
     }
@@ -1026,7 +1062,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       window.setTimeout(() => setRevealStage(5), 6000),
     ];
     return () => revealTimersRef.current.forEach((t) => window.clearTimeout(t));
-  }, [priceQuote, qualifyDone]);
+  }, [qualifyDone]);
 
   // Follow the reveal — ease the newest content into view as each stage
   // lands (anchors the card on first reveal, then trails the drip).
@@ -1699,8 +1735,46 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     } else if (key === "questions") {
       handlePriceQuestions();
     } else {
+      void handleShareToGroup();
+    }
+  };
+
+  /** Mint the trip link directly (no LLM turn) so the share widget shows
+   *  fast. At the price reveal the guest already has every slot, so
+   *  Olivia has nothing to compose; routing through the model only added
+   *  seconds. Ensures the session first, then hits the share route. */
+  const handleShareToGroup = async () => {
+    if (shareData || shareBusy) return;
+    setShareBusy(true);
+    const epoch = sessionEpochRef.current;
+    try {
+      const sid =
+        harnessSessionIdRef.current ?? (await commitScripted("share"));
+      if (!sid) throw new Error("no_session");
+      const res = await fetch("/api/inquiry-agent/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sid }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        url?: string;
+        total_cents?: number | null;
+      };
+      if (sessionEpochRef.current !== epoch) return;
+      if (res.ok && data.ok && data.url) {
+        setShareData({ url: data.url, totalCents: data.total_cents ?? 0 });
+      } else {
+        // Fall back to the agent path if the direct mint can't proceed.
+        setAgentDriven(true);
+        void fireWidgetCommit("Can I send this to my group?", "share");
+      }
+    } catch {
+      if (sessionEpochRef.current !== epoch) return;
       setAgentDriven(true);
       void fireWidgetCommit("Can I send this to my group?", "share");
+    } finally {
+      if (sessionEpochRef.current === epoch) setShareBusy(false);
     }
   };
 
@@ -2125,13 +2199,16 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                         <span
                           key={`bb${i}`}
                           className={styles.qualifyBubble}
-                          style={{
-                            left: `${b.left}%`,
-                            width: `${b.size}px`,
-                            height: `${b.size}px`,
-                            animationDelay: `${b.delay}s`,
-                            animationDuration: `${b.dur}s`,
-                          }}
+                          style={
+                            {
+                              left: `${b.left}%`,
+                              width: `${b.size}px`,
+                              height: `${b.size}px`,
+                              animationDelay: `${b.delay}s`,
+                              animationDuration: `${b.dur}s`,
+                              "--drift": `${b.drift}px`,
+                            } as React.CSSProperties
+                          }
                         />
                       ))}
                   </div>
@@ -2226,25 +2303,8 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                 </div>
               )}
 
-              {qualifyDone && !priceQuote && !priceError && (
-                <div
-                  className={`${styles.checking} ${styles.fadeIn}`}
-                  role="status"
-                  aria-live="polite"
-                >
-                  <span className={styles.checkingDots} aria-hidden="true">
-                    <span className={styles.checkingDot} />
-                    <span className={styles.checkingDot} />
-                    <span className={styles.checkingDot} />
-                  </span>
-                  <span className={styles.checkingText}>
-                    Finalizing your number&hellip;
-                  </span>
-                </div>
-              )}
-
-              {priceQuote &&
-                qualifyDone &&
+              {qualifyDone &&
+                !priceError &&
                 (() => {
                   const framing =
                     VALUE_FRAMING[occasion] ?? VALUE_FRAMING.default;
@@ -2254,9 +2314,27 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                   const shownReviews = reviewsExpanded
                     ? allReviews
                     : allReviews.slice(0, 1);
-                  const perNight = Math.round(
-                    priceQuote.perGuestCents / priceQuote.nights,
-                  );
+                  // Header values come from local state so the card can
+                  // render before the quote lands; the quote refines them.
+                  const hdrArrival = priceQuote?.arrival ?? arrival;
+                  const hdrDeparture = priceQuote?.departure ?? departure;
+                  const hdrNights =
+                    priceQuote?.nights ??
+                    (arrival && departure
+                      ? Math.max(
+                          1,
+                          Math.round(
+                            (new Date(departure + "T00:00:00").getTime() -
+                              new Date(arrival + "T00:00:00").getTime()) /
+                              86_400_000,
+                          ),
+                        )
+                      : 0);
+                  const hdrGuests =
+                    priceQuote?.guests ?? (Number.parseInt(groupSize, 10) || 0);
+                  const perNight = priceQuote
+                    ? Math.round(priceQuote.perGuestCents / priceQuote.nights)
+                    : 0;
                   return (
                     <div
                       className={`${styles.priceCard} ${styles.fadeIn}`}
@@ -2267,14 +2345,12 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     >
                       <div className={styles.priceCardLabel}>Your weekend</div>
                       <div className={styles.priceCardRange}>
-                        {formatRangeShort(priceQuote.arrival, priceQuote.departure)}
+                        {formatRangeShort(hdrArrival, hdrDeparture)}
                       </div>
                       <div className={styles.priceCardMeta}>
-                        {priceQuote.nights}{" "}
-                        {priceQuote.nights === 1 ? "night" : "nights"}
+                        {hdrNights} {hdrNights === 1 ? "night" : "nights"}
                         {" · "}
-                        {priceQuote.guests}{" "}
-                        {priceQuote.guests === 1 ? "guest" : "guests"}
+                        {hdrGuests} {hdrGuests === 1 ? "guest" : "guests"}
                       </div>
 
                       {/* Advancing status — promises the number is coming
@@ -2384,36 +2460,56 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                           role="status"
                           aria-live="polite"
                         >
-                          <div className={styles.priceHero}>
-                            <span className={styles.priceHeroNum}>
-                              ${formatDollars(perNight)}
-                            </span>
-                            <span className={styles.priceHeroUnit}>
-                              per guest, per night
-                            </span>
-                          </div>
-                          <div className={styles.priceHeroTotal}>
-                            ${formatDollars(priceQuote.totalCents)} for the whole
-                            group, {priceQuote.nights}{" "}
-                            {priceQuote.nights === 1 ? "night" : "nights"}
-                          </div>
-                          {(priceQuote.savedVsAirbnbCents ?? 0) > 0 && (
-                            <div className={styles.savingsTag}>
-                              <span className={styles.savingsPill}>
-                                Book direct
+                          {priceQuote ? (
+                            <>
+                              <div className={styles.priceHero}>
+                                <span className={styles.priceHeroNum}>
+                                  ${formatDollars(perNight)}
+                                </span>
+                                <span className={styles.priceHeroUnit}>
+                                  per guest, per night
+                                </span>
+                              </div>
+                              <div className={styles.priceHeroTotal}>
+                                ${formatDollars(priceQuote.totalCents)} for the
+                                whole group, {priceQuote.nights}{" "}
+                                {priceQuote.nights === 1 ? "night" : "nights"}
+                              </div>
+                              {(priceQuote.savedVsAirbnbCents ?? 0) > 0 && (
+                                <div className={styles.savingsTag}>
+                                  <span className={styles.savingsPill}>
+                                    Book direct
+                                  </span>
+                                  <span>
+                                    Saves the group $
+                                    {formatDollars(
+                                      priceQuote.savedVsAirbnbCents ?? 0,
+                                    )}{" "}
+                                    vs Airbnb
+                                  </span>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className={styles.checking}>
+                              <span
+                                className={styles.checkingDots}
+                                aria-hidden="true"
+                              >
+                                <span className={styles.checkingDot} />
+                                <span className={styles.checkingDot} />
+                                <span className={styles.checkingDot} />
                               </span>
-                              <span>
-                                Saves the group $
-                                {formatDollars(priceQuote.savedVsAirbnbCents ?? 0)}{" "}
-                                vs Airbnb
+                              <span className={styles.checkingText}>
+                                Pulling your number&hellip;
                               </span>
                             </div>
                           )}
                         </div>
                       )}
 
-                      {/* Stage 5: the breakdown dropdown. */}
-                      {revealStage >= 5 && (
+                      {/* Stage 5: the breakdown dropdown (needs the quote). */}
+                      {revealStage >= 5 && priceQuote && (
                         <div className={`${styles.pillar} ${styles.fadeIn}`}>
                           <button
                             type="button"
@@ -2482,7 +2578,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                   (that invites haggling) — lead with the lowest-risk
                   commitment. Reserve is primary; questions opens Olivia's
                   diagnostic chat; share reuses the link flow. */}
-              {priceQuote && priceAction === "none" && revealStage >= 5 && (
+              {priceQuote &&
+                priceAction === "none" &&
+                revealStage >= 5 &&
+                !shareData &&
+                !shareBusy && (
                 <div
                   className={`${styles.priceActions} ${styles.fadeIn}`}
                   ref={actionsRowRef}
@@ -2506,6 +2606,36 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     </div>
                   ))}
                 </div>
+              )}
+
+              {/* Share-to-group, minted directly (no LLM turn) so the
+                  trip widget appears fast. A brief building state, then
+                  the widget. */}
+              {shareBusy && !shareData && (
+                <div
+                  className={`${styles.checking} ${styles.fadeIn}`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className={styles.checkingDots} aria-hidden="true">
+                    <span className={styles.checkingDot} />
+                    <span className={styles.checkingDot} />
+                    <span className={styles.checkingDot} />
+                  </span>
+                  <span className={styles.checkingText}>
+                    Building your group page&hellip;
+                  </span>
+                </div>
+              )}
+              {shareData && (
+                <ShareLinkWidget
+                  url={shareData.url}
+                  guestCount={Number.parseInt(groupSize, 10) || 0}
+                  occasion={occasion}
+                  arrival={arrival}
+                  departure={departure}
+                  totalCents={shareData.totalCents}
+                />
               )}
 
               {priceError && (
@@ -2698,7 +2828,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         {/* Floating Reserve CTA: hovers above the composer while the
             guest reads the long price card, then yields to the inline
             buttons once they scroll into view. */}
-        {priceQuote && priceAction === "none" && revealStage >= 5 && !actionsInView && showcaseIndex === null && (
+        {priceQuote && priceAction === "none" && revealStage >= 5 && !actionsInView && showcaseIndex === null && !shareData && (
           <div className={styles.stickyCta}>
             <button
               type="button"
@@ -2706,6 +2836,63 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
               onClick={() => runCtaAction(ctaActions[0].key)}
             >
               {ctaActions[0].label}
+            </button>
+          </div>
+        )}
+
+        {/* Once the trip page is minted, keep its actions hovering the
+            whole time so the coordinator can copy, open, or send it
+            without scrolling back to the card. */}
+        {shareData && showcaseIndex === null && (
+          <div className={`${styles.stickyCta} ${styles.stickyShare}`}>
+            <a
+              href={shareData.url}
+              target="_blank"
+              rel="noreferrer"
+              className={styles.stickyShareBtn}
+            >
+              Open
+            </a>
+            <button
+              type="button"
+              className={styles.stickyShareBtn}
+              onClick={() => {
+                void navigator.clipboard
+                  ?.writeText(shareData.url)
+                  .then(() => {
+                    setShareCopied(true);
+                    window.setTimeout(() => setShareCopied(false), 1800);
+                  })
+                  .catch(() => {});
+              }}
+            >
+              {shareCopied ? "Copied" : "Copy link"}
+            </button>
+            <button
+              type="button"
+              className={`${styles.stickyShareBtn} ${styles.stickyShareBtnPrimary}`}
+              onClick={() => {
+                const canShare =
+                  typeof navigator !== "undefined" &&
+                  typeof navigator.share === "function";
+                if (canShare) {
+                  void navigator
+                    .share({
+                      title: "The Jackpot Chicago",
+                      text: occasion
+                        ? `${occasion} at The Jackpot. Take a look:`
+                        : "Take a look at this place:",
+                      url: shareData.url,
+                    })
+                    .catch(() => {});
+                } else {
+                  void navigator.clipboard?.writeText(shareData.url).catch(() => {});
+                  setShareCopied(true);
+                  window.setTimeout(() => setShareCopied(false), 1800);
+                }
+              }}
+            >
+              Send it
             </button>
           </div>
         )}
