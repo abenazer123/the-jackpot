@@ -134,24 +134,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
     inquiryId = data.id;
-    await supabase
-      .from("inquiry_session")
-      .update({
-        inquiry_id: inquiryId,
-        last_activity_at: now,
-        ...(signalsChanged ? { signals: mergedSignals } : {}),
-      })
-      .eq("id", session_id);
   }
 
-  // Persist the qualify signals on the reuse path too (the create path
-  // already folded them into the update above).
-  if (inquiryId && signalsChanged && sessionRow.inquiry_id) {
-    await supabase
-      .from("inquiry_session")
-      .update({ signals: mergedSignals, last_activity_at: now })
-      .eq("id", session_id);
-  }
+  // One session update covers both the create and reuse paths: link the
+  // inquiry, move the session to `awaiting_abe` (a hot lead holding
+  // dates, which the abandonment sweep deliberately skips), bump
+  // activity, and fold in the qualify signals.
+  await supabase
+    .from("inquiry_session")
+    .update({
+      inquiry_id: inquiryId,
+      phase: "awaiting_abe",
+      last_activity_at: now,
+      ...(signalsChanged ? { signals: mergedSignals } : {}),
+    })
+    .eq("id", session_id);
 
   // Notify Abe — this is a hot lead holding dates with no payment.
   type TMsg = { role: string; body: string; ts: string };

@@ -898,12 +898,17 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       return;
     }
     setRevealStage(0);
+    // Pace each value beat so it can actually be read before the next
+    // lands: dream topline + photos, then the 3 pillars, then the
+    // matched review, THEN the number, THEN the CTAs. ~1.4s per beat so
+    // the unveiling feels deliberate, not a flash. Impatient guests tap
+    // to skip straight to the number.
     revealTimersRef.current = [
-      window.setTimeout(() => setRevealStage(1), 500),
-      window.setTimeout(() => setRevealStage(2), 1000),
-      window.setTimeout(() => setRevealStage(3), 1500),
-      window.setTimeout(() => setRevealStage(4), 2100),
-      window.setTimeout(() => setRevealStage(5), 2600),
+      window.setTimeout(() => setRevealStage(1), 700),
+      window.setTimeout(() => setRevealStage(2), 2100),
+      window.setTimeout(() => setRevealStage(3), 3600),
+      window.setTimeout(() => setRevealStage(4), 5100),
+      window.setTimeout(() => setRevealStage(5), 6000),
     ];
     return () => revealTimersRef.current.forEach((t) => window.clearTimeout(t));
   }, [priceQuote, qualifyDone]);
@@ -1922,7 +1927,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                         ref={qualifyQ2Ref}
                         tabIndex={-1}
                       >
-                        Once you&rsquo;ve got the number, what&rsquo;s the move?
+                        Once you&rsquo;ve got the number, what happens next?
                       </p>
                       <div className={styles.qualifyChips}>
                         <button
