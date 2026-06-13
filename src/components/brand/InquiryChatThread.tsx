@@ -726,7 +726,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  reserve a real session to attach to. Fire-and-forget from the step
    *  handlers; awaited at reserve so a hold always lands a lead. Returns
    *  the session id (existing or freshly minted), or null on failure. */
-  const commitScripted = async (label: string): Promise<string | null> => {
+  const commitScripted = async (
+    label: string,
+    userText?: string,
+    agentLine?: string,
+  ): Promise<string | null> => {
     const epoch = sessionEpochRef.current;
     const existing = harnessSessionIdRef.current;
     try {
@@ -735,9 +739,14 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: existing,
+          // When the caller passes readable text we log it as a real
+          // user turn (so the transcript reads as a conversation); else
+          // a system marker. `commit: true` forces the no-LLM path.
+          commit: true,
+          agent_line: agentLine,
           message: {
-            role: "system",
-            body: `[COMMIT: ${label}]`,
+            role: userText ? "user" : "system",
+            body: userText || `[COMMIT: ${label}]`,
             ts: new Date().toISOString(),
           },
           client_context: {
@@ -760,6 +769,36 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       return existing;
     }
   };
+
+  // Log the two qualify answers to the transcript (readably) the moment
+  // both are in, so the session reads as a real conversation and the
+  // signals persist before the reveal. Guarded so it fires once per beat.
+  const qualifyLoggedRef = useRef(false);
+  useEffect(() => {
+    if (!qualifyDone) {
+      qualifyLoggedRef.current = false;
+      return;
+    }
+    if (qualifyLoggedRef.current) return;
+    qualifyLoggedRef.current = true;
+    const q1: Record<string, string> = {
+      starting: "Just starting to look",
+      awhile: "Been at it a while",
+      ready: "Ready to lock something in",
+    };
+    const q2: Record<string, string> = {
+      lock: "I'll lock it in",
+      crew: "I'll run it by the crew",
+      relay: "I'm gathering for whoever's deciding",
+    };
+    void commitScripted(
+      "qualify",
+      `Where I am: ${q1[searchStage] ?? searchStage}. Next: ${q2[decisionPower] ?? decisionPower}.`,
+      "Finalizing your number.",
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qualifyDone]);
+
   const [priceError, setPriceError] = useState<string | null>(null);
   /** Nearby open ranges returned alongside an `unavailable` quote.
    *  Rendered as tappable cards; picking one re-quotes that range. */
@@ -1189,7 +1228,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       // scripted flow AND syncs the latest slots (e.g. an alternate date
       // the guest picked after the first quote) so the hold records the
       // weekend they actually reserved, not a stale one.
-      const sid = await commitScripted("reserve");
+      const sid = await commitScripted(
+        "reserve",
+        slotText,
+        `Holding ${formatRangeShort(arrival, departure)}, nothing due. Abe will call ${dayText} in the ${callWindow.toLowerCase()} to lock it in.`,
+      );
       if (!sid) throw new Error("no_session");
       const res = await fetch("/api/inquiry-agent/reserve", {
         method: "POST",
@@ -1273,7 +1316,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       void fireWidgetCommit(`I picked my dates: ${label}.`, label);
       return;
     }
-    void commitScripted("dates");
+    void commitScripted(
+      "dates",
+      formatRangeShort(arrival, departure),
+      "Pulling your availability and pricing.",
+    );
     setCheckingPhase(0);
     setStep("checking");
   };
@@ -1540,7 +1587,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       void fireWidgetCommit(`Here’s my info: ${summary}.`, summary);
       return;
     }
-    void commitScripted("contact");
+    void commitScripted(
+      "contact",
+      contactSummary,
+      "Saved. I'll send the answer to your inbox too.",
+    );
     setAvailablePhase(0);
     setStep("available");
   };
@@ -1555,7 +1606,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       );
       return;
     }
-    void commitScripted("trip");
+    void commitScripted(
+      "trip",
+      `${groupSize} guests · ${occasion}`,
+      "Pulling your real number.",
+    );
     setStep("pricing");
   };
 

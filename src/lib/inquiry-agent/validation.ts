@@ -388,6 +388,12 @@ export const TurnRequestSchema = z.object({
     })
     .optional()
     .default({ phase: "state1", slots: {}, signals: {} }),
+  // Scripted-widget commit: forces the no-LLM path (so a readable
+  // tap-through still records to the transcript without calling Claude)
+  // and supplies the scripted Olivia line to store opposite the guest's
+  // message. `message.body` carries the human-readable guest choice.
+  commit: z.boolean().optional(),
+  agent_line: z.string().optional(),
 });
 
 export const TurnWidgetSchema = z.object({

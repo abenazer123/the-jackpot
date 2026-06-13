@@ -108,9 +108,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // 4. Branch: widget-confirm tokens stay deterministic. Free-text,
   //    direct messages, and synthetic system events go through the
   //    harness.
-  const isWidgetConfirm = WIDGET_CONFIRM_PREFIXES.some((p) =>
-    turn.message.body.startsWith(p),
-  );
+  const isWidgetConfirm =
+    turn.commit === true ||
+    WIDGET_CONFIRM_PREFIXES.some((p) => turn.message.body.startsWith(p));
 
   let oliviaReply: TurnMessage;
   let slotsUpdate: Partial<ExtractedSlots> = {};
@@ -129,9 +129,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // lead and lets a later reserve attach to a real session.
     slotsUpdate = (turn.client_context.slots ?? {}) as Partial<ExtractedSlots>;
     signalsUpdate = (turn.client_context.signals ?? {}) as Partial<Signals>;
+    // Store the scripted Olivia line opposite the guest's choice so the
+    // transcript reads as a real conversation, not commit markers.
     oliviaReply = {
       role: "olivia",
-      body: "(widget commit recorded)",
+      body:
+        turn.agent_line && turn.agent_line.trim()
+          ? turn.agent_line
+          : "(widget commit recorded)",
       ts: new Date().toISOString(),
     };
   } else {
