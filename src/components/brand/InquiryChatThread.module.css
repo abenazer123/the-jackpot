@@ -419,6 +419,8 @@
    questions as tailoring the number, with a progress treatment that
    advances on each tap so answering feels like summoning the price. */
 .qualify {
+  position: relative;
+  overflow: hidden;
   align-self: stretch;
   margin: 4px 4px 4px 32px;
   padding: 16px 16px 18px;
@@ -429,6 +431,79 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+/* Ambient occasion motif: a decorative layer behind the content. Only
+   transform + opacity animate, so it stays on the compositor. */
+.qualifyMotif {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: var(--jp-radius-md);
+}
+
+.qualifySparkle {
+  position: absolute;
+  color: var(--jp-gold);
+  line-height: 1;
+  opacity: 0;
+  transform: scale(0.6);
+  will-change: transform, opacity;
+  animation-name: qualifyTwinkle;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+@keyframes qualifyTwinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.6) rotate(0deg);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1) rotate(18deg);
+  }
+}
+
+.qualifyBubble {
+  position: absolute;
+  bottom: -8px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 248, 230, 0.95),
+    var(--jp-gold-25)
+  );
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: qualifyRise;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in;
+}
+
+@keyframes qualifyRise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.8);
+  }
+  20% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-96px) scale(1);
+  }
+}
+
+/* Keep all content above the motif layer. */
+.qualifyLead,
+.qualifyProgress,
+.qualifyQ {
+  position: relative;
+  z-index: 1;
 }
 
 .qualifyLead {
@@ -530,6 +605,9 @@
   }
   .qualifyProgressLabel {
     animation: none;
+  }
+  .qualifyMotif {
+    display: none;
   }
 }
 

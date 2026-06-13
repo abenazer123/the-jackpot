@@ -271,6 +271,29 @@ const CALC_HEADLINES = [
   "Finalizing your number",
 ];
 
+/** Ambient occasion motif behind the qualify beat. Deterministic
+ *  positions (no random, SSR-safe), capped counts, transform/opacity
+ *  only, all gated behind prefers-reduced-motion. Bachelorette gets gold
+ *  sparkles + rising champagne bubbles; other occasions get the calmer
+ *  sparkle field for now. */
+const QUALIFY_SPARKLES = [
+  { left: 7, top: 16, size: 11, delay: 0, dur: 2.6 },
+  { left: 88, top: 12, size: 14, delay: 0.7, dur: 3.0 },
+  { left: 72, top: 58, size: 8, delay: 1.2, dur: 2.3 },
+  { left: 20, top: 66, size: 12, delay: 0.35, dur: 2.9 },
+  { left: 47, top: 7, size: 9, delay: 1.6, dur: 2.7 },
+  { left: 93, top: 70, size: 8, delay: 0.95, dur: 2.5 },
+  { left: 34, top: 38, size: 7, delay: 2.0, dur: 3.2 },
+  { left: 62, top: 82, size: 10, delay: 0.5, dur: 2.4 },
+];
+const QUALIFY_BUBBLES = [
+  { left: 13, size: 6, delay: 0, dur: 4.4 },
+  { left: 31, size: 4, delay: 1.5, dur: 5.2 },
+  { left: 56, size: 7, delay: 0.8, dur: 4.7 },
+  { left: 79, size: 5, delay: 2.2, dur: 5.5 },
+  { left: 91, size: 4, delay: 1.1, dur: 4.9 },
+];
+
 /** Vertical (9:12) media carousel for the price card. Placeholder for
  *  real stay videos; brand photos stand in for now. Horizontal
  *  scroll-snap; a play glyph signals these become video. */
@@ -2078,6 +2101,40 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                   fetches in the background; the reveal waits for both. */}
               {!qualifyDone && !priceError && (
                 <div className={`${styles.qualify} ${styles.fadeIn}`}>
+                  {/* Ambient occasion motif (decorative; reduced-motion
+                      hides it). Bachelorette adds rising champagne
+                      bubbles to the gold sparkle field. */}
+                  <div className={styles.qualifyMotif} aria-hidden="true">
+                    {QUALIFY_SPARKLES.map((sp, i) => (
+                      <span
+                        key={`sp${i}`}
+                        className={styles.qualifySparkle}
+                        style={{
+                          left: `${sp.left}%`,
+                          top: `${sp.top}%`,
+                          fontSize: `${sp.size}px`,
+                          animationDelay: `${sp.delay}s`,
+                          animationDuration: `${sp.dur}s`,
+                        }}
+                      >
+                        ✦
+                      </span>
+                    ))}
+                    {occasion === "Bachelorette" &&
+                      QUALIFY_BUBBLES.map((b, i) => (
+                        <span
+                          key={`bb${i}`}
+                          className={styles.qualifyBubble}
+                          style={{
+                            left: `${b.left}%`,
+                            width: `${b.size}px`,
+                            height: `${b.size}px`,
+                            animationDelay: `${b.delay}s`,
+                            animationDuration: `${b.dur}s`,
+                          }}
+                        />
+                      ))}
+                  </div>
                   <p className={styles.qualifyLead}>
                     Pulling your real number. Two quick taps so it&rsquo;s
                     accurate.
