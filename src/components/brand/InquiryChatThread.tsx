@@ -255,6 +255,22 @@ const REVEAL_STATUS = [
   "And your number.",
 ];
 
+/** Ambient "computation" headlines that cycle under the progress bar
+ *  during the qualify beat. Each maps to a real step the price engine
+ *  does (PriceLabs rates, calendar availability, taxes/fees, comps,
+ *  per-guest sizing), so the sense of work is honest, not theater. They
+ *  loop on a timer independent of the taps, so answering the two
+ *  questions feels like "since you're waiting, do these" rather than a
+ *  gate. */
+const CALC_HEADLINES = [
+  "Pulling Chicago’s live rates",
+  "Checking your weekend on the calendar",
+  "Adding city taxes and fees",
+  "Comparing nearby stays",
+  "Sizing it for your group",
+  "Finalizing your number",
+];
+
 /** Vertical (9:12) media carousel for the price card. Placeholder for
  *  real stay videos; brand photos stand in for now. Horizontal
  *  scroll-snap; a play glyph signals these become video. */
@@ -632,6 +648,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   // their deciding power (drives the CTA priority in item 3).
   const [searchStage, setSearchStage] = useState(""); // "starting" | "awhile" | "ready"
   const [decisionPower, setDecisionPower] = useState(""); // "lock" | "crew" | "relay"
+  // Index into CALC_HEADLINES; cycles on a timer while the qualify beat
+  // is open so the "we're computing" headline keeps moving even between
+  // taps. Decorative (aria-hidden); the questions carry the real state.
+  const [calcStep, setCalcStep] = useState(0);
   // Both taps answered. Gates the price reveal (the taps summon it) and
   // drives the context-aware CTA priority.
   const qualifyDone = !!searchStage && !!decisionPower;
@@ -642,6 +662,25 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   useEffect(() => {
     if (searchStage && !decisionPower) qualifyQ2Ref.current?.focus();
   }, [searchStage, decisionPower]);
+  // Cycle the ambient "computation" headline while the qualify beat is
+  // open. Skipped under reduced-motion (a static label shows instead).
+  useEffect(() => {
+    if (step !== "pricing" || qualifyDone) {
+      setCalcStep(0);
+      return;
+    }
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+    const id = window.setInterval(
+      () => setCalcStep((i) => (i + 1) % CALC_HEADLINES.length),
+      1600,
+    );
+    return () => window.clearInterval(id);
+  }, [step, qualifyDone]);
   /** Map the two qualify answers to the existing session signals so they
    *  ride along in client_context (and the reserve body). Q1 maps to
    *  decision_timeline, Q2 to decision_makers (relay folds into crew,
@@ -726,6 +765,18 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
    *  Rendered as tappable cards; picking one re-quotes that range. */
   const [alternates, setAlternates] = useState<AlternateRange[]>([]);
 
+  /** Real availability for the picked dates, checked during the
+   *  "checking the calendar" step (which used to be a timed cover that
+   *  never checked). "open" lets the wide-open beat proceed; "taken"
+   *  pivots to the alternate-weekend picker at the available step so we
+   *  never promise a date and then contradict it at pricing. */
+  const [availability, setAvailability] = useState<
+    "unknown" | "open" | "taken"
+  >("unknown");
+  const [availabilityAlts, setAvailabilityAlts] = useState<AlternateRange[]>(
+    [],
+  );
+
   /** Post-price action state. The price reveal shows action buttons
    *  (reserve / questions / share), not a budget-sentiment scale.
    *  `reserve` opens an all-fields form; `reserved` is the confirmed
@@ -776,6 +827,8 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setPriceQuote(null);
       setPriceError(null);
       setAlternates([]);
+      setAvailability("unknown");
+      setAvailabilityAlts([]);
       setSearchStage("");
       setDecisionPower("");
       setPriceAction("none");
@@ -973,6 +1026,56 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialIntent]);
 
+  /** Real calendar check for the picked range. Availability is
+   *  guest-independent (a date is booked or not), so we can run it with
+   *  a placeholder guest count before the group is collected; the price
+   *  step recomputes with the real count. Soft codes (out_of_window /
+   *  cache_empty / network) don't block — they fall through to "open"
+   *  and the price step surfaces the real result. */
+  const checkAvailability = useCallback(
+    async (arr: string, dep: string) => {
+      try {
+        const res = await fetch("/api/inquiry-agent/quote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            arrival: arr,
+            departure: dep,
+            guests: Number.parseInt(groupSize, 10) || 2,
+            occasion: occasion || "Other",
+          }),
+        });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          error?: { code?: string };
+          alternates?: AlternateRange[];
+        };
+        if (!data.ok && data.error?.code === "unavailable") {
+          setAvailability("taken");
+          setAvailabilityAlts(
+            Array.isArray(data.alternates) ? data.alternates : [],
+          );
+        } else {
+          setAvailability("open");
+        }
+      } catch {
+        setAvailability("open");
+      }
+    },
+    [groupSize, occasion],
+  );
+
+  // Run the real availability check when the flow enters "checking" (the
+  // step that already pretends to check the calendar). Resolves while
+  // the guest fills contact, so the "available" beat can branch on the
+  // truth instead of always claiming "wide open".
+  useEffect(() => {
+    if (step !== "checking" || !arrival || !departure) return;
+    setAvailability("unknown");
+    setAvailabilityAlts([]);
+    void checkAvailability(arrival, departure);
+  }, [step, arrival, departure, checkAvailability]);
+
   // Drip-feed the "checking" step: typing dots → first Olivia reply +
   // availability pill → typing dots again → second Olivia reply →
   // contact form. Cleared on unmount or if the dialog closes mid-flow.
@@ -1146,6 +1249,17 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     setAlternates([]);
     setPriceError(null);
     setPriceQuote(null); // clearing re-arms the price-card scroll anchor
+  };
+
+  /** Guest picked an open weekend from the available-step taken pivot.
+   *  Swap the dates, re-check, and stay on the available step so the
+   *  wide-open beat + group/occasion proceed once it confirms open. */
+  const handlePickAlternateAvailable = (alt: AlternateRange) => {
+    setArrival(alt.arrival);
+    setDeparture(alt.departure);
+    setAvailability("unknown");
+    setAvailabilityAlts([]);
+    void checkAvailability(alt.arrival, alt.departure);
   };
 
   const canConfirmDates =
@@ -1775,21 +1889,64 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
             <>
               {!agentDriven && availablePhase === 0 && <OliviaTyping />}
 
-              {!agentDriven && availablePhase >= 1 && (
-                <div className={`${styles.msgRow} ${styles.fadeIn}`}>
-                  <div className={styles.msgAvatar} aria-hidden="true">
-                    O
-                  </div>
-                  <div className={styles.msgBubble}>
-                    {goodNewsGreeting}
-                    {formatRangeLong(arrival, departure)} is wide open. Two
-                    quick things so I can pull your most accurate price:{" "}
-                    <em>your group size and what you&apos;re celebrating.</em>
-                  </div>
-                </div>
-              )}
+              {/* Taken pivot: the real check during "checking" came back
+                  unavailable, so instead of the wide-open promise we show
+                  the closest open weekends right here. No prices yet (no
+                  group), so the rows are date-only. */}
+              {!agentDriven &&
+                availablePhase >= 1 &&
+                availability === "taken" && (
+                  <>
+                    <div className={`${styles.msgRow} ${styles.fadeIn}`}>
+                      <div className={styles.msgAvatar} aria-hidden="true">
+                        O
+                      </div>
+                      <div className={styles.msgBubble}>
+                        {firstName ? `${firstName}, those ` : "Those "}exact
+                        nights are taken. Here are the closest open weekends I
+                        can pull a real number for.
+                      </div>
+                    </div>
+                    {availabilityAlts.length > 0 && (
+                      <div className={`${styles.altDates} ${styles.fadeIn}`}>
+                        <div className={styles.altDatesLabel}>
+                          Closest open weekends &middot; tap one to use those
+                          dates
+                        </div>
+                        {availabilityAlts.map((alt) => (
+                          <button
+                            key={alt.arrival}
+                            type="button"
+                            className={styles.altDateRow}
+                            onClick={() => handlePickAlternateAvailable(alt)}
+                          >
+                            <span className={styles.altDateRange}>
+                              {formatRangeShort(alt.arrival, alt.departure)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
 
-              {availablePhase >= 2 && (
+              {!agentDriven &&
+                availablePhase >= 1 &&
+                availability !== "taken" && (
+                  <div className={`${styles.msgRow} ${styles.fadeIn}`}>
+                    <div className={styles.msgAvatar} aria-hidden="true">
+                      O
+                    </div>
+                    <div className={styles.msgBubble}>
+                      {goodNewsGreeting}
+                      {formatRangeLong(arrival, departure)} is wide open. Two
+                      quick things so I can pull your most accurate price:{" "}
+                      <em>your group size and what you&apos;re celebrating.</em>
+                    </div>
+                  </div>
+                )}
+
+              {availablePhase >= 2 && availability !== "taken" && (
                 <div className={`${styles.optionsBlock} ${styles.fadeIn}`}>
                   <div className={styles.optionsGroup}>
                     <p className={styles.optionsLabel}>How big&apos;s the group</p>
@@ -1871,23 +2028,23 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     accurate.
                   </p>
 
-                  <div
-                    className={styles.qualifyProgress}
-                    role="status"
-                    aria-live="polite"
-                  >
-                    <span className={styles.qualifyTrack} aria-hidden="true">
+                  {/* Decorative "we're computing" motion: a determinate
+                      fill that advances on each tap, a gold shimmer that
+                      sweeps continuously, and a headline that cycles
+                      through the real work-steps. aria-hidden because the
+                      questions below carry the actual state for AT. */}
+                  <div className={styles.qualifyProgress} aria-hidden="true">
+                    <span className={styles.qualifyTrack}>
                       <span
                         className={styles.qualifyFill}
                         data-step={searchStage ? (decisionPower ? 3 : 2) : 1}
                       />
                     </span>
-                    <span className={styles.qualifyProgressLabel}>
-                      {!searchStage
-                        ? "Reading your dates"
-                        : !decisionPower
-                          ? "Sizing it for your group"
-                          : "Finalizing your number"}
+                    <span
+                      key={calcStep}
+                      className={styles.qualifyProgressLabel}
+                    >
+                      {CALC_HEADLINES[calcStep]}
                     </span>
                   </div>
 

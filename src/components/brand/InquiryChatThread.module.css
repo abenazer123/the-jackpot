@@ -476,7 +476,30 @@
   width: 100%;
 }
 
+/* Continuous gold sheen sweeping the track, so the bar reads as "live
+   computation" even between taps. Warm highlight, not harsh white. */
+.qualifyTrack::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 248, 230, 0.7) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: qualifyShimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes qualifyShimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
 .qualifyProgressLabel {
+  display: inline-block;
   font-family: var(--jp-font-body);
   font-weight: 600;
   font-size: 11px;
@@ -485,6 +508,29 @@
   /* Small uppercase label is body-size for WCAG, so it must clear AA.
      Primary olive, not the lighter secondary, to be safe. */
   color: var(--jp-text-primary);
+  /* Keyed on the headline index in TSX, so each new headline fades in. */
+  animation: qualifyLabelIn 320ms ease both;
+}
+
+@keyframes qualifyLabelIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qualifyTrack::after {
+    animation: none;
+    display: none;
+  }
+  .qualifyProgressLabel {
+    animation: none;
+  }
 }
 
 /* Programmatic focus on the question heading (focus moves here when the
