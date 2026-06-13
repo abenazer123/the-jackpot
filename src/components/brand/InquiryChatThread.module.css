@@ -464,7 +464,7 @@
     transform: scale(0.4) rotate(0deg);
   }
   50% {
-    opacity: 0.95;
+    opacity: 0.82;
     transform: scale(1.1) rotate(20deg);
   }
 }
@@ -2116,6 +2116,24 @@
   border: 0;
   color: #ffffff;
   background-image: var(--jp-gradient-button);
+}
+
+/* "Reserve the dates while they vote" nudge under the trip widget, so
+   the share path converts into a free hold instead of dead-ending. */
+.shareReserveNudge {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shareReserveText {
+  margin: 0;
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--jp-text-primary);
 }
 
 .optionsContinue {

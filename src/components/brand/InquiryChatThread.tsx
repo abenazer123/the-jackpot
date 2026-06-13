@@ -279,16 +279,16 @@ const CALC_HEADLINES = [
 const QUALIFY_SPARKLES = [
   { left: 6, top: 14, size: 18, delay: 0, dur: 2.2 },
   { left: 90, top: 10, size: 22, delay: 0.5, dur: 2.6 },
-  { left: 80, top: 30, size: 13, delay: 1.1, dur: 2.0 },
-  { left: 16, top: 40, size: 14, delay: 0.3, dur: 2.4 },
+  { left: 80, top: 28, size: 13, delay: 1.1, dur: 2.0 },
+  { left: 8, top: 26, size: 14, delay: 0.3, dur: 2.4 },
   { left: 95, top: 52, size: 16, delay: 1.4, dur: 2.3 },
-  { left: 70, top: 70, size: 12, delay: 0.8, dur: 2.1 },
-  { left: 9, top: 78, size: 17, delay: 1.7, dur: 2.7 },
+  { left: 70, top: 72, size: 12, delay: 0.8, dur: 2.1 },
+  { left: 6, top: 80, size: 17, delay: 1.7, dur: 2.7 },
   { left: 88, top: 86, size: 14, delay: 0.45, dur: 2.2 },
-  { left: 40, top: 90, size: 12, delay: 1.2, dur: 2.5 },
+  { left: 40, top: 92, size: 12, delay: 1.2, dur: 2.5 },
   { left: 56, top: 6, size: 13, delay: 1.9, dur: 2.3 },
-  { left: 30, top: 60, size: 11, delay: 0.65, dur: 2.0 },
-  { left: 50, top: 46, size: 10, delay: 2.1, dur: 2.6 },
+  { left: 94, top: 40, size: 11, delay: 0.65, dur: 2.0 },
+  { left: 92, top: 18, size: 10, delay: 2.1, dur: 2.6 },
 ];
 const QUALIFY_BUBBLES = [
   { left: 10, size: 10, delay: 0, dur: 4.0, drift: 6 },
@@ -628,6 +628,11 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   // floating Reserve CTA shows only while it's false, so the primary
   // action stays reachable through the long card, then "locks" inline.
   const [actionsInView, setActionsInView] = useState(false);
+  // Same idea for the trip-share widget's own buttons: the hovering
+  // share bar only shows while they're scrolled out of view, so the two
+  // sets never double up on screen.
+  const shareWidgetRef = useRef<HTMLDivElement>(null);
+  const [shareInView, setShareInView] = useState(false);
 
   const [arrival, setArrival] = useState("");
   const [departure, setDeparture] = useState("");
@@ -1106,6 +1111,22 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     // revealStage included so the observer re-attaches when the inline
     // action row finally mounts at the end of the staged reveal.
   }, [priceQuote, priceAction, revealStage]);
+
+  // Mirror of the above for the share widget's own button row.
+  useEffect(() => {
+    const el = shareWidgetRef.current;
+    const root = bodyRef.current;
+    if (!el || !root) {
+      setShareInView(false);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      ([entry]) => setShareInView(entry.isIntersecting),
+      { root, threshold: 0, rootMargin: "0px 0px -72px 0px" },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [shareData]);
 
   // When the dialog opens with an entry-chip intent (e.g. "Send this
   // to my group"), fire a one-shot system event so Olivia composes the
@@ -2628,14 +2649,35 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                 </div>
               )}
               {shareData && (
-                <ShareLinkWidget
-                  url={shareData.url}
-                  guestCount={Number.parseInt(groupSize, 10) || 0}
-                  occasion={occasion}
-                  arrival={arrival}
-                  departure={departure}
-                  totalCents={shareData.totalCents}
-                />
+                <div ref={shareWidgetRef}>
+                  <ShareLinkWidget
+                    url={shareData.url}
+                    guestCount={Number.parseInt(groupSize, 10) || 0}
+                    occasion={occasion}
+                    arrival={arrival}
+                    departure={departure}
+                    totalCents={shareData.totalCents}
+                  />
+                  {/* The share path used to dead-end here. Give the
+                      coordinator the obvious next move: turn the share
+                      into a free hold so the vote isn't racing an open
+                      calendar. */}
+                  {priceAction !== "reserve" && priceAction !== "reserved" && (
+                    <div className={styles.shareReserveNudge}>
+                      <p className={styles.shareReserveText}>
+                        Sent it? I&rsquo;ll hold these dates while your crew
+                        votes, so nobody loses the weekend. Nothing due.
+                      </p>
+                      <button
+                        type="button"
+                        className={styles.reservePrimary}
+                        onClick={() => setPriceAction("reserve")}
+                      >
+                        Reserve the dates while they vote
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
 
               {priceError && (
@@ -2843,7 +2885,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         {/* Once the trip page is minted, keep its actions hovering the
             whole time so the coordinator can copy, open, or send it
             without scrolling back to the card. */}
-        {shareData && showcaseIndex === null && (
+        {shareData && showcaseIndex === null && !shareInView && (
           <div className={`${styles.stickyCta} ${styles.stickyShare}`}>
             <a
               href={shareData.url}
