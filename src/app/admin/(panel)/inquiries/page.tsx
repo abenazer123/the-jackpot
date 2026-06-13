@@ -38,6 +38,12 @@ interface InquiryRow {
   venue: string | null;
   quote_total_cents: number | null;
   quote_snapshot: unknown;
+  // Reserve-with-no-payment (chat_reserve leads)
+  reserved_at: string | null;
+  reserve_call_window: string | null;
+  // Funnel decision signal
+  budget_bucket: string | null;
+  split_intent: string | null;
   // Attribution
   utm_source: string | null;
   utm_medium: string | null;
@@ -367,6 +373,31 @@ export default async function InquiriesPage({ searchParams }: PageProps) {
     : statusFiltered;
   const rows = afterAvailability.slice(0, 100);
 
+  // Pull the linked chat sessions for the visible rows so each detail can
+  // show the qualify signals and link to the full transcript viewer.
+  const inquiryIds = rows.map((r) => r.id);
+  const sessionByInquiry = new Map<
+    string,
+    { id: string; signals: Record<string, unknown> }
+  >();
+  if (inquiryIds.length) {
+    const { data: sessRows } = await sb
+      .from("inquiry_session")
+      .select("id, inquiry_id, signals")
+      .in("inquiry_id", inquiryIds);
+    for (const sRow of (sessRows ?? []) as Array<{
+      id: string;
+      inquiry_id: string | null;
+      signals: Record<string, unknown> | null;
+    }>) {
+      if (sRow.inquiry_id)
+        sessionByInquiry.set(sRow.inquiry_id, {
+          id: sRow.id,
+          signals: sRow.signals ?? {},
+        });
+    }
+  }
+
   return (
     <div>
       <h1 className={styles.h1}>Inquiries</h1>
@@ -547,12 +578,21 @@ export default async function InquiriesPage({ searchParams }: PageProps) {
                   {row.source || row.venue || row.utm_source || "—"}
                 </span>
                 <span className={styles.cell}>
-                  <span className={`${own.pathTag} ${pathClass(row.primary_cta_path)}`}>
-                    {pathLabel(row.primary_cta_path)}
-                  </span>
+                  {row.reserved_at ? (
+                    <span
+                      className={`${own.pathTag} ${own.pathInterested}`}
+                      title={row.reserve_call_window ?? "Reserved, nothing due"}
+                    >
+                      Reserved
+                    </span>
+                  ) : (
+                    <span className={`${own.pathTag} ${pathClass(row.primary_cta_path)}`}>
+                      {pathLabel(row.primary_cta_path)}
+                    </span>
+                  )}
                 </span>
               </summary>
-              <InquiryDetail row={row} />
+              <InquiryDetail row={row} session={sessionByInquiry.get(row.id)} />
             </details>
           ))}
         </div>
@@ -561,7 +601,33 @@ export default async function InquiriesPage({ searchParams }: PageProps) {
   );
 }
 
-function InquiryDetail({ row }: { row: InquiryRow }) {
+const TIMELINE_LABEL: Record<string, string> = {
+  immediate: "Ready to lock now",
+  this_week: "Deciding this week",
+  this_month: "Deciding this month",
+  flexible: "Flexible / early",
+  unknown: "Unknown",
+};
+const DECIDER_LABEL: Record<string, string> = {
+  solo: "Decides solo",
+  partner: "Decides with partner",
+  crew: "Needs the crew",
+  unknown: "Unknown",
+};
+
+function InquiryDetail({
+  row,
+  session,
+}: {
+  row: InquiryRow;
+  session?: { id: string; signals: Record<string, unknown> };
+}) {
+  const sig = session?.signals ?? {};
+  const timeline =
+    typeof sig.decision_timeline === "string" ? sig.decision_timeline : null;
+  const decider =
+    typeof sig.decision_makers === "string" ? sig.decision_makers : null;
+
   const flags: string[] = [];
   if (row.share_requested) flags.push("share_requested");
   if (row.alt_dates_requested) flags.push("alt_dates_requested");
@@ -577,6 +643,43 @@ function InquiryDetail({ row }: { row: InquiryRow }) {
         <DetailField label="Inquiry ID" value={row.id} mono />
         <DetailField label="Created" value={formatExact(row.created_at)} />
         <DetailField label="Phone" value={row.phone || "—"} />
+        {row.reserved_at ? (
+          <DetailField label="Reserved" value={formatExact(row.reserved_at)} />
+        ) : null}
+        {row.reserve_call_window ? (
+          <DetailField label="Call booked" value={row.reserve_call_window} />
+        ) : null}
+        {timeline ? (
+          <DetailField
+            label="Timeline"
+            value={TIMELINE_LABEL[timeline] ?? timeline}
+          />
+        ) : null}
+        {decider ? (
+          <DetailField
+            label="Deciding power"
+            value={DECIDER_LABEL[decider] ?? decider}
+          />
+        ) : null}
+        {row.budget_bucket ? (
+          <DetailField label="Budget" value={row.budget_bucket} />
+        ) : null}
+        {row.split_intent ? (
+          <DetailField label="Split intent" value={row.split_intent} />
+        ) : null}
+        {session ? (
+          <DetailField
+            label="Chat session"
+            value={
+              <a
+                href={`/admin/sessions/${session.id}`}
+                className={own.detailLink}
+              >
+                View full session →
+              </a>
+            }
+          />
+        ) : null}
         <DetailField label="Venue" value={row.venue || "—"} />
         <DetailField
           label="Stretch level"
