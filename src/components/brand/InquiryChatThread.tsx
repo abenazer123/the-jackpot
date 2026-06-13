@@ -998,6 +998,8 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
             departure,
             guests: Number.parseInt(groupSize, 10),
             occasion: occasion || undefined,
+            // Persist the total into the session so notify_abe carries it.
+            session_id: harnessSessionIdRef.current ?? undefined,
           }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

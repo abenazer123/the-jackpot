@@ -8,7 +8,14 @@
  * computeQuoteLive (see src/lib/pricing/computeQuoteLive.ts) — same
  * shape, same numbers. We deliberately don't dedupe the two routes:
  * /api/inquiries owns lead capture + email + CRM sync, while this
- * endpoint is read-only and stateless (no DB writes).
+ * endpoint computes the chat-surface number.
+ *
+ * One side effect: when the caller passes a `session_id`, we persist the
+ * computed total into that session's slots (quote_total_cents). This is
+ * what makes a later notify_abe carry the price the guest saw, on BOTH
+ * the scripted widget path and the agent-driven path, with no client
+ * round-trip and no race. Best-effort: a persist failure never affects
+ * the quote response.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
@@ -16,6 +23,7 @@ import { z } from "zod";
 
 import { findAlternateRanges } from "@/lib/inquiry-agent/alternates";
 import { computeQuoteLive } from "@/lib/pricing/computeQuoteLive";
+import { supabaseServer } from "@/lib/supabase-server";
 
 export const runtime = "nodejs";
 
@@ -24,7 +32,37 @@ const QuoteRequestSchema = z.object({
   departure: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   guests: z.number().int().min(1).max(14),
   occasion: z.string().optional(),
+  /** When present, persist the computed total into this session's slots
+   *  so notify_abe carries the price. Pass it only from the real
+   *  price-reveal fetch, never the placeholder-count availability check. */
+  session_id: z.string().optional(),
 });
+
+/** Merge the computed total into the session's slots. Read-modify-write
+ *  so we don't clobber other slots; swallow all errors (never block the
+ *  quote on a bookkeeping write). */
+async function persistTotalToSession(
+  sessionId: string,
+  totalCents: number,
+): Promise<void> {
+  try {
+    const supabase = supabaseServer();
+    const { data: row } = await supabase
+      .from("inquiry_session")
+      .select("slots")
+      .eq("id", sessionId)
+      .maybeSingle();
+    if (!row) return; // session not minted yet — nothing to update
+    const slots = (row.slots ?? {}) as Record<string, unknown>;
+    if (slots.quote_total_cents === totalCents) return; // already current
+    await supabase
+      .from("inquiry_session")
+      .update({ slots: { ...slots, quote_total_cents: totalCents } })
+      .eq("id", sessionId);
+  } catch (err) {
+    console.warn("[quote] session total persist skipped", err);
+  }
+}
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   let body: unknown;
@@ -58,6 +96,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { ok: false, error: result.error, alternates: alternates ?? [] },
       { status: 200 },
     );
+  }
+
+  // Persist the real total into the session (best-effort) so notify_abe
+  // carries the number regardless of which chat path the guest is on.
+  if (parsed.data.session_id) {
+    await persistTotalToSession(parsed.data.session_id, result.quote.totalCents);
   }
 
   return NextResponse.json({ ok: true, quote: result.quote });
