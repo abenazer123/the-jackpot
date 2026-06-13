@@ -1,0 +1,108 @@
+.back {
+  display: inline-block;
+  margin-bottom: 12px;
+  font-family: var(--jp-font-body, "Outfit", sans-serif);
+  font-size: 13px;
+  color: #a08840;
+  text-decoration: none;
+}
+.back:hover {
+  color: #7a6030;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+@media (max-width: 860px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionHighlight {
+  background: #fbf6ea;
+  border: 1px solid #f0e4cc;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.empty {
+  font-family: var(--jp-font-body, "Outfit", sans-serif);
+  font-size: 13px;
+  color: #b09860;
+  font-style: italic;
+}
+
+/* Transcript */
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.msg {
+  max-width: 88%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid #f0e4cc;
+}
+
+.msg_olivia {
+  align-self: flex-start;
+  background: #faf6ef;
+  border-bottom-left-radius: 4px;
+}
+
+.msg_user {
+  align-self: flex-end;
+  background: #fbf6ea;
+  border-bottom-right-radius: 4px;
+}
+
+.msg_system {
+  align-self: center;
+  max-width: 100%;
+  background: transparent;
+  border: 1px dashed #f0e4cc;
+  opacity: 0.85;
+}
+
+.msgMeta {
+  font-family: var(--jp-font-body, "Outfit", sans-serif);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #a08840;
+  margin-bottom: 4px;
+}
+
+.msgBody {
+  font-family: var(--jp-font-body, "Outfit", sans-serif);
+  font-size: 14px;
+  line-height: 1.5;
+  color: #7a6030;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
