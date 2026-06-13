@@ -15,6 +15,16 @@ export interface InquiryPayload {
    *  finalize POST resolves; emails link to this so the coordinator
    *  has the share artifact at her fingertips three days later. */
   tripUrl?: string;
+  /** What the guest did at the price reveal — surfaced in the host
+   *  notification so Abe sees their intent, not just their contact. */
+  reveal?: {
+    primary_cta_path?: string | null;
+    appeal_text?: string | null;
+    appeal_stretch_level?: string | null;
+    alt_dates_requested?: boolean;
+    share_requested?: boolean;
+    split_pay_requested?: boolean;
+  };
   /** Attribution snapshot from UtmProvider — populated when UTMs were
    *  present at first landing (localStorage persists 30 days). */
   attribution?: {

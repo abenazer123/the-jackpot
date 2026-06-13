@@ -166,7 +166,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     reason,
     urgency: "high",
     transcriptUrl: `${siteOrigin()}/admin/sessions/${session_id}`,
-    slots: { ...slots, name, email, phone, reserve_call_window: call_window },
+    slots: {
+      ...slots,
+      name,
+      email,
+      phone,
+      reserve_call_window: call_window,
+      quote_total_cents: quote?.totalCents ?? null,
+    },
     signals: mergedSignals,
     recentTranscript,
   });

@@ -11,7 +11,31 @@ import { FROM_EMAIL, NOTIFY_EMAIL, getResend } from "../resend";
 import { channelLabel } from "./channelLabel";
 import { formatIsoDate, type InquiryPayload } from "./types";
 
+const CTA_LABEL: Record<string, string> = {
+  interested: "Wants to book",
+  share: "Shared with the group",
+  appeal: "Asked about the price",
+};
+
+/** Guest free-text (appeal) is interpolated into the email HTML, so it
+ *  must be escaped. */
+function esc(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function renderHtml(p: InquiryPayload): string {
+  // What the guest did at the reveal, in plain terms.
+  const asks: string[] = [];
+  if (p.reveal?.alt_dates_requested) asks.push("other dates");
+  if (p.reveal?.split_pay_requested) asks.push("splitting payment");
+  if (p.reveal?.share_requested) asks.push("sharing with the group");
+  const ctaPath = p.reveal?.primary_cta_path;
+  const stretch = p.reveal?.appeal_stretch_level;
+
   const rows: Array<[string, string]> = [
     ["Dates", `${formatIsoDate(p.arrival)} → ${formatIsoDate(p.departure)}  ·  ${p.nights} night${p.nights === 1 ? "" : "s"}`],
     ["Guests", String(p.guests)],
@@ -20,6 +44,8 @@ function renderHtml(p: InquiryPayload): string {
     ["Name", p.name],
     ["Email", `<a href="mailto:${p.email}" style="color:#c49025;text-decoration:none">${p.email}</a>`],
     ["Phone", `<a href="tel:${p.phone}" style="color:#c49025;text-decoration:none">${p.phone}</a>`],
+    ...(ctaPath ? [["At reveal", `${CTA_LABEL[ctaPath] ?? ctaPath}${stretch ? ` (${stretch === "far" ? "big stretch" : "close"})` : ""}`] as [string, string]] : []),
+    ...(asks.length ? [["Asked about", asks.join(", ")] as [string, string]] : []),
     ...(p.source ? [["Source", p.source] as [string, string]] : []),
   ];
 
@@ -36,6 +62,14 @@ function renderHtml(p: InquiryPayload): string {
       <div style="font-family:'Outfit',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#7a6030;background:#fbf6ea;border:1px solid #f0e4cc;border-radius:10px;padding:12px 16px;">
         📍 <strong style="font-weight:600;">This lead came from: ${channel}</strong>${campaign ? ` <span style="font-style:italic;color:#a08840;">(${campaign})</span>` : ""}
       </div>
+    </td></tr>`
+    : "";
+
+  const appealHtml = p.reveal?.appeal_text
+    ? `
+    <tr><td style="padding:8px 32px 0;">
+      <div style="font-family:'Outfit',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#a08840;margin-bottom:6px;">What they said</div>
+      <div style="font-family:'Outfit',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#7a6030;background:#faf6ef;border:1px solid #f0e4cc;border-radius:10px;padding:12px 16px;white-space:pre-wrap;">${esc(p.reveal.appeal_text)}</div>
     </td></tr>`
     : "";
 
@@ -66,6 +100,7 @@ function renderHtml(p: InquiryPayload): string {
             ${rowsHtml}
           </table>
         </td></tr>
+        ${appealHtml}
         <tr><td style="padding:24px 32px 28px;">
           <a href="mailto:${p.email}?subject=${encodeURIComponent("Your Jackpot pricing guide")}" style="display:inline-block;padding:12px 24px;background:linear-gradient(135deg,#e8b923,#ff9050);color:#ffffff;font-family:'Outfit',Helvetica,Arial,sans-serif;font-weight:600;font-size:14px;letter-spacing:0.4px;text-decoration:none;border-radius:999px;">Reply to ${p.name.split(" ")[0]}</a>
           <div style="margin-top:16px;font-family:'Outfit',Helvetica,Arial,sans-serif;font-size:11px;color:#b09860;">Submitted ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })} CT</div>

@@ -61,7 +61,30 @@ function s(v: unknown): string | null {
   return null;
 }
 
-function renderSlotRows(slots: Record<string, unknown>): string {
+/** Readable labels for the qualify-beat enums (stored in signals). */
+const TIMELINE_LABEL: Record<string, string> = {
+  immediate: "Ready to lock now",
+  this_week: "Deciding this week",
+  this_month: "Deciding this month",
+  flexible: "Flexible / early",
+  unknown: "Unknown",
+};
+const DECIDER_LABEL: Record<string, string> = {
+  solo: "Decides solo",
+  partner: "Decides with partner",
+  crew: "Needs the crew",
+  unknown: "Unknown",
+};
+
+function money(cents: unknown): string | null {
+  if (typeof cents !== "number" || !Number.isFinite(cents)) return null;
+  return `$${Math.round(cents / 100).toLocaleString("en-US")}`;
+}
+
+function collectRows(
+  slots: Record<string, unknown>,
+  signals: Record<string, unknown>,
+): Array<[string, string]> {
   const rows: Array<[string, string]> = [];
   const push = (label: string, value: unknown) => {
     const v = s(value);
@@ -74,14 +97,34 @@ function renderSlotRows(slots: Record<string, unknown>): string {
   push("Dates", slots.arrival && slots.departure ? `${slots.arrival} to ${slots.departure}` : null);
   push("Guests", slots.guest_count);
   push("Occasion", slots.occasion);
-  push("Price reaction", slots.price_response);
+  // Reserve: the call window the guest booked + the held quote.
+  push("Call booked", slots.reserve_call_window);
+  push("Quote", money(slots.quote_total_cents));
+  // Qualify beat lives in signals, not slots.
+  {
+    const t = s(signals.decision_timeline);
+    if (t) push("Timeline", TIMELINE_LABEL[t] ?? t);
+    const d = s(signals.decision_makers);
+    if (d) push("Deciding power", DECIDER_LABEL[d] ?? d);
+  }
+  push("Price reaction", slots.price_response ?? signals.price_response);
   push("Date flexibility", slots.date_flexibility);
-  push("Decision maker", slots.decision_makers);
-  push("Timeline", slots.decision_timeline);
-  push("Objections", slots.objections);
+  // Passive read of the conversation (only when the LLM inferred them).
+  push("Stage", signals.stage);
+  push("Urgency", signals.urgency);
+  push("Fit", signals.fit);
+  push("Sentiment", signals.sentiment);
+  push("Objections", signals.objections ?? slots.objections);
   push("Comparing", slots.alternatives_considered);
 
-  return rows
+  return rows;
+}
+
+function renderSlotRows(
+  slots: Record<string, unknown>,
+  signals: Record<string, unknown>,
+): string {
+  return collectRows(slots, signals)
     .map(
       ([label, value]) => `
       <tr>
@@ -132,7 +175,7 @@ function renderHtml(p: AbeNotificationInput): string {
 
       <tr><td style="padding:24px 32px 0;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-          ${renderSlotRows(p.slots)}
+          ${renderSlotRows(p.slots, p.signals)}
         </table>
       </td></tr>
 
@@ -158,9 +201,8 @@ function renderHtml(p: AbeNotificationInput): string {
 
 function renderText(p: AbeNotificationInput): string {
   const urgency = URGENCY_LABEL[p.urgency];
-  const slotLines = Object.entries(p.slots)
-    .filter(([, v]) => s(v))
-    .map(([k, v]) => `${k}: ${s(v)}`)
+  const slotLines = collectRows(p.slots, p.signals)
+    .map(([label, value]) => `${label}: ${value}`)
     .join("\n");
   const thread = p.recentTranscript
     .map((m) => `${m.role.toUpperCase()}: ${m.body}`)

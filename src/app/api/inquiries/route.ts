@@ -726,7 +726,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const tripUrl = finalizedShareToken
     ? `${origin}/trip/${finalizedShareToken}`
     : undefined;
-  const emailPayload = { ...p, tripUrl };
+  const emailPayload = {
+    ...p,
+    tripUrl,
+    reveal: {
+      primary_cta_path: reveal.primary_cta_path,
+      appeal_text: reveal.appeal_text,
+      appeal_stretch_level: reveal.appeal_stretch_level,
+      alt_dates_requested: reveal.alt_dates_requested,
+      share_requested: reveal.share_requested,
+      split_pay_requested: reveal.split_pay_requested,
+    },
+  };
 
   // Emails — fire and log, don't block the response.
   Promise.allSettled([
