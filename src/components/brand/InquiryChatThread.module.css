@@ -419,11 +419,9 @@
    questions as tailoring the number, with a progress treatment that
    advances on each tap so answering feels like summoning the price. */
 .qualify {
-  position: relative;
-  overflow: hidden;
   align-self: stretch;
-  margin: 4px 4px 4px 32px;
-  padding: 16px 16px 18px;
+  margin: 4px 4px 8px 32px;
+  padding: 16px 16px 20px;
   background: var(--jp-linen);
   border: 1px solid var(--jp-border-default);
   border-radius: var(--jp-radius-md);
@@ -433,79 +431,79 @@
   gap: 14px;
 }
 
-/* Ambient occasion motif: a decorative layer behind the content. Only
-   transform + opacity animate, so it stays on the compositor. */
-.qualifyMotif {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
+/* Contained "calculating" band: holds the ONE process animation (a
+   champagne coupe), the cycling work-step headline, and progress. Clipped
+   so nothing spills into the question/answer area below. */
+.qualifyCalc {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--jp-gold-10);
   border-radius: var(--jp-radius-md);
+  overflow: hidden;
 }
 
-.qualifySparkle {
+/* Champagne coupe with bubbles rising inside it. */
+.qualifyGlass {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 60px;
+}
+
+.qualifyGlassSvg {
+  display: block;
+  width: 40px;
+  height: 60px;
+}
+
+.qualifyGlassSvg path {
+  stroke: var(--jp-gold-deep);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.qualifyGlassFill {
+  stroke: none;
+  fill: var(--jp-gold);
+  opacity: 0.5;
+}
+
+.qualifyGlassBubble {
   position: absolute;
-  color: var(--jp-gold-deep);
-  line-height: 1;
-  opacity: 0;
-  transform: scale(0.4);
-  will-change: transform, opacity;
-  text-shadow: 0 0 6px rgba(212, 169, 48, 0.45);
-  animation-name: qualifyTwinkle;
-  animation-iteration-count: infinite;
-  animation-timing-function: ease-in-out;
-}
-
-@keyframes qualifyTwinkle {
-  0%,
-  100% {
-    opacity: 0;
-    transform: scale(0.4) rotate(0deg);
-  }
-  50% {
-    opacity: 0.82;
-    transform: scale(1.1) rotate(20deg);
-  }
-}
-
-.qualifyBubble {
-  position: absolute;
-  bottom: -10px;
+  bottom: 40%;
   border-radius: 50%;
-  background: radial-gradient(
-    circle at 32% 28%,
-    rgba(255, 252, 242, 0.98),
-    var(--jp-gold) 75%
-  );
-  box-shadow: 0 0 5px rgba(212, 169, 48, 0.4);
+  background: var(--jp-gold-bright, #efd279);
+  box-shadow: 0 0 3px rgba(212, 169, 48, 0.5);
   opacity: 0;
   will-change: transform, opacity;
-  animation-name: qualifyRise;
+  animation-name: qualifyGlassRise;
   animation-iteration-count: infinite;
   animation-timing-function: ease-in;
 }
 
-@keyframes qualifyRise {
+@keyframes qualifyGlassRise {
   0% {
     opacity: 0;
-    transform: translate(0, 0) scale(0.7);
+    transform: translateY(0) scale(0.6);
   }
-  20% {
-    opacity: 0.9;
+  25% {
+    opacity: 0.95;
   }
   100% {
     opacity: 0;
-    transform: translate(var(--drift, 0), -120px) scale(1.05);
+    transform: translateY(-24px) scale(1);
   }
 }
 
-/* Keep all content above the motif layer. */
-.qualifyLead,
-.qualifyProgress,
-.qualifyQ {
-  position: relative;
-  z-index: 1;
+.qualifyCalcMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .qualifyLead {
@@ -515,12 +513,6 @@
   font-size: 14px;
   line-height: 1.45;
   color: var(--jp-text-primary);
-}
-
-.qualifyProgress {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
 }
 
 .qualifyTrack {
@@ -608,7 +600,7 @@
   .qualifyProgressLabel {
     animation: none;
   }
-  .qualifyMotif {
+  .qualifyGlassBubble {
     display: none;
   }
 }

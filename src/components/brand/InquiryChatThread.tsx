@@ -271,34 +271,16 @@ const CALC_HEADLINES = [
   "Finalizing your number",
 ];
 
-/** Ambient occasion motif behind the qualify beat. Deterministic
- *  positions (no random, SSR-safe), capped counts, transform/opacity
- *  only, all gated behind prefers-reduced-motion. Bachelorette gets gold
- *  sparkles + rising champagne bubbles; other occasions get the calmer
- *  sparkle field for now. */
-const QUALIFY_SPARKLES = [
-  { left: 6, top: 14, size: 18, delay: 0, dur: 2.2 },
-  { left: 90, top: 10, size: 22, delay: 0.5, dur: 2.6 },
-  { left: 80, top: 28, size: 13, delay: 1.1, dur: 2.0 },
-  { left: 8, top: 26, size: 14, delay: 0.3, dur: 2.4 },
-  { left: 95, top: 52, size: 16, delay: 1.4, dur: 2.3 },
-  { left: 70, top: 72, size: 12, delay: 0.8, dur: 2.1 },
-  { left: 6, top: 80, size: 17, delay: 1.7, dur: 2.7 },
-  { left: 88, top: 86, size: 14, delay: 0.45, dur: 2.2 },
-  { left: 40, top: 92, size: 12, delay: 1.2, dur: 2.5 },
-  { left: 56, top: 6, size: 13, delay: 1.9, dur: 2.3 },
-  { left: 94, top: 40, size: 11, delay: 0.65, dur: 2.0 },
-  { left: 92, top: 18, size: 10, delay: 2.1, dur: 2.6 },
-];
-const QUALIFY_BUBBLES = [
-  { left: 10, size: 10, delay: 0, dur: 4.0, drift: 6 },
-  { left: 26, size: 7, delay: 1.3, dur: 4.8, drift: -5 },
-  { left: 44, size: 12, delay: 0.6, dur: 4.3, drift: 8 },
-  { left: 60, size: 8, delay: 2.0, dur: 5.0, drift: -7 },
-  { left: 74, size: 11, delay: 0.9, dur: 4.5, drift: 5 },
-  { left: 86, size: 7, delay: 1.6, dur: 4.9, drift: -6 },
-  { left: 95, size: 9, delay: 0.3, dur: 4.2, drift: 4 },
-  { left: 36, size: 6, delay: 2.4, dur: 5.2, drift: -4 },
+/** Champagne bubbles rising INSIDE the coupe in the contained
+ *  "calculating" band (not scattered across the card). `left` is a % of
+ *  the glass, positioned within the bowl; they rise + fade on a loop.
+ *  Deterministic (SSR-safe), transform/opacity only, reduced-motion off. */
+const QUALIFY_GLASS_BUBBLES = [
+  { left: 42, size: 3, delay: 0, dur: 2.2 },
+  { left: 55, size: 2.5, delay: 0.7, dur: 2.6 },
+  { left: 48, size: 3.5, delay: 1.3, dur: 2.4 },
+  { left: 61, size: 2, delay: 1.9, dur: 2.9 },
+  { left: 37, size: 2.5, delay: 1.0, dur: 2.5 },
 ];
 
 /** Vertical (9:12) media carousel for the price card. Placeholder for
@@ -2196,66 +2178,61 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                   fetches in the background; the reveal waits for both. */}
               {!qualifyDone && !priceError && (
                 <div className={`${styles.qualify} ${styles.fadeIn}`}>
-                  {/* Ambient occasion motif (decorative; reduced-motion
-                      hides it). Bachelorette adds rising champagne
-                      bubbles to the gold sparkle field. */}
-                  <div className={styles.qualifyMotif} aria-hidden="true">
-                    {QUALIFY_SPARKLES.map((sp, i) => (
-                      <span
-                        key={`sp${i}`}
-                        className={styles.qualifySparkle}
-                        style={{
-                          left: `${sp.left}%`,
-                          top: `${sp.top}%`,
-                          fontSize: `${sp.size}px`,
-                          animationDelay: `${sp.delay}s`,
-                          animationDuration: `${sp.dur}s`,
-                        }}
-                      >
-                        ✦
-                      </span>
-                    ))}
-                    {occasion === "Bachelorette" &&
-                      QUALIFY_BUBBLES.map((b, i) => (
-                        <span
-                          key={`bb${i}`}
-                          className={styles.qualifyBubble}
-                          style={
-                            {
-                              left: `${b.left}%`,
-                              width: `${b.size}px`,
-                              height: `${b.size}px`,
-                              animationDelay: `${b.delay}s`,
-                              animationDuration: `${b.dur}s`,
-                              "--drift": `${b.drift}px`,
-                            } as React.CSSProperties
-                          }
-                        />
-                      ))}
-                  </div>
                   <p className={styles.qualifyLead}>
                     Pulling your real number. Two quick taps so it&rsquo;s
                     accurate.
                   </p>
 
-                  {/* Decorative "we're computing" motion: a determinate
-                      fill that advances on each tap, a gold shimmer that
-                      sweeps continuously, and a headline that cycles
-                      through the real work-steps. aria-hidden because the
-                      questions below carry the actual state for AT. */}
-                  <div className={styles.qualifyProgress} aria-hidden="true">
-                    <span className={styles.qualifyTrack}>
+                  {/* Contained "calculating" band: ONE deliberate motion
+                      (a champagne coupe with bubbles rising inside it) plus
+                      the cycling work-step headline + progress. Everything
+                      is clipped to this band, so the question/answer area
+                      below stays completely clear. aria-hidden; the
+                      questions carry the real state for AT. */}
+                  <div className={styles.qualifyCalc} aria-hidden="true">
+                    <div className={styles.qualifyGlass}>
+                      <svg
+                        className={styles.qualifyGlassSvg}
+                        viewBox="0 0 40 64"
+                        fill="none"
+                      >
+                        <path
+                          className={styles.qualifyGlassFill}
+                          d="M12.6 28 L14 41 Q20 47 26 41 L27.4 28 Z"
+                        />
+                        <path d="M11 7 L14 41 Q20 47 26 41 L29 7" />
+                        <path d="M11 7 L29 7" />
+                        <path d="M20 47 L20 56" />
+                        <path d="M13.5 57.5 L26.5 57.5" />
+                      </svg>
+                      {QUALIFY_GLASS_BUBBLES.map((b, i) => (
+                        <span
+                          key={`gb${i}`}
+                          className={styles.qualifyGlassBubble}
+                          style={{
+                            left: `${b.left}%`,
+                            width: `${b.size}px`,
+                            height: `${b.size}px`,
+                            animationDelay: `${b.delay}s`,
+                            animationDuration: `${b.dur}s`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className={styles.qualifyCalcMeta}>
+                      <span className={styles.qualifyTrack}>
+                        <span
+                          className={styles.qualifyFill}
+                          data-step={searchStage ? (decisionPower ? 3 : 2) : 1}
+                        />
+                      </span>
                       <span
-                        className={styles.qualifyFill}
-                        data-step={searchStage ? (decisionPower ? 3 : 2) : 1}
-                      />
-                    </span>
-                    <span
-                      key={calcStep}
-                      className={styles.qualifyProgressLabel}
-                    >
-                      {CALC_HEADLINES[calcStep]}
-                    </span>
+                        key={calcStep}
+                        className={styles.qualifyProgressLabel}
+                      >
+                        {CALC_HEADLINES[calcStep]}
+                      </span>
+                    </div>
                   </div>
 
                   {!searchStage ? (
