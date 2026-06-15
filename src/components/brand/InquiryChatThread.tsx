@@ -345,12 +345,6 @@ function formatShort(iso: string): string {
   });
 }
 
-function weekdayShort(iso: string): string {
-  if (!iso) return "";
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "short" });
-}
-
 /** Digits-only length check — phone is required wherever we capture
  *  contact, so a present-but-junk value should still fail. */
 function looksLikePhone(s: string): boolean {
@@ -1268,15 +1262,15 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   };
 
   // Reserve scheduler options. The hold IS scheduling Abe's lock-in
-  // call: pick a day (next five days) and a window. We only ask for
-  // contact we don't already have, and phone is required.
+  // call: pick Today or Tomorrow and a window. We only ask for contact
+  // we don't already have, and phone is required.
   const CALL_DAYS = useMemo(
     () =>
-      Array.from({ length: 5 }, (_, i) => {
+      Array.from({ length: 2 }, (_, i) => {
         const iso = addDaysIso(today, i);
         return {
           iso,
-          label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : weekdayShort(iso),
+          label: i === 0 ? "Today" : "Tomorrow",
           sub: formatShort(iso),
         };
       }),
