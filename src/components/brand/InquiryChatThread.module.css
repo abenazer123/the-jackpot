@@ -1741,6 +1741,29 @@
   color: var(--jp-gold-deep);
 }
 
+/* Phone confirmation inside the scheduler. The number Abe will dial,
+   surfaced for confirm/edit even when we already have it. The soft gold
+   card sets it apart from the day/window pickers so it reads as a "check
+   this is right" beat, not just another field. */
+.schedPhone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 6px 0;
+  padding: 12px;
+  border: 1px solid var(--jp-gold-25);
+  border-radius: var(--jp-radius-md);
+  background: var(--jp-gold-10);
+}
+
+.contactHint {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--jp-text-secondary);
+}
+
 /* Reserve scheduler — pick the day + window for Abe's lock-in call. */
 .schedLabel {
   font-family: var(--jp-font-body);

@@ -2805,9 +2805,20 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                   />
                 </label>
               )}
-              {needsPhone && (
+              {/* Phone is the number Abe actually dials, so we always
+                  surface it here, prefilled when we have it, so the guest
+                  can confirm it or correct it before the hold lands. */}
+              <div className={styles.schedPhone}>
                 <label className={styles.contactRow}>
-                  <span className={styles.contactLabel}>Phone</span>
+                  <span className={styles.contactLabel}>
+                    <span
+                      className={styles.reserveScarcityMark}
+                      aria-hidden="true"
+                    >
+                      ✦
+                    </span>
+                    Number for the call
+                  </span>
                   <input
                     type="tel"
                     className={styles.contactInput}
@@ -2818,7 +2829,12 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     placeholder="Best number for the call"
                   />
                 </label>
-              )}
+                <span className={styles.contactHint}>
+                  {needsPhone
+                    ? "Abe will call this number to lock in your dates."
+                    : "This is the number Abe will call. Edit it if there's a better one."}
+                </span>
+              </div>
 
               <div className={styles.schedLabel}>Pick a day for the call</div>
               <div className={styles.schedDays}>
