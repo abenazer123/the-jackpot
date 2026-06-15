@@ -345,6 +345,16 @@ function formatShort(iso: string): string {
   });
 }
 
+/** Minutes past midnight to a "h:mm AM/PM" clock label (e.g. 750 →
+ *  "12:30 PM"). Used by the reserve scheduler's time slots. */
+function minutesToTimeLabel(min: number): string {
+  const h24 = Math.floor(min / 60);
+  const m = min % 60;
+  const ampm = h24 >= 12 ? "PM" : "AM";
+  const h = h24 % 12 || 12;
+  return `${h}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
 /** Digits-only length check — phone is required wherever we capture
  *  contact, so a present-but-junk value should still fail. */
 function looksLikePhone(s: string): boolean {
@@ -873,10 +883,14 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   } | null>(null);
   const [shareBusy, setShareBusy] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
-  // Reserve scheduler: the guest picks the day + window for Abe's
-  // lock-in call. The call is the hold's guarantee mechanism.
+  // Reserve scheduler: the guest picks the day, a window, then a
+  // specific time for Abe's lock-in call. The call is the hold's
+  // guarantee mechanism. `callWindow` only drives progressive
+  // disclosure (which window's times are revealed); `callTime` (minutes
+  // past midnight, CT) is the actual booked slot.
   const [callDate, setCallDate] = useState("");
   const [callWindow, setCallWindow] = useState("");
+  const [callTime, setCallTime] = useState<number | null>(null);
   // Lean price card: each value pillar expands inline (accordion), the
   // breakdown is its own accordion, reviews reveal more in place, and a
   // tapped video opens a fullscreen showcase. No single details modal.
@@ -927,6 +941,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setReserveBusy(false);
       setCallDate("");
       setCallWindow("");
+      setCallTime(null);
       setOpenPillar(null);
       setBreakdownOpen(false);
       setReviewsExpanded(false);
@@ -1276,7 +1291,24 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       }),
     [today],
   );
-  const CALL_WINDOWS = ["Morning", "Afternoon", "Evening"];
+  // Call windows for Abe's lock-in call, 12 PM to 9 PM CT. The day
+  // starts at noon so there's no Morning. Each window reveals specific
+  // times stepped every 15 minutes (a 10-minute call with a 5-minute
+  // buffer between slots). Times are CT — Abe's and the property's zone.
+  const CALL_WINDOWS = useMemo(
+    () =>
+      [
+        { key: "Afternoon", startMin: 12 * 60, endMin: 17 * 60 - 15 },
+        { key: "Evening", startMin: 17 * 60, endMin: 21 * 60 },
+      ].map((w) => ({
+        ...w,
+        times: Array.from(
+          { length: Math.floor((w.endMin - w.startMin) / 15) + 1 },
+          (_, i) => w.startMin + i * 15,
+        ),
+      })),
+    [],
+  );
 
   const needsName = !contactName.trim();
   const needsEmail = !looksLikeEmail(contactEmail);
@@ -1286,7 +1318,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     looksLikeEmail(contactEmail) &&
     looksLikePhone(contactPhone) &&
     !!callDate &&
-    !!callWindow;
+    callTime !== null;
 
   /** Reserve flow, single submit: collect only the contact we're
    *  missing (phone required), book the day + window for Abe's call,
@@ -1297,7 +1329,8 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     const epoch = sessionEpochRef.current;
     const dayOpt = CALL_DAYS.find((d) => d.iso === callDate);
     const dayText = dayOpt ? `${dayOpt.label}, ${dayOpt.sub}` : "";
-    const slotText = `${dayText} · ${callWindow}`;
+    const timeText = callTime !== null ? `${minutesToTimeLabel(callTime)} CT` : "";
+    const slotText = `${dayText} · ${timeText}`;
     setReserveBusy(true);
     try {
       // Always commit first: this mints the session in the no-intent
@@ -1307,7 +1340,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       const sid = await commitScripted(
         "reserve",
         slotText,
-        `Holding ${formatRangeShort(arrival, departure)}, nothing due. Abe will call ${dayText} in the ${callWindow.toLowerCase()} to lock it in.`,
+        `Holding ${formatRangeShort(arrival, departure)}, nothing due. Abe will call ${dayText} at ${timeText} to lock it in.`,
       );
       if (!sid) throw new Error("no_session");
       const res = await fetch("/api/inquiry-agent/reserve", {
@@ -1330,7 +1363,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         { role: "user", body: slotText, ts: new Date().toISOString() },
         {
           role: "olivia",
-          body: `Your weekend is on hold, nothing due. We hold it 7 days so the next group gets a fair shot, and Abe will call you ${dayText} in the ${callWindow.toLowerCase()} to lock it in. Talk soon.`,
+          body: `Your weekend is on hold, nothing due. We hold it 7 days so the next group gets a fair shot, and Abe will call you ${dayText} at ${timeText} to lock it in. Talk soon.`,
           ts: new Date().toISOString(),
         },
       ]);
@@ -2850,16 +2883,44 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
               <div className={styles.schedWindows}>
                 {CALL_WINDOWS.map((w) => (
                   <button
-                    key={w}
+                    key={w.key}
                     type="button"
                     className={styles.schedWindow}
-                    data-active={callWindow === w ? "true" : undefined}
-                    onClick={() => setCallWindow(w)}
+                    data-active={callWindow === w.key ? "true" : undefined}
+                    onClick={() => {
+                      if (w.key !== callWindow) {
+                        setCallWindow(w.key);
+                        setCallTime(null);
+                      }
+                    }}
                   >
-                    {w}
+                    {w.key}
                   </button>
                 ))}
               </div>
+
+              {callWindow && (
+                <>
+                  <div className={styles.schedLabel}>
+                    Pick a time (CT)
+                  </div>
+                  <div className={`${styles.schedTimes} ${styles.fadeIn}`}>
+                    {CALL_WINDOWS.find(
+                      (w) => w.key === callWindow,
+                    )?.times.map((min) => (
+                      <button
+                        key={min}
+                        type="button"
+                        className={styles.schedTime}
+                        data-active={callTime === min ? "true" : undefined}
+                        onClick={() => setCallTime(min)}
+                      >
+                        {minutesToTimeLabel(min)}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <button
                 type="submit"

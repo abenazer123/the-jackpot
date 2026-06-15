@@ -1866,6 +1866,44 @@
   color: var(--jp-gold-deep);
 }
 
+/* Specific time slots revealed under the selected window. A wrapping
+   grid of compact chips, sized for a comfortable tap target. */
+.schedTimes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.schedTime {
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+  background: var(--jp-bg-primary);
+  color: var(--jp-text-primary);
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background var(--jp-transition),
+    border-color var(--jp-transition),
+    color var(--jp-transition);
+}
+
+.schedTime:hover {
+  border-color: var(--jp-border-hover);
+  background: var(--jp-gold-10);
+}
+
+.schedTime[data-active="true"] {
+  border-color: var(--jp-gold);
+  background: var(--jp-gold-25);
+  color: var(--jp-gold-deep);
+  font-weight: 600;
+}
+
 /* Alternate-dates widget — tappable cards shown when the requested
    nights are booked. Each row picks that range and re-quotes. */
 .altDates {
