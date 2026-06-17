@@ -2454,30 +2454,38 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                         Any budget per person in mind for the home? Totally fine
                         if not.
                       </p>
-                      <div className={styles.moneyInputWrap}>
-                        <span className={styles.moneyPrefix}>$</span>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          className={styles.contactInput}
-                          placeholder="per person"
-                          value={budgetPP}
-                          onChange={(e) => setBudgetPP(e.target.value)}
-                          aria-label="Budget per person"
-                        />
-                      </div>
-                      <div className={styles.qualifyChips}>
+                      <div className={styles.budgetRow}>
+                        <div className={styles.moneyInputWrap}>
+                          <span className={styles.moneyPrefix}>$</span>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            className={styles.contactInput}
+                            placeholder="per person"
+                            value={budgetPP}
+                            onChange={(e) => setBudgetPP(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && budgetPP.trim()) {
+                                setBudgetUnsure(false);
+                                setBudgetDone(true);
+                              }
+                            }}
+                            aria-label="Budget per person"
+                          />
+                        </div>
                         <button
                           type="button"
-                          className={styles.qualifyChip}
+                          className={styles.budgetSet}
                           disabled={!budgetPP.trim()}
                           onClick={() => {
                             setBudgetUnsure(false);
                             setBudgetDone(true);
                           }}
                         >
-                          That works
+                          Set
                         </button>
+                      </div>
+                      <div className={styles.qualifyChips}>
                         <button
                           type="button"
                           className={styles.qualifyChip}

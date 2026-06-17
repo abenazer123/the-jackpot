@@ -1963,6 +1963,42 @@
   padding-left: 26px;
 }
 
+/* Budget input + its inline confirm button on one row, so the CTA reads
+   as "set this number" rather than a stray full-width chip. */
+.budgetRow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.budgetRow .moneyInputWrap {
+  flex: 1 1 0;
+}
+
+.budgetSet {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--jp-radius-sm);
+  background: var(--jp-gradient-button);
+  color: var(--jp-text-on-color);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter var(--jp-transition);
+}
+
+.budgetSet:not(:disabled):hover {
+  filter: brightness(1.03);
+}
+
+.budgetSet:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Alternate-dates widget — tappable cards shown when the requested
    nights are booked. Each row picks that range and re-quotes. */
 .altDates {
