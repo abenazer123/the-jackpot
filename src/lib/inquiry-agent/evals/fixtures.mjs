@@ -195,4 +195,62 @@ export const FIXTURES = [
       { send: "we could maybe do a weekday", expect: { bodyNoDashes: true, bodyNoForbidden: true, noSelfNegotiate: true, noFillerOpener: true } },
     ],
   },
+
+  // ── Intake rebuild: birthday occasion ───────────────────────────
+  {
+    name: "birthday_occasion_extracts",
+    startPhase: "state1",
+    startSlots: {},
+    turns: [
+      {
+        send: "it's my mom's 60th birthday, 8 of us",
+        expect: {
+          bodyNoDashes: true,
+          slotEquals: { occasion: "birthday", guest_count: 8 },
+          actionFired: "commit_facts",
+          noFakeProgress: true,
+        },
+      },
+    ],
+  },
+
+  // ── Intake rebuild: celebrant name capture ──────────────────────
+  {
+    name: "celebrant_name_extracts",
+    startPhase: "state1",
+    startSlots: {},
+    turns: [
+      {
+        send: "bachelorette for the bride, her name is Jenna, 10 of us",
+        expect: {
+          bodyNoDashes: true,
+          slotEquals: { occasion: "bachelorette", guest_count: 10, celebrant_name: "Jenna" },
+          actionFired: "commit_facts",
+          noFakeProgress: true,
+        },
+      },
+    ],
+  },
+
+  // ── Intake rebuild: budget per person is gathered, never haggled ─
+  {
+    name: "budget_per_person_gathered_not_negotiated",
+    startPhase: "post_price",
+    startSlots: { arrival: "2026-09-18", departure: "2026-09-20", guest_count: 10, occasion: "bachelorette", name: "Maya", email: "maya@example.com" },
+    turns: [
+      {
+        send: "we were hoping to keep the house around 300 per person",
+        expect: {
+          bodyNoDashes: true,
+          // A budget mention is gathered, never met with a counter or a
+          // quote. (Naming Abe is only mandatory on price pushback, not
+          // a volunteered budget, so we don't require it here.)
+          bodyNotMatches: /\$\s?\d{3,}/,
+          noSelfNegotiate: true,
+          noFillerOpener: true,
+          noFakeProgress: true,
+        },
+      },
+    ],
+  },
 ];
