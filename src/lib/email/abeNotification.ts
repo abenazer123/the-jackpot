@@ -95,6 +95,12 @@ const DECIDER_LABEL: Record<string, string> = {
   crew: "Needs the crew",
   unknown: "Unknown",
 };
+/** Explicit date-flex toggle from the intake widget (distinct from the
+ *  LLM-inferred date_flexibility enum). */
+const DATEFLEX_LABEL: Record<string, string> = {
+  locked: "Locked in",
+  soft: "Some wiggle room",
+};
 
 function money(cents: unknown): string | null {
   if (typeof cents !== "number" || !Number.isFinite(cents)) return null;
@@ -117,6 +123,7 @@ function collectRows(
   push("Dates", slots.arrival && slots.departure ? `${slots.arrival} to ${slots.departure}` : null);
   push("Guests", slots.guest_count);
   push("Occasion", slots.occasion);
+  push("Celebrant", slots.celebrant_name);
   // Reserve: the call window the guest booked + the held quote.
   push("Call booked", slots.reserve_call_window);
   push("Quote", money(slots.quote_total_cents));
@@ -126,9 +133,18 @@ function collectRows(
     if (t) push("Timeline", TIMELINE_LABEL[t] ?? t);
     const d = s(signals.decision_makers);
     if (d) push("Deciding power", DECIDER_LABEL[d] ?? d);
+    // Budget per person, captured in the qualify beat (signals) or
+    // volunteered to the LLM (slots). Prefix $ for bare numbers.
+    const b = s(signals.house_budget_pp) ?? s(slots.house_budget_pp);
+    if (b) push("Budget / person", /^\d+$/.test(b) ? `$${b}` : b);
   }
   push("Price reaction", slots.price_response ?? signals.price_response);
-  push("Date flexibility", slots.date_flexibility);
+  // Explicit intake toggle wins over the inferred enum when present.
+  {
+    const df = s(signals.date_flex);
+    if (df) push("Date flexibility", DATEFLEX_LABEL[df] ?? df);
+    else push("Date flexibility", slots.date_flexibility);
+  }
   // Passive read of the conversation (only when the LLM inferred them).
   push("Stage", signals.stage);
   push("Urgency", signals.urgency);

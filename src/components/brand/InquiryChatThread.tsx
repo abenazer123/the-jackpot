@@ -177,8 +177,8 @@ const OCCASION_FROM_HARNESS: Record<string, (typeof OCCASION_OPTIONS)[number]> =
 // (concrete service, not the vague "it's handled").
 const OCCASION_WORD: Record<string, string> = {
   Bachelorette: "bachelorette",
-  Bachelor: "bachelor weekend",
-  Wedding: "wedding weekend",
+  Bachelor: "bachelor trip",
+  Wedding: "wedding",
   Birthday: "birthday",
   Other: "celebration",
 };
@@ -202,14 +202,14 @@ const VALUE_FRAMING: Record<string, OccasionFraming> = {
     topline:
       "The sendoff the bride actually remembers, the whole crew together for it.",
     proof: [
-      "Composed for the weekend and set up before you arrive, down to the courtyard made for the photos.",
+      "Composed for the stay and set up before you arrive, down to the courtyard made for the photos.",
       "Bar, cinema, hot tub, parlor. No tab, no closing time, no car home, no strangers.",
       "Abe plans it with you, knows the city, sends the photographer list, and is there start to finish.",
     ],
   },
   Bachelor: {
     topline:
-      "The kind of weekend the group still talks about, all of you under one roof.",
+      "The kind of stay the group still talks about, all of you under one roof.",
     proof: [
       "The whole place dialed for the group and set up before you arrive.",
       "Bar, cinema, game room, hot tub. The night in that beats a night out.",
@@ -236,7 +236,7 @@ const VALUE_FRAMING: Record<string, OccasionFraming> = {
   },
   default: {
     topline:
-      "The difference between a trip you coordinate and a weekend you’re actually in.",
+      "The difference between a trip you coordinate and a stay you’re actually in.",
     proof: [
       "Composed for the celebration and set up before you arrive.",
       "Cinema, hot tub, bar and parlor, the courtyard with the fire pit. The night out comes to you.",
@@ -261,7 +261,7 @@ const STARS = "★★★★★";
 // (without the figure) and signals finite, intentional progress, so the
 // drip reads as an unveil, not a stall. Indexed by revealStage (0..4).
 const REVEAL_STATUS = [
-  "Pulling your weekend together…",
+  "Pulling your stay together…",
   "Here’s the place itself.",
   "What it’s made for.",
   "What your crew says.",
@@ -277,7 +277,7 @@ const REVEAL_STATUS = [
  *  gate. */
 const CALC_HEADLINES = [
   "Pulling Chicago’s live rates",
-  "Checking your weekend on the calendar",
+  "Checking your dates on the calendar",
   "Adding city taxes and fees",
   "Comparing nearby stays",
   "Sizing it for your group",
@@ -438,12 +438,12 @@ function priceErrorMessage(code: string, hasAlternates = false): string {
       return "Hmm. I can’t pull a real number for those dates right this second. Let me flag Abe to text you a quote in the next few minutes. Want me to do that?";
     case "unavailable":
       return hasAlternates
-        ? "Those exact nights are taken. Here are the closest open weekends I can pull a real number for."
-        : "Those exact nights are taken, and I’m not seeing close open weekends right now. Want me to flag Abe to find you something?";
+        ? "Those exact nights are taken. Here are the closest open dates I can pull a real number for."
+        : "Those exact nights are taken, and I’m not seeing close open dates right now. Want me to flag Abe to find you something?";
     case "sub_floor":
       return "We’re a 2 night minimum. Want me to bump the stay by a night so we can get you a real number?";
     case "max_guests":
-      return "We cap at 14 guests on a single booking. Could the group come down to 14, or split into two weekends?";
+      return "We cap at 14 guests on a single booking. Could the group come down to 14, or split into two stays?";
     default:
       return "Something on my end is off. Let me get Abe on it. What's the best number for him to text you?";
   }
@@ -535,7 +535,7 @@ function ShareLinkWidget({
   if (perPersonCents > 0) {
     metaParts.push(`$${Math.round(perPersonCents / 100)}/person/night`);
   }
-  if (occasion) metaParts.push(`${occasion} weekend`);
+  if (occasion) metaParts.push(`${occasion} stay`);
   const metaLine = metaParts.join(" · ") || "Sleeps 14 · 5BR · 3BA";
 
   return (
@@ -1399,7 +1399,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         { role: "user", body: slotText, ts: new Date().toISOString() },
         {
           role: "olivia",
-          body: `Your weekend is on hold, nothing due. We hold it 7 days so the next group gets a fair shot, and Abe will call you ${dayText} at ${timeText} to lock it in. Talk soon.`,
+          body: `Your dates are on hold, nothing due. We hold them 7 days so the next group gets a fair shot, and Abe will call you ${dayText} at ${timeText} to lock it in. Talk soon.`,
           ts: new Date().toISOString(),
         },
       ]);
@@ -1521,9 +1521,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     setAgentDriven(true);
     const body =
       intent === "share"
-        ? "[EVENT:chip_intent_share] Guest tapped 'Send this to my group'. They are the coordinator organizing for a crew. Follow the 'Sharing to the group' rules. Your opener speaks to what THEY get: hand the group a page everyone can see, let everyone vote on the weekend so the date settles without them chasing anyone, and nothing is due or held to share it. Never state our goal ('get buy in', 'get the crew in'). Warm, confident, declarative, luxury tone, no hype, no one word opener. Then collect what you need one widget at a time (date_picker, group_occasion, contact_form). Once you have name, email, dates, count, and occasion, propose show_widget: share_link."
+        ? "[EVENT:chip_intent_share] Guest tapped 'Send this to my group'. They are the coordinator organizing for a crew. Follow the 'Sharing to the group' rules. Your opener speaks to what THEY get: hand the group a page everyone can see, let everyone vote on the dates so they settle without them chasing anyone, and nothing is due or held to share it. Never state our goal ('get buy in', 'get the crew in'). Warm, confident, declarative, luxury tone, no hype, no one word opener. Then collect what you need one widget at a time (date_picker, group_occasion, contact_form). Once you have name, email, dates, count, and occasion, propose show_widget: share_link."
         : intent === "reserve"
-          ? "[EVENT:chip_intent_reserve] Guest just tapped 'Reserve now, nothing due'. They want to hold dates with no payment. Acknowledge warmly that they can lock dates with nothing due today. Collect what you need one widget at a time (date_picker for the weekend, group_occasion for size and occasion), then fire show_widget: reserve_form to capture their info and hold it. Do NOT talk price; this is the no-payment hold path."
+          ? "[EVENT:chip_intent_reserve] Guest just tapped 'Reserve now, nothing due'. They want to hold dates with no payment. Acknowledge warmly that they can lock dates with nothing due today. Collect what you need one widget at a time (date_picker for the dates, group_occasion for size and occasion), then fire show_widget: reserve_form to capture their info and hold it. Do NOT talk price; this is the no-payment hold path."
           : "[EVENT:chip_intent_unknown]";
     try {
       const res = await fetch("/api/inquiry-agent/turn", {
@@ -1816,7 +1816,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
         ? "Hold the dates while they decide. Free, nothing due."
         : exploring
           ? "Lock the dates while you think. Nothing due now."
-          : "Locks your weekend now. Nothing due, no card needed.",
+          : "Locks your dates now. Nothing due, no card needed.",
     };
     const share = {
       key: "share" as const,
@@ -2151,7 +2151,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
 
               {/* Taken pivot: the real check during "checking" came back
                   unavailable, so instead of the wide-open promise we show
-                  the closest open weekends right here. No prices yet (no
+                  the closest open dates right here. No prices yet (no
                   group), so the rows are date-only. */}
               {!agentDriven &&
                 availablePhase >= 1 &&
@@ -2163,14 +2163,14 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                       </div>
                       <div className={styles.msgBubble}>
                         {firstName ? `${firstName}, those ` : "Those "}exact
-                        nights are taken. Here are the closest open weekends I
+                        nights are taken. Here are the closest open dates I
                         can pull a real number for.
                       </div>
                     </div>
                     {availabilityAlts.length > 0 && (
                       <div className={`${styles.altDates} ${styles.fadeIn}`}>
                         <div className={styles.altDatesLabel}>
-                          Closest open weekends &middot; tap one to use those
+                          Closest open dates &middot; tap one to use those
                           dates
                         </div>
                         {availabilityAlts.map((alt) => (
@@ -2543,7 +2543,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                         if (revealStage < 5) skipReveal();
                       }}
                     >
-                      <div className={styles.priceCardLabel}>Your weekend</div>
+                      <div className={styles.priceCardLabel}>Your stay</div>
                       <div className={styles.priceCardRange}>
                         {formatRangeShort(hdrArrival, hdrDeparture)}
                       </div>
@@ -2845,7 +2845,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     <div className={styles.shareReserveNudge}>
                       <p className={styles.shareReserveText}>
                         Sent it? I&rsquo;ll hold these dates while your crew
-                        votes, so nobody loses the weekend. Nothing due.
+                        votes, so nobody loses the dates. Nothing due.
                       </p>
                       <button
                         type="button"
@@ -2873,7 +2873,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
               {priceError === "unavailable" && alternates.length > 0 && (
                 <div className={`${styles.altDates} ${styles.fadeIn}`}>
                   <div className={styles.altDatesLabel}>
-                    Closest open weekends · tap one for the real number
+                    Closest open dates · tap one for the real number
                   </div>
                   {alternates.map((alt) => (
                     <button
