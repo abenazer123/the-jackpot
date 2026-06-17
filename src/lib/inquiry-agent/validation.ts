@@ -25,6 +25,7 @@ export const OccasionSchema = z.enum([
   "bachelor",
   "bachelorette",
   "wedding",
+  "birthday",
   "other",
 ]);
 
