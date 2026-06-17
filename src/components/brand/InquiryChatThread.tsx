@@ -148,6 +148,7 @@ const OCCASION_OPTIONS = [
   "Bachelor",
   "Bachelorette",
   "Wedding",
+  "Birthday",
   "Other",
 ] as const;
 
@@ -159,6 +160,7 @@ const OCCASION_FROM_HARNESS: Record<string, (typeof OCCASION_OPTIONS)[number]> =
   bachelor: "Bachelor",
   bachelorette: "Bachelorette",
   wedding: "Wedding",
+  birthday: "Birthday",
   other: "Other",
 };
 
@@ -177,6 +179,7 @@ const OCCASION_WORD: Record<string, string> = {
   Bachelorette: "bachelorette",
   Bachelor: "bachelor weekend",
   Wedding: "wedding weekend",
+  Birthday: "birthday",
   Other: "celebration",
 };
 
@@ -222,6 +225,15 @@ const VALUE_FRAMING: Record<string, OccasionFraming> = {
       "Abe plans it with you, knows the city, and is there start to finish.",
     ],
   },
+  Birthday: {
+    topline:
+      "The birthday everyone clears their calendar for, the whole crew under one roof.",
+    proof: [
+      "The whole place dialed for the celebration and set up before you arrive, down to the courtyard for the photos.",
+      "Bar, cinema, hot tub, parlor. The party comes to you, no tab and no closing time.",
+      "Abe plans it with you, knows the city, and is there start to finish, never a lockbox.",
+    ],
+  },
   default: {
     topline:
       "The difference between a trip you coordinate and a weekend you’re actually in.",
@@ -239,6 +251,7 @@ const OCCASION_TO_REVIEW_TAG: Record<string, OccasionId | null> = {
   Bachelorette: "bachelorette",
   Bachelor: "bachelorette",
   Wedding: "wedding",
+  Birthday: null,
   Other: null,
 };
 
@@ -682,13 +695,19 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   // their deciding power (drives the CTA priority in item 3).
   const [searchStage, setSearchStage] = useState(""); // "starting" | "awhile" | "ready"
   const [decisionPower, setDecisionPower] = useState(""); // "lock" | "crew" | "relay"
+  // Q3 of the qualify beat: budget per person. `budgetDone` gates the
+  // reveal alongside the other two taps; "Not sure yet" sets it without
+  // a number.
+  const [budgetPP, setBudgetPP] = useState("");
+  const [budgetDone, setBudgetDone] = useState(false);
+  const [budgetUnsure, setBudgetUnsure] = useState(false);
   // Index into CALC_HEADLINES; cycles on a timer while the qualify beat
   // is open so the "we're computing" headline keeps moving even between
   // taps. Decorative (aria-hidden); the questions carry the real state.
   const [calcStep, setCalcStep] = useState(0);
   // Both taps answered. Gates the price reveal (the taps summon it) and
   // drives the context-aware CTA priority.
-  const qualifyDone = !!searchStage && !!decisionPower;
+  const qualifyDone = !!searchStage && !!decisionPower && budgetDone;
   /** Move focus to the second qualify question when it replaces the
    *  first, so keyboard / screen-reader users aren't stranded on a chip
    *  that just unmounted. */
@@ -735,6 +754,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       out.decision_timeline = timeline[searchStage];
     if (decisionPower && deciders[decisionPower])
       out.decision_makers = deciders[decisionPower];
+    if (dateFlex) out.date_flex = dateFlex;
+    if (!budgetUnsure && budgetPP.trim())
+      out.house_budget_pp = budgetPP.trim();
     return out;
   };
 
@@ -749,6 +771,8 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     if (groupSize)
       slots.guest_count = Number.parseInt(groupSize, 10) || groupSize;
     if (occasion) slots.occasion = occasion;
+    const celeb = celebrantMe ? contactName.trim() || "me" : celebrantName.trim();
+    if (celeb) slots.celebrant_name = celeb;
     // Persist the revealed number into the session so a later notify_abe
     // (guest asks for Abe after seeing the price) carries the quote.
     if (priceQuote) slots.quote_total_cents = priceQuote.totalCents;
@@ -891,6 +915,12 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   const [callDate, setCallDate] = useState("");
   const [callWindow, setCallWindow] = useState("");
   const [callTime, setCallTime] = useState<number | null>(null);
+  // Intake additions: date flexibility (asked in the group/occasion
+  // widget) and the celebrant (asked after occasion, skipped for
+  // "Other"). Budget state lives with the qualify-beat state above.
+  const [dateFlex, setDateFlex] = useState(""); // "" | "locked" | "soft"
+  const [celebrantMe, setCelebrantMe] = useState(false);
+  const [celebrantName, setCelebrantName] = useState("");
   // Lean price card: each value pillar expands inline (accordion), the
   // breakdown is its own accordion, reviews reveal more in place, and a
   // tapped video opens a fullscreen showcase. No single details modal.
@@ -923,6 +953,12 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
       setContactPhone("");
       setGroupSize("");
       setOccasion("");
+      setDateFlex("");
+      setCelebrantMe(false);
+      setCelebrantName("");
+      setBudgetPP("");
+      setBudgetDone(false);
+      setBudgetUnsure(false);
       setHarnessSessionId(null);
       harnessSessionIdRef.current = null;
       setHarnessMessages([]);
@@ -1687,7 +1723,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     }
   };
 
-  const canSaveContact = looksLikeEmail(contactEmail) && looksLikePhone(contactPhone);
+  const canSaveContact =
+    !!contactName.trim() &&
+    looksLikeEmail(contactEmail) &&
+    looksLikePhone(contactPhone);
   const handleSaveContact = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!canSaveContact) return;
@@ -1705,7 +1744,24 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
     setStep("available");
   };
 
-  const canContinueOptions = !!groupSize && !!occasion;
+  // Celebrant only matters for named occasions; "Other" has no honoree.
+  const celebrantNeeded = !!occasion && occasion !== "Other";
+  const celebrantFilled = celebrantMe || !!celebrantName.trim();
+  const celebrantPrompt =
+    occasion === "Bachelorette"
+      ? "Who's the lucky bride?"
+      : occasion === "Bachelor"
+        ? "Who's the lucky groom?"
+        : occasion === "Wedding"
+          ? "Who's the happy couple?"
+          : occasion === "Birthday"
+            ? "Whose birthday are we celebrating?"
+            : "Who are we celebrating?";
+  const canContinueOptions =
+    !!dateFlex &&
+    !!groupSize &&
+    !!occasion &&
+    (!celebrantNeeded || celebrantFilled);
   const handleContinueOptions = () => {
     if (!canContinueOptions) return;
     if (agentDriven) {
@@ -1882,8 +1938,9 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                 O
               </div>
               <div className={styles.msgBubble}>
-                What weekend are you thinking? Pick any dates and I&apos;ll
-                pull a real number.
+                Hi, I&apos;m Olivia. I help plan the stays around here. Pick
+                the dates you&apos;re eyeing and I&apos;ll check they&apos;re
+                open and pull you a real price.
               </div>
             </div>
           )}
@@ -1999,9 +2056,10 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                   </div>
                   <div className={styles.msgBubble}>
                     <em>
-                      While I look. Where can I reach you? In case we
-                      get disconnected, I&apos;ll send the full answer your
-                      way.
+                      While I check those dates, where should I send
+                      everything? Drop your name, email, and phone and I&apos;ll
+                      send the full breakdown your way, so you have it to share
+                      with the crew.
                     </em>
                   </div>
                 </div>
@@ -2141,15 +2199,34 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                     </div>
                     <div className={styles.msgBubble}>
                       {goodNewsGreeting}
-                      {formatRangeLong(arrival, departure)} is wide open. Two
-                      quick things so I can pull your most accurate price:{" "}
-                      <em>your group size and what you&apos;re celebrating.</em>
+                      {formatRangeLong(arrival, departure)} is wide open. A few
+                      quick things so I can pull your most accurate price and
+                      tailor it to your trip.
                     </div>
                   </div>
                 )}
 
               {availablePhase >= 2 && availability !== "taken" && (
                 <div className={`${styles.optionsBlock} ${styles.fadeIn}`}>
+                  <div className={styles.optionsGroup}>
+                    <p className={styles.optionsLabel}>Are your dates flexible?</p>
+                    <div className={styles.flexToggle}>
+                      {[
+                        { key: "locked", label: "Locked in" },
+                        { key: "soft", label: "A little wiggle room" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          className={styles.optionChip}
+                          data-selected={dateFlex === opt.key ? "true" : undefined}
+                          onClick={() => setDateFlex(opt.key)}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className={styles.optionsGroup}>
                     <p className={styles.optionsLabel}>How big&apos;s the group</p>
                     <input
@@ -2192,6 +2269,33 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                       ))}
                     </div>
                   </div>
+                  {celebrantNeeded && (
+                    <div className={`${styles.optionsGroup} ${styles.fadeIn}`}>
+                      <p className={styles.optionsLabel}>{celebrantPrompt}</p>
+                      <div className={styles.celebrantRow}>
+                        <button
+                          type="button"
+                          className={`${styles.optionChip} ${styles.celebrantMe}`}
+                          data-selected={celebrantMe ? "true" : undefined}
+                          onClick={() => {
+                            setCelebrantMe((v) => !v);
+                            setCelebrantName("");
+                          }}
+                        >
+                          Me
+                        </button>
+                        <input
+                          type="text"
+                          className={styles.contactInput}
+                          placeholder="their name"
+                          value={celebrantMe ? "" : celebrantName}
+                          disabled={celebrantMe}
+                          onChange={(e) => setCelebrantName(e.target.value)}
+                          aria-label="Who we're celebrating"
+                        />
+                      </div>
+                    </div>
+                  )}
                   <button
                     type="button"
                     className={styles.optionsContinue}
@@ -2226,7 +2330,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
               {!qualifyDone && !priceError && (
                 <div className={`${styles.qualify} ${styles.fadeIn}`}>
                   <p className={styles.qualifyLead}>
-                    Pulling your real number. Two quick taps so it&rsquo;s
+                    Pulling your real number. A few quick taps so it&rsquo;s
                     accurate.
                   </p>
 
@@ -2311,7 +2415,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                         </button>
                       </div>
                     </div>
-                  ) : (
+                  ) : !decisionPower ? (
                     <div className={styles.qualifyQ} key="q2">
                       <p
                         className={styles.qualifyQLabel}
@@ -2341,6 +2445,49 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
                           onClick={() => setDecisionPower("relay")}
                         >
                           I&rsquo;m gathering for whoever&rsquo;s deciding
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={styles.qualifyQ} key="q3">
+                      <p className={styles.qualifyQLabel}>
+                        Any budget per person in mind for the home? Totally fine
+                        if not.
+                      </p>
+                      <div className={styles.moneyInputWrap}>
+                        <span className={styles.moneyPrefix}>$</span>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          className={styles.contactInput}
+                          placeholder="per person"
+                          value={budgetPP}
+                          onChange={(e) => setBudgetPP(e.target.value)}
+                          aria-label="Budget per person"
+                        />
+                      </div>
+                      <div className={styles.qualifyChips}>
+                        <button
+                          type="button"
+                          className={styles.qualifyChip}
+                          disabled={!budgetPP.trim()}
+                          onClick={() => {
+                            setBudgetUnsure(false);
+                            setBudgetDone(true);
+                          }}
+                        >
+                          That works
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.qualifyChip}
+                          onClick={() => {
+                            setBudgetUnsure(true);
+                            setBudgetPP("");
+                            setBudgetDone(true);
+                          }}
+                        >
+                          Not sure yet
                         </button>
                       </div>
                     </div>

@@ -1904,6 +1904,65 @@
   font-weight: 600;
 }
 
+/* ---- Intake flow widgets (date flex, celebrant, budget) ---- */
+
+/* Date flexibility: two segmented options that split the row evenly. */
+.flexToggle {
+  display: flex;
+  gap: 8px;
+}
+
+.flexToggle .optionChip {
+  flex: 1 1 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Celebrant: a Me quick-pick beside the name input. */
+.celebrantRow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.celebrantRow .contactInput {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.celebrantMe {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding-left: 18px;
+  padding-right: 18px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Budget: a money input with a $ prefix, paired with band chips. */
+.moneyInputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.moneyPrefix {
+  position: absolute;
+  left: 12px;
+  font-family: var(--jp-font-body);
+  font-size: 15px;
+  color: var(--jp-text-tertiary);
+  pointer-events: none;
+}
+
+.moneyInputWrap .contactInput {
+  flex: 1 1 0;
+  padding-left: 26px;
+}
+
 /* Alternate-dates widget — tappable cards shown when the requested
    nights are booked. Each row picks that range and re-quotes. */
 .altDates {
