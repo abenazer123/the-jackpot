@@ -16,6 +16,7 @@
 import { supabaseServer } from "@/lib/supabase-server";
 
 import styles from "../admin.module.css";
+import own from "./marketing.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -206,7 +207,7 @@ export default async function MarketingPage() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>By channel (all time)</h2>
         <div className={styles.table}>
-          <div className={styles.tableHeader}>
+          <div className={`${styles.tableHeader} ${own.row5}`}>
             <span>Channel</span>
             <span>Leads</span>
             <span>Share</span>
@@ -214,7 +215,7 @@ export default async function MarketingPage() {
             <span>Reserve rate</span>
           </div>
           {channelRows.map(([key, v]) => (
-            <div key={key} className={styles.tableRow}>
+            <div key={key} className={`${styles.tableRow} ${own.row5}`}>
               <span className={styles.cell}>{channelLabel(key)}</span>
               <span className={styles.cell}>{v.leads}</span>
               <span className={styles.cell}>{pct(v.leads, totalLeads)}</span>
@@ -228,7 +229,7 @@ export default async function MarketingPage() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Month over month</h2>
         <div className={styles.table}>
-          <div className={styles.tableHeader}>
+          <div className={`${styles.tableHeader} ${own.row5}`}>
             <span>Month</span>
             <span>Leads</span>
             <span>Batch</span>
@@ -239,7 +240,7 @@ export default async function MarketingPage() {
             const cpl = v.batch > 0 ? money(batchSpend / v.batch) : "—";
             const partial = key === currentMonth;
             return (
-              <div key={key} className={styles.tableRow}>
+              <div key={key} className={`${styles.tableRow} ${own.row5}`}>
                 <span className={styles.cell}>
                   {monthLabel(key)}
                   {partial ? (

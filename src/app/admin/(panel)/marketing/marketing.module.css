@@ -1,0 +1,13 @@
+/* Both marketing tables are "label + four numbers", so one 5-column
+   grid template serves the header and the rows. The shared .tableRow
+   already sets display:grid/align/gap/padding; the header only has
+   .tableHeader, so this class restates them to line the header up too. */
+.row5 {
+  display: grid;
+  grid-template-columns:
+    minmax(140px, 1.6fr) /* channel / month */
+    repeat(4, minmax(80px, 1fr));
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+}
