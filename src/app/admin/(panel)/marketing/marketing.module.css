@@ -11,3 +11,86 @@
   gap: 12px;
   padding: 10px 14px;
 }
+
+/* Batch lead profile — a grid of breakdown cards, each a list of
+   labeled horizontal bars. */
+.profileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.profileCard {
+  padding: 16px 18px;
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-md);
+}
+
+.profileTitle {
+  margin: 0;
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+}
+
+.profileStat {
+  margin: 2px 0 0;
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  color: var(--jp-text-secondary);
+}
+
+.dist {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.distRow {
+  display: grid;
+  grid-template-columns: minmax(72px, 0.9fr) 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.distLabel {
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  color: var(--jp-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.distBar {
+  display: block;
+  height: 8px;
+  background: var(--jp-gold-10, #fbf6ea);
+  border-radius: var(--jp-radius-full);
+  overflow: hidden;
+}
+
+.distFill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  background: var(--jp-gradient-button);
+  border-radius: var(--jp-radius-full);
+}
+
+.distVal {
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--jp-text-secondary);
+  white-space: nowrap;
+}
+
+.distPct {
+  color: var(--jp-text-tertiary);
+}

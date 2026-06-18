@@ -38,6 +38,9 @@ interface Row {
   utm_source: string | null;
   referrer: string | null;
   reserved_at: string | null;
+  reason: string | null;
+  guests: number | null;
+  nights: number | null;
 }
 
 /** Resolve a lead to one channel. Batch is detected by either the UTM
@@ -78,6 +81,18 @@ function pct(n: number, d: number): string {
   return `${Math.round((n / d) * 100)}%`;
 }
 
+/** Count occurrences, blanks folded into "Unknown", sorted by count. */
+function distribution(
+  values: Array<string | number | null | undefined>,
+): Array<[string, number]> {
+  const m = new Map<string, number>();
+  for (const v of values) {
+    const k = v == null || v === "" ? "Unknown" : String(v);
+    m.set(k, (m.get(k) ?? 0) + 1);
+  }
+  return [...m.entries()].sort((a, b) => b[1] - a[1]);
+}
+
 const CHANNEL_LABEL: Record<string, string> = {
   batch: "Batch",
   hero: "Hero (site)",
@@ -91,12 +106,63 @@ function channelLabel(key: string): string {
   return CHANNEL_LABEL[key] ?? key;
 }
 
+/** A labeled horizontal-bar breakdown. Bars scale to the largest row so
+ *  small samples still read; the value shows count and share of total. */
+function Distribution({
+  rows,
+  total,
+}: {
+  rows: Array<[string, number]>;
+  total: number;
+}) {
+  const max = Math.max(1, ...rows.map(([, n]) => n));
+  return (
+    <div className={own.dist}>
+      {rows.map(([label, n]) => (
+        <div key={label} className={own.distRow}>
+          <span className={own.distLabel}>{label}</span>
+          <span className={own.distBar} aria-hidden="true">
+            <span
+              className={own.distFill}
+              style={{ width: `${Math.round((n / max) * 100)}%` }}
+            />
+          </span>
+          <span className={own.distVal}>
+            {n}
+            {total ? (
+              <span className={own.distPct}> · {Math.round((n / total) * 100)}%</span>
+            ) : null}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ProfileCard({
+  title,
+  stat,
+  children,
+}: {
+  title: string;
+  stat?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={own.profileCard}>
+      <p className={own.profileTitle}>{title}</p>
+      {stat ? <p className={own.profileStat}>{stat}</p> : null}
+      {children}
+    </div>
+  );
+}
+
 export default async function MarketingPage() {
   const sb = supabaseServer();
   const { data, error } = await sb
     .from("inquiries")
     .select(
-      "status, created_at, email, arrival, departure, source, utm_source, referrer, reserved_at",
+      "status, created_at, email, arrival, departure, source, utm_source, referrer, reserved_at, reason, guests, nights",
     )
     .order("created_at", { ascending: false });
 
@@ -161,6 +227,81 @@ export default async function MarketingPage() {
   const batchCplThisMonth =
     thisMonth.batch > 0 ? money(batchSpend / thisMonth.batch) : "—";
 
+  // ── Batch lead profile (who's actually coming from the paid channel) ─
+  const batchLeads = leads.filter((r) => channelOf(r) === "batch");
+  const bn = batchLeads.length;
+
+  const occasionDist = distribution(batchLeads.map((r) => r.reason));
+
+  const guestNums = batchLeads
+    .map((r) => r.guests)
+    .filter((n): n is number => typeof n === "number" && n > 0)
+    .sort((a, b) => a - b);
+  const guestAvg = guestNums.length
+    ? (guestNums.reduce((a, b) => a + b, 0) / guestNums.length).toFixed(1)
+    : "—";
+  const guestMedian = guestNums.length
+    ? guestNums[Math.floor(guestNums.length / 2)]
+    : "—";
+  const guestDist = distribution(batchLeads.map((r) => r.guests)).sort(
+    (a, b) => Number(a[0]) - Number(b[0]),
+  );
+
+  const nightsDist = distribution(batchLeads.map((r) => r.nights)).sort(
+    (a, b) => Number(a[0]) - Number(b[0]),
+  );
+
+  const monthMap = new Map<string, number>();
+  for (const r of batchLeads) {
+    const k = (r.arrival ?? "").slice(0, 7) || "Unknown";
+    monthMap.set(k, (monthMap.get(k) ?? 0) + 1);
+  }
+  const arrivalMonths = [...monthMap.entries()].sort((a, b) =>
+    a[0] < b[0] ? -1 : 1,
+  );
+
+  const LEAD_BUCKETS: Array<[string, number, number]> = [
+    ["Under 2 weeks", 0, 14],
+    ["2 to 4 weeks", 14, 30],
+    ["1 to 2 months", 30, 60],
+    ["2 to 4 months", 60, 120],
+    ["4 months+", 120, Infinity],
+  ];
+  const leadCounts = new Map<string, number>();
+  const leadDays: number[] = [];
+  for (const r of batchLeads) {
+    if (!r.arrival || !r.created_at) continue;
+    const d = Math.round(
+      (new Date(r.arrival + "T00:00:00").getTime() -
+        new Date(r.created_at).getTime()) /
+        86_400_000,
+    );
+    if (d < 0) continue;
+    leadDays.push(d);
+    for (const [label, lo, hi] of LEAD_BUCKETS) {
+      if (d >= lo && d < hi) {
+        leadCounts.set(label, (leadCounts.get(label) ?? 0) + 1);
+        break;
+      }
+    }
+  }
+  leadDays.sort((a, b) => a - b);
+  const leadMedian = leadDays.length
+    ? leadDays[Math.floor(leadDays.length / 2)]
+    : null;
+  const leadRows: Array<[string, number]> = LEAD_BUCKETS.map(([label]) => [
+    label,
+    leadCounts.get(label) ?? 0,
+  ]);
+
+  const batchSubmitted = batchLeads.filter(
+    (r) => r.status === "submitted",
+  ).length;
+  const completionRows: Array<[string, number]> = [
+    ["Completed inquiry", batchSubmitted],
+    ["Partial (dropped)", bn - batchSubmitted],
+  ];
+
   return (
     <div>
       <h1 className={styles.h1}>Marketing</h1>
@@ -224,6 +365,43 @@ export default async function MarketingPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>
+          Who&apos;s coming from Batch ({bn} leads)
+        </h2>
+        <div className={own.profileGrid}>
+          <ProfileCard title="Occasion">
+            <Distribution rows={occasionDist} total={bn} />
+          </ProfileCard>
+          <ProfileCard
+            title="Group size"
+            stat={`avg ${guestAvg} · median ${guestMedian} guests`}
+          >
+            <Distribution rows={guestDist} total={bn} />
+          </ProfileCard>
+          <ProfileCard title="Trip length">
+            <Distribution rows={nightsDist} total={bn} />
+          </ProfileCard>
+          <ProfileCard title="When they want to come">
+            <Distribution rows={arrivalMonths} total={bn} />
+          </ProfileCard>
+          <ProfileCard
+            title="How far ahead they inquire"
+            stat={leadMedian != null ? `median ${leadMedian} days out` : undefined}
+          >
+            <Distribution rows={leadRows} total={bn} />
+          </ProfileCard>
+          <ProfileCard title="Inquiry completion">
+            <Distribution rows={completionRows} total={bn} />
+          </ProfileCard>
+        </div>
+        <p className={styles.kpiSub} style={{ marginTop: 12 }}>
+          Trip length is in nights. Group size and occasion come from the
+          inquiry form. Most Batch leads complete the inquiry, then go quiet,
+          so the gap is post inquiry, not first touch.
+        </p>
       </section>
 
       <section className={styles.section}>
