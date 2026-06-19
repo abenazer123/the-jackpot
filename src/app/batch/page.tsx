@@ -237,16 +237,26 @@ function OccasionScreen() {
     const reduced = prefersReducedMotion();
     const dest = `/chat?occasion=${encodeURIComponent(occasion)}`;
     if (occasion === "bachelorette" && !reduced) {
-      // Fire the burst, then route to the destination behind it (the
-      // confetti canvas lives on document.body and survives the nav, so
-      // it keeps falling over the loaded page and reveals it top to bottom
-      // under gravity). No fade — the page itself is the reveal.
-      fireConfetti();
-      window.setTimeout(() => router.push(dest), 500);
-    } else {
-      setExiting(true);
-      window.setTimeout(() => router.push(dest), reduced ? 0 : 380);
+      // Opaque cover (matches the dark screen) so NOTHING behind shows.
+      // Appended to <body> so it survives the route change. Sequence:
+      // boom + full cover -> hold 0.5s (destination loads behind) -> the
+      // whole cover slides down, revealing the page top to bottom.
+      const cover = document.createElement("div");
+      cover.style.cssText =
+        "position:fixed;inset:0;z-index:9998;will-change:transform;" +
+        "transition:transform 0.85s cubic-bezier(0.4,0,0.2,1);" +
+        "background:radial-gradient(130% 85% at 50% -5%, rgba(232,185,35,0.2) 0%, rgba(212,169,48,0.05) 32%, transparent 62%), #14100b;";
+      document.body.appendChild(cover);
+      fireConfetti(); // canvas is zIndex 9999, above the cover
+      router.push(dest); // loads behind the cover during the hold
+      window.setTimeout(() => {
+        cover.style.transform = "translateY(100%)";
+      }, 500);
+      window.setTimeout(() => cover.remove(), 1450);
+      return;
     }
+    setExiting(true);
+    window.setTimeout(() => router.push(dest), reduced ? 0 : 380);
   }
 
   function fireConfetti() {
