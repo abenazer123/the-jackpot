@@ -314,6 +314,11 @@ now or keep the `/chat` fallback until the real one is designed.
   confetti. Confetti palette = bachelorette pink/red/blush/white mixed
   with brand gold/gold-bright/peach/cream — a confetti-only, scoped
   exception to the no-pink rule, not a brand-wide change.
+- 2026-06-18 — /batch screen restyled to a deep WARM near-black bg (gold
+  glow) for a dramatic "reveal" feel + mobile layout fixed. Scoped brand
+  exception (like the pink confetti): warm-toned dark, confined to the
+  /batch entry screen, does NOT change the brand's warm-and-light rule
+  anywhere else. Truer/cooler black is a one-line dial if wanted.
 - 2026-06-18 — Phases 1-3 built: landing_event table + /api/landing-event
   (migration applied to prod), the /batch screen (8 options + hierarchy +
   Something-else free-text), staged entrance animation, and bachelorette
