@@ -314,6 +314,13 @@ now or keep the `/chat` fallback until the real one is designed.
   confetti. Confetti palette = bachelorette pink/red/blush/white mixed
   with brand gold/gold-bright/peach/cream — a confetti-only, scoped
   exception to the no-pink rule, not a brand-wide change.
+- 2026-06-18 — Phases 1-3 built: landing_event table + /api/landing-event
+  (migration applied to prod), the /batch screen (8 options + hierarchy +
+  Something-else free-text), staged entrance animation, and bachelorette
+  confetti exit. Verified live: events write w/ attribution, routes to
+  /chat?occasion=…. Icons/timing/confetti density flagged for visual
+  iteration. Remaining: Phase 4 (/chat reads occasion), 5 (dashboard
+  section), 6 (chat widget + enum alignment).
 - 2026-06-18 — Routing locked: bachelorette → dedicated page; all others →
   one shared occasion-aware page; v1 everything falls back to
   `/chat?occasion=…`, no dead ends. UTM preservation mandatory (reuse

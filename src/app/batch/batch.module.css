@@ -1,0 +1,379 @@
+/* /batch occasion screen.
+   Default styles = the composed (final) state. `.playing` layers the
+   staged entrance on top (animations run from hidden → composed). `.static`
+   shows the composed state instantly (reduced motion / already seen this
+   session). `.pending` (no modifier) stays invisible for the one frame
+   before JS decides, so there's no flash of the composed layout. */
+
+.screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 20px 48px;
+  background:
+    radial-gradient(120% 80% at 50% -10%, var(--jp-gold-10) 0%, transparent 60%),
+    var(--jp-bg-secondary, #faf6ef);
+  opacity: 0; /* pending: invisible until mode decided */
+  transition: opacity 0.38s ease;
+}
+
+.playing,
+.static {
+  opacity: 1;
+}
+
+.exiting {
+  opacity: 0;
+  transition: opacity 0.38s ease;
+}
+
+/* ── Brand lockup ──────────────────────────────────────────────── */
+.lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 36px;
+  will-change: transform;
+}
+
+.the {
+  font-family: var(--jp-font-body);
+  font-weight: 300;
+  font-size: 11px;
+  letter-spacing: 7px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+  padding-left: 7px;
+}
+
+.wordmark {
+  font-family: var(--jp-font-display);
+  font-weight: 700;
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--jp-gold);
+  display: inline-flex;
+}
+
+.letter {
+  display: inline-block;
+}
+
+.burst {
+  margin-top: 6px;
+  display: inline-flex;
+}
+
+.chicago {
+  margin-top: 4px;
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--jp-text-secondary);
+  opacity: 0.7;
+  padding-left: 5px;
+}
+
+/* ── Question + options ────────────────────────────────────────── */
+.body {
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+}
+
+.question {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 30px;
+  line-height: 1.15;
+  color: var(--jp-text-primary);
+  margin: 0 0 6px;
+}
+
+.sub {
+  font-family: var(--jp-font-body);
+  font-weight: 400;
+  font-size: 15px;
+  color: var(--jp-text-secondary);
+  margin: 0 0 24px;
+}
+
+/* Hero card — bachelorette, the dominant choice. */
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 76px;
+  padding: 18px 22px;
+  margin-bottom: 12px;
+  border: 1px solid var(--jp-gold);
+  border-radius: var(--jp-radius-lg);
+  background: linear-gradient(135deg, var(--jp-gold-10), var(--jp-gold-25));
+  color: var(--jp-gold-deep);
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(139, 112, 64, 0.1);
+  transition:
+    transform var(--jp-transition),
+    box-shadow var(--jp-transition),
+    border-color var(--jp-transition);
+}
+
+.hero:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(139, 112, 64, 0.16);
+}
+
+.heroIcon {
+  display: inline-flex;
+  color: var(--jp-gold-deep);
+}
+
+.heroLabel {
+  font-family: var(--jp-font-display);
+  font-weight: 600;
+  font-size: 24px;
+  color: var(--jp-text-primary);
+}
+
+/* Standard cards — the next clear occasions. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 96px;
+  padding: 16px 10px;
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-md);
+  background: var(--jp-bg-primary);
+  color: var(--jp-text-primary);
+  cursor: pointer;
+  transition:
+    transform var(--jp-transition),
+    border-color var(--jp-transition),
+    background var(--jp-transition);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--jp-gold);
+  background: var(--jp-gold-10);
+}
+
+.cardIcon {
+  display: inline-flex;
+  color: var(--jp-gold-deep);
+}
+
+.cardLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Lighter row — the friends-weekend cousins + "Something else". */
+.lighterRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-full);
+  background: transparent;
+  color: var(--jp-text-secondary);
+  font-family: var(--jp-font-body);
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color var(--jp-transition),
+    color var(--jp-transition),
+    background var(--jp-transition);
+}
+
+.chip:hover,
+.chip[data-active="true"] {
+  border-color: var(--jp-gold);
+  color: var(--jp-gold-deep);
+  background: var(--jp-gold-10);
+}
+
+.otherRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.otherInput {
+  flex: 1 1 0;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--jp-border-default);
+  border-radius: var(--jp-radius-sm);
+  background: var(--jp-bg-primary);
+  font-family: var(--jp-font-body);
+  font-size: 15px;
+  color: var(--jp-text-primary);
+  outline: none;
+}
+
+.otherInput:focus {
+  border-color: var(--jp-gold);
+  box-shadow: 0 0 0 2px rgba(212, 169, 48, 0.25);
+}
+
+.otherGo {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--jp-radius-sm);
+  background: var(--jp-gradient-button);
+  color: var(--jp-text-on-color);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+@media (max-width: 460px) {
+  .cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .wordmark {
+    font-size: 42px;
+  }
+}
+
+/* ── Entrance choreography (only under .playing) ───────────────────
+   1. wordmark letters rise in     (0 → ~0.4s)
+   2. starburst pops               (~0.45s)
+   3. lockup holds centered, then docks to the top (0 → 1.3s)
+   4. body + options rise in       (1.35s → ~1.9s)                    */
+
+.playing .lockup {
+  animation: lockupDock 1.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.playing .letter {
+  animation: riseIn 0.42s ease both;
+}
+
+.playing .the {
+  animation: fade 0.5s ease both;
+  animation-delay: 0.1s;
+}
+
+.playing .burst {
+  animation: burstIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.45s;
+}
+
+.playing .chicago {
+  animation: fadeChicago 0.5s ease both;
+  animation-delay: 0.55s;
+}
+
+.playing .body {
+  animation: bodyRise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 1.35s;
+}
+
+@keyframes lockupDock {
+  0% {
+    transform: translateY(34vh) scale(1.16);
+  }
+  42% {
+    transform: translateY(34vh) scale(1.16);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes burstIn {
+  from {
+    opacity: 0;
+    transform: scale(0.2) rotate(-30deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeChicago {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.7;
+  }
+}
+
+@keyframes bodyRise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen,
+  .playing .lockup,
+  .playing .letter,
+  .playing .the,
+  .playing .burst,
+  .playing .chicago,
+  .playing .body {
+    animation: none !important;
+    transition: none !important;
+  }
+}
