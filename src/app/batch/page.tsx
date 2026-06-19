@@ -240,96 +240,118 @@ function OccasionScreen() {
       // then cascades from the top down to reveal the page behind. Route
       // right after the pop so /chat loads behind the cover during the hold.
       confettiCoverReveal();
-      window.setTimeout(() => router.push(dest), 200);
+      window.setTimeout(() => router.push(dest), 350);
       return;
     }
     setExiting(true);
     window.setTimeout(() => router.push(dest), reduced ? 0 : 380);
   }
 
-  // One celebratory transition: a confetti cover snaps in and fully
-  // covers the screen, holds (stuck, nothing behind shows), then cascades
-  // from the top down to reveal the page behind. Built as DOM appended to
-  // <body> so it survives the route change. (canvas-confetti is physics
-  // only and can't "stick then cascade from the top".)
+  // Celebratory transition: confetti POPS onto the screen and tiles it
+  // edge to edge (overlapping grid, zero gaps — no background shows),
+  // holds stuck ~0.5s, then the individual pieces fall off row by row
+  // from the top down, revealing the page behind. Built as DOM on <body>
+  // so it survives the route change.
   function confettiCoverReveal() {
     const cover = document.createElement("div");
     cover.style.cssText =
       "position:fixed;inset:0;z-index:9998;overflow:hidden;pointer-events:none;";
 
-    // Opaque backing so the page behind never peeks through the gaps.
+    // Backing insurance behind the tiled confetti; clears top-down so the
+    // page (not the backing) is what shows as pieces fall off.
     const backing = document.createElement("div");
     backing.style.cssText =
       "position:absolute;inset:0;background:radial-gradient(130% 85% at 50% -5%, rgba(232,185,35,0.2) 0%, rgba(212,169,48,0.05) 32%, transparent 62%), #14100b;";
     cover.appendChild(backing);
 
-    // Dense field of confetti packed across the whole screen.
-    const pieces: Array<{ el: HTMLDivElement; y: number; rot: number }> = [];
-    for (let i = 0; i < 240; i++) {
-      const x = Math.random() * 100;
-      const y = Math.random() * 100;
-      const w = 6 + Math.random() * 11;
-      const circle = Math.random() < 0.45;
-      const rot = Math.random() * 360;
-      const color =
-        CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
-      const el = document.createElement("div");
-      el.style.cssText =
-        `position:absolute;left:${x}%;top:${y}%;width:${w}px;` +
-        `height:${circle ? w : w * (0.5 + Math.random() * 0.9)}px;` +
-        `background:${color};border-radius:${circle ? "50%" : "1px"};` +
-        `transform:rotate(${rot}deg);will-change:transform;`;
-      cover.appendChild(el);
-      pieces.push({ el, y, rot });
+    // Overlapping grid that fully tiles the viewport — pieces are sized
+    // ~1.6x the cell so neighbours overlap and leave no gaps.
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const cell = Math.max(24, Math.round(Math.sqrt((W * H) / 450)));
+    const cols = Math.ceil(W / cell) + 1;
+    const rows = Math.ceil(H / cell) + 1;
+    const pieces: Array<{ el: HTMLDivElement; row: number; rot: number }> = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const size = cell * (1.5 + Math.random() * 0.7);
+        const left = c * cell + (Math.random() - 0.5) * cell;
+        const top = r * cell + (Math.random() - 0.5) * cell;
+        const circle = Math.random() < 0.4;
+        const rot = Math.random() * 360;
+        const color =
+          CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+        const el = document.createElement("div");
+        el.style.cssText =
+          `position:absolute;left:${left}px;top:${top}px;width:${size}px;` +
+          `height:${circle ? size : size * (0.55 + Math.random() * 0.6)}px;` +
+          `background:${color};border-radius:${circle ? "50%" : "2px"};` +
+          `transform:rotate(${rot}deg) scale(0);will-change:transform;`;
+        cover.appendChild(el);
+        pieces.push({ el, row: r, rot });
+      }
     }
     document.body.appendChild(cover);
 
-    // One pop: snap in, fully covered.
-    cover.animate(
-      [
-        { opacity: 0, transform: "scale(1.05)" },
-        { opacity: 1, transform: "scale(1)" },
-      ],
-      { duration: 160, easing: "ease-out" },
-    );
+    // POP: every piece scales in fast with a bouncy overshoot and a tiny
+    // random stagger, so the confetti bursts onto the screen.
+    for (const { el, rot } of pieces) {
+      el.animate(
+        [
+          { transform: `rotate(${rot}deg) scale(0)` },
+          { transform: `rotate(${rot}deg) scale(1.12)`, offset: 0.7 },
+          { transform: `rotate(${rot}deg) scale(1)` },
+        ],
+        {
+          duration: 260,
+          delay: Math.random() * 130,
+          easing: "cubic-bezier(0.2,0.9,0.3,1.3)",
+          fill: "both",
+        },
+      );
+    }
 
-    const HOLD = 520; // stick, fully covered
-    const CASCADE = 650; // top-to-bottom stagger window
-    const FALL = 780; // how long each piece takes to fall off
+    const POP = 400; // pop + settle
+    const HOLD = 500; // stick, fully covered
+    const ROW_STAGGER = 18; // ms per row, top falls first
+    const FALL = 720; // how long each piece takes to fall off
 
     window.setTimeout(() => {
-      // Backing clears top-to-bottom, in sync with the cascade.
+      // Backing clears top-to-bottom in sync with the falling rows.
       backing.animate(
         [{ clipPath: "inset(0 0 0 0)" }, { clipPath: "inset(100% 0 0 0)" }],
         {
-          duration: CASCADE + 340,
+          duration: rows * ROW_STAGGER + 360,
           easing: "cubic-bezier(0.4,0,0.2,1)",
           fill: "forwards",
         },
       );
-      // Each piece falls, delayed by how high it sits (top falls first).
-      for (const { el, y, rot } of pieces) {
-        const drift = (Math.random() - 0.5) * 70;
+      // Each piece falls off, delayed by its row → top rows go first.
+      for (const { el, row, rot } of pieces) {
+        const drift = (Math.random() - 0.5) * 80;
         const spin = rot + (Math.random() - 0.5) * 540;
         el.animate(
           [
-            { transform: `rotate(${rot}deg)`, opacity: 1 },
+            { transform: `rotate(${rot}deg) scale(1)`, opacity: 1 },
             {
-              transform: `translate(${drift}px, 115vh) rotate(${spin}deg)`,
+              transform: `translate(${drift}px, 115vh) rotate(${spin}deg) scale(1)`,
               opacity: 1,
             },
           ],
           {
             duration: FALL,
-            delay: (y / 100) * CASCADE,
+            delay: row * ROW_STAGGER,
             easing: "cubic-bezier(0.3,0,0.5,1)",
             fill: "forwards",
           },
         );
       }
-    }, HOLD);
+    }, POP + HOLD);
 
-    window.setTimeout(() => cover.remove(), HOLD + CASCADE + FALL + 200);
+    window.setTimeout(
+      () => cover.remove(),
+      POP + HOLD + rows * ROW_STAGGER + FALL + 300,
+    );
   }
 
   const rootClass = [styles.screen, exiting ? styles.exiting : ""]
