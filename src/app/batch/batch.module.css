@@ -11,10 +11,12 @@
    warm (brown/gold undertone), never a cool #000. */
 
 .screen {
+  position: relative;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center; /* fill the screen, not crammed at the top */
   padding: 40px 20px 56px;
   background:
     radial-gradient(
@@ -39,8 +41,19 @@
   transition: opacity 0.38s ease;
 }
 
+/* Faded starburst constellation behind the content. */
+.bgField {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* ── Brand lockup ──────────────────────────────────────────────── */
 .lockup {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -94,6 +107,8 @@
 
 /* ── Question + options ────────────────────────────────────────── */
 .body {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 540px;
   display: flex;
@@ -350,10 +365,10 @@
 
 @keyframes lockupDock {
   0% {
-    transform: translateY(32vh) scale(1.16);
+    transform: translateY(16vh) scale(1.16);
   }
   42% {
-    transform: translateY(32vh) scale(1.16);
+    transform: translateY(16vh) scale(1.16);
   }
   100% {
     transform: translateY(0) scale(1);

@@ -39,6 +39,21 @@ const LIGHTER = [
   { key: "good_time", label: "Just a good time" },
 ];
 
+// Faded starburst constellation behind everything — deterministic
+// positions (SSR-safe), varied sizes + low opacity for warm texture.
+const BG_STARS = [
+  { top: "7%", left: "14%", size: 22, op: 0.1 },
+  { top: "15%", left: "84%", size: 38, op: 0.07 },
+  { top: "40%", left: "5%", size: 16, op: 0.12 },
+  { top: "30%", left: "92%", size: 26, op: 0.08 },
+  { top: "58%", left: "9%", size: 44, op: 0.06 },
+  { top: "52%", left: "88%", size: 18, op: 0.11 },
+  { top: "74%", left: "24%", size: 30, op: 0.08 },
+  { top: "82%", left: "72%", size: 24, op: 0.1 },
+  { top: "90%", left: "44%", size: 40, op: 0.05 },
+  { top: "66%", left: "52%", size: 14, op: 0.12 },
+];
+
 const CONFETTI_COLORS = [
   "#f7a8c4", // soft pink
   "#ec5f8a", // rose pink
@@ -233,17 +248,31 @@ function OccasionScreen() {
     const dest = `/chat?occasion=${encodeURIComponent(occasion)}`;
     if (occasion === "bachelorette" && !reduced) {
       fireConfetti();
-      window.setTimeout(() => router.push(dest), 950);
+      window.setTimeout(() => router.push(dest), 1300);
     } else {
       window.setTimeout(() => router.push(dest), reduced ? 0 : 380);
     }
   }
 
   function fireConfetti() {
-    const opts = { colors: CONFETTI_COLORS, disableForReducedMotion: true };
-    confetti({ ...opts, particleCount: 150, spread: 100, origin: { y: 0.6 }, scalar: 1.1, ticks: 240 });
-    confetti({ ...opts, particleCount: 60, angle: 60, spread: 70, origin: { x: 0, y: 0.7 } });
-    confetti({ ...opts, particleCount: 60, angle: 120, spread: 70, origin: { x: 1, y: 0.7 } });
+    const opts = {
+      colors: CONFETTI_COLORS,
+      disableForReducedMotion: true,
+      zIndex: 9999,
+    };
+    // Big center explosion that flies outward toward the viewer (360
+    // spread + large scalar reads as "coming at you").
+    confetti({ ...opts, particleCount: 240, spread: 360, startVelocity: 48, scalar: 1.5, ticks: 300, gravity: 0.85, origin: { x: 0.5, y: 0.5 } });
+    // Bottom corner cannons sweeping up and across the full width.
+    confetti({ ...opts, particleCount: 140, angle: 58, spread: 85, startVelocity: 70, origin: { x: 0, y: 1 } });
+    confetti({ ...opts, particleCount: 140, angle: 122, spread: 85, startVelocity: 70, origin: { x: 1, y: 1 } });
+    // Second wave: big, slow, close pieces drifting toward the camera.
+    window.setTimeout(() => {
+      confetti({ ...opts, particleCount: 180, spread: 360, startVelocity: 28, scalar: 2, ticks: 280, gravity: 0.8, origin: { x: 0.5, y: 0.45 } });
+    }, 180);
+    window.setTimeout(() => {
+      confetti({ ...opts, particleCount: 120, spread: 140, startVelocity: 60, scalar: 1.3, origin: { x: 0.5, y: 0.7 } });
+    }, 380);
   }
 
   const rootClass = [
@@ -259,6 +288,24 @@ function OccasionScreen() {
 
   return (
     <main className={rootClass} aria-label="What are you celebrating?">
+      <div className={styles.bgField} aria-hidden="true">
+        {BG_STARS.map((s, i) => (
+          <Starburst
+            key={i}
+            size={s.size}
+            tier={s.size >= 30 ? 8 : 6}
+            color="var(--jp-gold)"
+            secondary="var(--jp-peach)"
+            center="var(--jp-peach)"
+            style={{
+              position: "absolute",
+              top: s.top,
+              left: s.left,
+              opacity: s.op,
+            }}
+          />
+        ))}
+      </div>
       <div className={styles.lockup}>
         <span className={styles.the}>THE</span>
         <span className={styles.wordmark} aria-label="Jackpot">
