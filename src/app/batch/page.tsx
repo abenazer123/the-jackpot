@@ -17,7 +17,6 @@
 
 "use client";
 
-import confetti from "canvas-confetti";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 
@@ -237,46 +236,100 @@ function OccasionScreen() {
     const reduced = prefersReducedMotion();
     const dest = `/chat?occasion=${encodeURIComponent(occasion)}`;
     if (occasion === "bachelorette" && !reduced) {
-      // Opaque cover (matches the dark screen) so NOTHING behind shows.
-      // Appended to <body> so it survives the route change. Sequence:
-      // boom + full cover -> hold 0.5s (destination loads behind) -> the
-      // whole cover slides down, revealing the page top to bottom.
-      const cover = document.createElement("div");
-      cover.style.cssText =
-        "position:fixed;inset:0;z-index:9998;will-change:transform;" +
-        "transition:transform 0.85s cubic-bezier(0.4,0,0.2,1);" +
-        "background:radial-gradient(130% 85% at 50% -5%, rgba(232,185,35,0.2) 0%, rgba(212,169,48,0.05) 32%, transparent 62%), #14100b;";
-      document.body.appendChild(cover);
-      fireConfetti(); // canvas is zIndex 9999, above the cover
-      router.push(dest); // loads behind the cover during the hold
-      window.setTimeout(() => {
-        cover.style.transform = "translateY(100%)";
-      }, 500);
-      window.setTimeout(() => cover.remove(), 1450);
+      // Confetti cover: one pop fully covers the screen, sticks ~0.5s,
+      // then cascades from the top down to reveal the page behind. Route
+      // right after the pop so /chat loads behind the cover during the hold.
+      confettiCoverReveal();
+      window.setTimeout(() => router.push(dest), 200);
       return;
     }
     setExiting(true);
     window.setTimeout(() => router.push(dest), reduced ? 0 : 380);
   }
 
-  function fireConfetti() {
-    const opts = {
-      colors: CONFETTI_COLORS,
-      disableForReducedMotion: true,
-      zIndex: 9999,
-    };
-    // Big center explosion that flies outward toward the viewer.
-    confetti({ ...opts, particleCount: 240, spread: 360, startVelocity: 48, scalar: 1.5, ticks: 300, gravity: 1, origin: { x: 0.5, y: 0.5 } });
-    // Bottom corner cannons sweeping up and across the full width.
-    confetti({ ...opts, particleCount: 140, angle: 58, spread: 85, startVelocity: 70, origin: { x: 0, y: 1 } });
-    confetti({ ...opts, particleCount: 140, angle: 122, spread: 85, startVelocity: 70, origin: { x: 1, y: 1 } });
-    // Second wave: big, slow, close pieces drifting toward the camera.
+  // One celebratory transition: a confetti cover snaps in and fully
+  // covers the screen, holds (stuck, nothing behind shows), then cascades
+  // from the top down to reveal the page behind. Built as DOM appended to
+  // <body> so it survives the route change. (canvas-confetti is physics
+  // only and can't "stick then cascade from the top".)
+  function confettiCoverReveal() {
+    const cover = document.createElement("div");
+    cover.style.cssText =
+      "position:fixed;inset:0;z-index:9998;overflow:hidden;pointer-events:none;";
+
+    // Opaque backing so the page behind never peeks through the gaps.
+    const backing = document.createElement("div");
+    backing.style.cssText =
+      "position:absolute;inset:0;background:radial-gradient(130% 85% at 50% -5%, rgba(232,185,35,0.2) 0%, rgba(212,169,48,0.05) 32%, transparent 62%), #14100b;";
+    cover.appendChild(backing);
+
+    // Dense field of confetti packed across the whole screen.
+    const pieces: Array<{ el: HTMLDivElement; y: number; rot: number }> = [];
+    for (let i = 0; i < 240; i++) {
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
+      const w = 6 + Math.random() * 11;
+      const circle = Math.random() < 0.45;
+      const rot = Math.random() * 360;
+      const color =
+        CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+      const el = document.createElement("div");
+      el.style.cssText =
+        `position:absolute;left:${x}%;top:${y}%;width:${w}px;` +
+        `height:${circle ? w : w * (0.5 + Math.random() * 0.9)}px;` +
+        `background:${color};border-radius:${circle ? "50%" : "1px"};` +
+        `transform:rotate(${rot}deg);will-change:transform;`;
+      cover.appendChild(el);
+      pieces.push({ el, y, rot });
+    }
+    document.body.appendChild(cover);
+
+    // One pop: snap in, fully covered.
+    cover.animate(
+      [
+        { opacity: 0, transform: "scale(1.05)" },
+        { opacity: 1, transform: "scale(1)" },
+      ],
+      { duration: 160, easing: "ease-out" },
+    );
+
+    const HOLD = 520; // stick, fully covered
+    const CASCADE = 650; // top-to-bottom stagger window
+    const FALL = 780; // how long each piece takes to fall off
+
     window.setTimeout(() => {
-      confetti({ ...opts, particleCount: 180, spread: 360, startVelocity: 28, scalar: 2, ticks: 280, gravity: 1, origin: { x: 0.5, y: 0.45 } });
-    }, 180);
-    window.setTimeout(() => {
-      confetti({ ...opts, particleCount: 120, spread: 140, startVelocity: 60, scalar: 1.3, origin: { x: 0.5, y: 0.7 } });
-    }, 380);
+      // Backing clears top-to-bottom, in sync with the cascade.
+      backing.animate(
+        [{ clipPath: "inset(0 0 0 0)" }, { clipPath: "inset(100% 0 0 0)" }],
+        {
+          duration: CASCADE + 340,
+          easing: "cubic-bezier(0.4,0,0.2,1)",
+          fill: "forwards",
+        },
+      );
+      // Each piece falls, delayed by how high it sits (top falls first).
+      for (const { el, y, rot } of pieces) {
+        const drift = (Math.random() - 0.5) * 70;
+        const spin = rot + (Math.random() - 0.5) * 540;
+        el.animate(
+          [
+            { transform: `rotate(${rot}deg)`, opacity: 1 },
+            {
+              transform: `translate(${drift}px, 115vh) rotate(${spin}deg)`,
+              opacity: 1,
+            },
+          ],
+          {
+            duration: FALL,
+            delay: (y / 100) * CASCADE,
+            easing: "cubic-bezier(0.3,0,0.5,1)",
+            fill: "forwards",
+          },
+        );
+      }
+    }, HOLD);
+
+    window.setTimeout(() => cover.remove(), HOLD + CASCADE + FALL + 200);
   }
 
   const rootClass = [styles.screen, exiting ? styles.exiting : ""]
