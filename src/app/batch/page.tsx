@@ -178,15 +178,13 @@ function OccasionScreen() {
   const params = useSearchParams();
   const utm = useUtm();
 
-  // "pending" until we decide (avoids a flash of the composed state
-  // before the intro animation kicks in); then "play" or "static".
-  const [mode, setMode] = useState<"pending" | "play" | "static">("pending");
   const [exiting, setExiting] = useState(false);
   const [showOther, setShowOther] = useState(false);
   const [otherText, setOtherText] = useState("");
   const anonRef = useRef<string>("");
   const internalRef = useRef<boolean>(false);
   const firedView = useRef(false);
+  const transitioningRef = useRef(false);
 
   useEffect(() => {
     // Internal flag: /batch?internal=1 brands this device as test traffic.
@@ -198,16 +196,8 @@ function OccasionScreen() {
       firedView.current = true;
       track("occasion_screen_viewed");
     }
-
-    // Play the intro once per session; otherwise (or reduced motion) show
-    // the composed state instantly.
-    const played = sessionStorage.getItem("jp_batch_intro") === "1";
-    if (played || prefersReducedMotion()) {
-      setMode("static");
-    } else {
-      sessionStorage.setItem("jp_batch_intro", "1");
-      setMode("play");
-    }
+    // The entrance is pure CSS (plays on load, reduced-motion disables it),
+    // so there's no JS animation gating here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -241,15 +231,20 @@ function OccasionScreen() {
   }
 
   function select(occasion: string, freetext?: string) {
-    if (exiting) return;
+    if (transitioningRef.current) return;
+    transitioningRef.current = true;
     track("occasion_selected", occasion, freetext);
-    setExiting(true);
     const reduced = prefersReducedMotion();
     const dest = `/chat?occasion=${encodeURIComponent(occasion)}`;
     if (occasion === "bachelorette" && !reduced) {
+      // Fire the burst, then route to the destination behind it (the
+      // confetti canvas lives on document.body and survives the nav, so
+      // it keeps falling over the loaded page and reveals it top to bottom
+      // under gravity). No fade — the page itself is the reveal.
       fireConfetti();
-      window.setTimeout(() => router.push(dest), 1300);
+      window.setTimeout(() => router.push(dest), 500);
     } else {
+      setExiting(true);
       window.setTimeout(() => router.push(dest), reduced ? 0 : 380);
     }
   }
@@ -260,34 +255,28 @@ function OccasionScreen() {
       disableForReducedMotion: true,
       zIndex: 9999,
     };
-    // Big center explosion that flies outward toward the viewer (360
-    // spread + large scalar reads as "coming at you").
-    confetti({ ...opts, particleCount: 240, spread: 360, startVelocity: 48, scalar: 1.5, ticks: 300, gravity: 0.85, origin: { x: 0.5, y: 0.5 } });
+    // Big center explosion that flies outward toward the viewer.
+    confetti({ ...opts, particleCount: 240, spread: 360, startVelocity: 48, scalar: 1.5, ticks: 300, gravity: 1, origin: { x: 0.5, y: 0.5 } });
     // Bottom corner cannons sweeping up and across the full width.
     confetti({ ...opts, particleCount: 140, angle: 58, spread: 85, startVelocity: 70, origin: { x: 0, y: 1 } });
     confetti({ ...opts, particleCount: 140, angle: 122, spread: 85, startVelocity: 70, origin: { x: 1, y: 1 } });
     // Second wave: big, slow, close pieces drifting toward the camera.
     window.setTimeout(() => {
-      confetti({ ...opts, particleCount: 180, spread: 360, startVelocity: 28, scalar: 2, ticks: 280, gravity: 0.8, origin: { x: 0.5, y: 0.45 } });
+      confetti({ ...opts, particleCount: 180, spread: 360, startVelocity: 28, scalar: 2, ticks: 280, gravity: 1, origin: { x: 0.5, y: 0.45 } });
     }, 180);
     window.setTimeout(() => {
       confetti({ ...opts, particleCount: 120, spread: 140, startVelocity: 60, scalar: 1.3, origin: { x: 0.5, y: 0.7 } });
     }, 380);
   }
 
-  const rootClass = [
-    styles.screen,
-    mode === "play" ? styles.playing : "",
-    mode === "static" ? styles.static : "",
-    exiting ? styles.exiting : "",
-  ]
+  const rootClass = [styles.screen, exiting ? styles.exiting : ""]
     .filter(Boolean)
     .join(" ");
 
   const word = "JACKPOT";
 
   return (
-    <main className={rootClass} aria-label="What are you celebrating?">
+    <main className={rootClass} aria-label="What is the occasion?">
       <div className={styles.bgField} aria-hidden="true">
         {BG_STARS.map((s, i) => (
           <Starburst
@@ -327,7 +316,7 @@ function OccasionScreen() {
       </div>
 
       <div className={styles.body}>
-        <h1 className={styles.question}>What are you celebrating?</h1>
+        <h1 className={styles.question}>What is the occasion?</h1>
         <p className={styles.sub}>One tap and we&apos;ll tailor everything to it.</p>
 
         <button
