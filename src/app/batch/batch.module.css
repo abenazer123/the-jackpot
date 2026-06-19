@@ -60,16 +60,16 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  text-align: left;
+  text-align: center;
 }
 
-/* ── Brand lockup (top header, left-aligned) ───────────────────── */
+/* ── Brand lockup (centered top header) ────────────────────────── */
 .lockup {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 2px;
-  margin-bottom: 60px;
+  margin-bottom: 72px;
   will-change: transform;
 }
 
@@ -122,26 +122,26 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  text-align: left;
+  text-align: center;
 }
 
 .question {
   font-family: var(--jp-font-display);
   font-weight: 600;
-  font-size: 34px;
-  line-height: 1.15;
+  font-size: 40px;
+  line-height: 1.12;
   color: #faf6ef;
-  margin: 0 0 8px;
-  text-align: left;
+  margin: 0 0 10px;
+  text-align: center;
 }
 
 .sub {
   font-family: var(--jp-font-body);
   font-weight: 400;
-  font-size: 15px;
+  font-size: 16px;
   color: rgba(250, 246, 239, 0.62);
-  margin: 0 0 30px;
-  text-align: left;
+  margin: 0 0 40px;
+  text-align: center;
 }
 
 /* Hero card — bachelorette, the dominant choice. Gold gradient so it
@@ -230,7 +230,7 @@
 .lighterRow {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 8px;
 }
 
@@ -306,18 +306,18 @@
     padding: 28px 16px 40px;
   }
   .lockup {
-    margin-bottom: 26px;
+    margin-bottom: 52px;
   }
   .wordmark {
     font-size: 40px;
     letter-spacing: 2px;
   }
   .question {
-    font-size: 25px;
+    font-size: 31px;
   }
   .sub {
-    font-size: 14px;
-    margin-bottom: 22px;
+    font-size: 15px;
+    margin-bottom: 32px;
   }
   .hero {
     min-height: 66px;
