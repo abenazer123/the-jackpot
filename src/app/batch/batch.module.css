@@ -16,8 +16,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center; /* fill the screen, not crammed at the top */
-  padding: 40px 20px 56px;
+  justify-content: flex-start; /* lockup is a header, anchored at the top */
+  padding: 52px 20px 64px;
   background:
     radial-gradient(
       130% 85% at 50% -5%,
@@ -50,15 +50,26 @@
   z-index: 0;
 }
 
-/* ── Brand lockup ──────────────────────────────────────────────── */
-.lockup {
+/* Shared content column — lockup, question, and buttons all align to the
+   same left edge inside it. */
+.col {
   position: relative;
   z-index: 1;
+  width: 100%;
+  max-width: 520px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  text-align: left;
+}
+
+/* ── Brand lockup (top header, left-aligned) ───────────────────── */
+.lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
-  margin-bottom: 40px;
+  margin-bottom: 60px;
   will-change: transform;
 }
 
@@ -75,9 +86,9 @@
 .wordmark {
   font-family: var(--jp-font-display);
   font-weight: 700;
-  font-size: 56px;
+  font-size: 44px;
   line-height: 1;
-  letter-spacing: 4px;
+  letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--jp-gold-bright, #e8b923);
   text-shadow: 0 0 28px rgba(232, 185, 35, 0.35);
@@ -107,23 +118,21 @@
 
 /* ── Question + options ────────────────────────────────────────── */
 .body {
-  position: relative;
-  z-index: 1;
   width: 100%;
-  max-width: 540px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  text-align: center;
+  text-align: left;
 }
 
 .question {
   font-family: var(--jp-font-display);
   font-weight: 600;
-  font-size: 32px;
+  font-size: 34px;
   line-height: 1.15;
   color: #faf6ef;
-  margin: 0 0 6px;
+  margin: 0 0 8px;
+  text-align: left;
 }
 
 .sub {
@@ -131,7 +140,8 @@
   font-weight: 400;
   font-size: 15px;
   color: rgba(250, 246, 239, 0.62);
-  margin: 0 0 26px;
+  margin: 0 0 30px;
+  text-align: left;
 }
 
 /* Hero card — bachelorette, the dominant choice. Gold gradient so it
@@ -220,7 +230,7 @@
 .lighterRow {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
 }
 
@@ -334,11 +344,10 @@
   }
 }
 
-/* ── Entrance choreography (only under .playing) ───────────────── */
-.playing .lockup {
-  animation: lockupDock 1.3s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
+/* ── Entrance choreography (only under .playing) ───────────────────
+   Lockup is a fixed top header now, so no center-dock. The wordmark
+   writes in letter by letter, the starburst pops, THE/CHICAGO fade, then
+   the body rises. */
 .playing .letter {
   animation: riseIn 0.42s ease both;
 }
@@ -360,19 +369,7 @@
 
 .playing .body {
   animation: bodyRise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 1.35s;
-}
-
-@keyframes lockupDock {
-  0% {
-    transform: translateY(16vh) scale(1.16);
-  }
-  42% {
-    transform: translateY(16vh) scale(1.16);
-  }
-  100% {
-    transform: translateY(0) scale(1);
-  }
+  animation-delay: 0.8s;
 }
 
 @keyframes riseIn {

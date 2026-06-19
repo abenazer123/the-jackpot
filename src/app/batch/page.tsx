@@ -306,6 +306,7 @@ function OccasionScreen() {
           />
         ))}
       </div>
+      <div className={styles.col}>
       <div className={styles.lockup}>
         <span className={styles.the}>THE</span>
         <span className={styles.wordmark} aria-label="Jackpot">
@@ -398,6 +399,7 @@ function OccasionScreen() {
             </button>
           </form>
         )}
+      </div>
       </div>
     </main>
   );
