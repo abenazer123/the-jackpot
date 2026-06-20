@@ -299,10 +299,10 @@ function OccasionScreen() {
         // the piece starts here (clustered, small) and bursts out to (0,0).
         const dx = cx - (left + size / 2);
         const dy = cy - (top + size / 2);
-        // Small scatter so the launch reads as a tight cluster of distinct
-        // confetti at one spot, not a single dot.
-        const sx = (Math.random() - 0.5) * 60;
-        const sy = (Math.random() - 0.5) * 60;
+        // Tight scatter so the source reads as one spot — a small dense
+        // cluster the fountain fires from, not a wide patch.
+        const sx = (Math.random() - 0.5) * 40;
+        const sy = (Math.random() - 0.5) * 40;
         const dist = Math.hypot(dx, dy);
         if (dist > maxDist) maxDist = dist;
         const el = document.createElement("div");
@@ -310,7 +310,7 @@ function OccasionScreen() {
           `position:absolute;left:${left}px;top:${top}px;width:${size}px;` +
           `height:${circle ? size : size * (0.32 + Math.random() * 0.7)}px;` +
           `background:${color};border-radius:${circle ? "50%" : "1px"};` +
-          `transform:translate(${dx + sx}px,${dy + sy}px) rotate(${rot}deg) scale(0.22);` +
+          `transform:translate(${dx + sx}px,${dy + sy}px) rotate(${rot}deg) scale(0.16);` +
           `will-change:transform;`;
         cover.appendChild(el);
         pieces.push({ el, row: r, rot, dx, dy, dist, sx, sy });
@@ -318,24 +318,30 @@ function OccasionScreen() {
     }
     document.body.appendChild(cover);
 
-    // POP: confetti erupts from one spot at the center and flies outward to
-    // fill the screen. All pieces launch together from a tight cluster, but
-    // travel time scales with distance at constant-ish speed, so the center
-    // bursts first and the wave visibly propagates out to the edges — you
-    // watch the confetti fly, rather than the whole screen appearing at
-    // once. Slow enough to perceive the flight; a moderate ease-out keeps
-    // the launch punchy without snapping instantly to rest. Each piece
-    // overshoots radially past its spot, scale-punches, and spins.
-    const BURST_BASE = 380; // travel time for a center-ish piece
-    const BURST_SPAN = 640; // extra travel time for the farthest piece
+    // POP: a fountain from one spot. The center holds a tight bright
+    // cluster of confetti (every piece parks there behind its launch delay,
+    // via fill:both) that keeps FIRING pieces outward over a short window.
+    // Because pieces leave the source at staggered times — front-loaded
+    // into an initial bang, then a trailing fountain — at any instant some
+    // are mid-flight as distinct pieces (dark gaps between them) while the
+    // source keeps emitting and depleting. That reads as "popping from a
+    // single location," vs the whole field expanding in lockstep. Each
+    // piece flies fast on a hard ease-out, overshoots radially past its
+    // spot, scale-punches, and spins to rest on `rot`.
+    const ERUPT = 700; // eruption window: pieces fire over this span
+    const FLY_BASE = 320; // fast individual flight for a center-ish piece
+    const FLY_SPAN = 240; // extra flight time for the farthest piece
     let popEnd = 0;
     for (const { el, rot, dx, dy, dist, sx, sy } of pieces) {
       const t = dist / maxDist;
-      const dur = BURST_BASE + t * BURST_SPAN;
-      const jitter = Math.random() * 60;
+      const dur = FLY_BASE + t * FLY_SPAN;
+      // Front-loaded launch: most pieces fire early (the bang), the rest
+      // trail out as a fountain. fill:both parks the piece at the source
+      // until its delay elapses.
+      const delay = Math.pow(Math.random(), 1.5) * ERUPT;
       // Radial overshoot: keep flying outward (away from center) past the
       // final spot, then ease back. translate(-dx,-dy) points outward.
-      const over = 0.1;
+      const over = 0.12;
       const ox = -dx * over;
       const oy = -dy * over;
       // Continuous spin that lands exactly on `rot` (so the fall, which
@@ -345,7 +351,7 @@ function OccasionScreen() {
       el.animate(
         [
           {
-            transform: `translate(${dx + sx}px,${dy + sy}px) rotate(${rot - spinAmt}deg) scale(0.22)`,
+            transform: `translate(${dx + sx}px,${dy + sy}px) rotate(${rot - spinAmt}deg) scale(0.16)`,
             opacity: 1,
             offset: 0,
           },
@@ -361,12 +367,12 @@ function OccasionScreen() {
         ],
         {
           duration: dur,
-          delay: jitter,
-          easing: "cubic-bezier(0.2,0.55,0.35,1)",
+          delay,
+          easing: "cubic-bezier(0.1,0.8,0.25,1)",
           fill: "both",
         },
       );
-      if (dur + jitter > popEnd) popEnd = dur + jitter;
+      if (dur + delay > popEnd) popEnd = dur + delay;
     }
 
     const POP = Math.round(popEnd) + 60; // last piece lands + settle
