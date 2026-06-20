@@ -264,75 +264,138 @@ function OccasionScreen() {
       "position:absolute;inset:0;background:radial-gradient(130% 85% at 50% -5%, rgba(232,185,35,0.2) 0%, rgba(212,169,48,0.05) 32%, transparent 62%), #14100b;";
     cover.appendChild(backing);
 
-    // Overlapping grid that fully tiles the viewport — pieces are sized
-    // ~1.6x the cell so neighbours overlap and leave no gaps.
+    // Fine confetti scattered over a dense grid. The dark backing already
+    // hides the page, so pieces stay small and crisp (real confetti, not
+    // cut-paper tiles) — a denser grid keeps the scatter rich even though
+    // each piece is small.
     const W = window.innerWidth;
     const H = window.innerHeight;
-    const cell = Math.max(24, Math.round(Math.sqrt((W * H) / 450)));
+    const cell = Math.max(18, Math.round(Math.sqrt((W * H) / 900)));
     const cols = Math.ceil(W / cell) + 1;
     const rows = Math.ceil(H / cell) + 1;
-    const pieces: Array<{ el: HTMLDivElement; row: number; rot: number }> = [];
+    const cx = W / 2;
+    const cy = H / 2;
+    const pieces: Array<{
+      el: HTMLDivElement;
+      row: number;
+      rot: number;
+      dx: number;
+      dy: number;
+      dist: number;
+      sx: number;
+      sy: number;
+    }> = [];
+    let maxDist = 1;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const size = cell * (1.5 + Math.random() * 0.7);
-        const left = c * cell + (Math.random() - 0.5) * cell;
-        const top = r * cell + (Math.random() - 0.5) * cell;
-        const circle = Math.random() < 0.4;
+        const size = cell * (0.95 + Math.random() * 0.55);
+        const left = c * cell + (Math.random() - 0.5) * cell * 0.7;
+        const top = r * cell + (Math.random() - 0.5) * cell * 0.7;
+        const circle = Math.random() < 0.32;
         const rot = Math.random() * 360;
         const color =
           CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+        // Offset from this piece's final spot back to screen center —
+        // the piece starts here (clustered, small) and bursts out to (0,0).
+        const dx = cx - (left + size / 2);
+        const dy = cy - (top + size / 2);
+        // Small scatter so the launch reads as a tight cluster of distinct
+        // confetti at one spot, not a single dot.
+        const sx = (Math.random() - 0.5) * 60;
+        const sy = (Math.random() - 0.5) * 60;
+        const dist = Math.hypot(dx, dy);
+        if (dist > maxDist) maxDist = dist;
         const el = document.createElement("div");
         el.style.cssText =
           `position:absolute;left:${left}px;top:${top}px;width:${size}px;` +
-          `height:${circle ? size : size * (0.55 + Math.random() * 0.6)}px;` +
-          `background:${color};border-radius:${circle ? "50%" : "2px"};` +
-          `transform:rotate(${rot}deg) scale(0);will-change:transform;`;
+          `height:${circle ? size : size * (0.32 + Math.random() * 0.7)}px;` +
+          `background:${color};border-radius:${circle ? "50%" : "1px"};` +
+          `transform:translate(${dx + sx}px,${dy + sy}px) rotate(${rot}deg) scale(0.22);` +
+          `will-change:transform;`;
         cover.appendChild(el);
-        pieces.push({ el, row: r, rot });
+        pieces.push({ el, row: r, rot, dx, dy, dist, sx, sy });
       }
     }
     document.body.appendChild(cover);
 
-    // POP: every piece scales in fast with a bouncy overshoot and a tiny
-    // random stagger, so the confetti bursts onto the screen.
-    for (const { el, rot } of pieces) {
+    // POP: confetti erupts from one spot at the center and flies outward to
+    // fill the screen. All pieces launch together from a tight cluster, but
+    // travel time scales with distance at constant-ish speed, so the center
+    // bursts first and the wave visibly propagates out to the edges — you
+    // watch the confetti fly, rather than the whole screen appearing at
+    // once. Slow enough to perceive the flight; a moderate ease-out keeps
+    // the launch punchy without snapping instantly to rest. Each piece
+    // overshoots radially past its spot, scale-punches, and spins.
+    const BURST_BASE = 380; // travel time for a center-ish piece
+    const BURST_SPAN = 640; // extra travel time for the farthest piece
+    let popEnd = 0;
+    for (const { el, rot, dx, dy, dist, sx, sy } of pieces) {
+      const t = dist / maxDist;
+      const dur = BURST_BASE + t * BURST_SPAN;
+      const jitter = Math.random() * 60;
+      // Radial overshoot: keep flying outward (away from center) past the
+      // final spot, then ease back. translate(-dx,-dy) points outward.
+      const over = 0.1;
+      const ox = -dx * over;
+      const oy = -dy * over;
+      // Continuous spin that lands exactly on `rot` (so the fall, which
+      // starts from `rot`, picks up seamlessly).
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      const spinAmt = (260 + Math.random() * 520) * dir;
       el.animate(
         [
-          { transform: `rotate(${rot}deg) scale(0)` },
-          { transform: `rotate(${rot}deg) scale(1.12)`, offset: 0.7 },
-          { transform: `rotate(${rot}deg) scale(1)` },
+          {
+            transform: `translate(${dx + sx}px,${dy + sy}px) rotate(${rot - spinAmt}deg) scale(0.22)`,
+            opacity: 1,
+            offset: 0,
+          },
+          {
+            transform: `translate(${ox}px,${oy}px) rotate(${rot - spinAmt * 0.25}deg) scale(1.06)`,
+            offset: 0.72,
+          },
+          {
+            transform: `translate(0,0) rotate(${rot}deg) scale(1)`,
+            opacity: 1,
+            offset: 1,
+          },
         ],
         {
-          duration: 260,
-          delay: Math.random() * 130,
-          easing: "cubic-bezier(0.2,0.9,0.3,1.3)",
+          duration: dur,
+          delay: jitter,
+          easing: "cubic-bezier(0.2,0.55,0.35,1)",
           fill: "both",
         },
       );
+      if (dur + jitter > popEnd) popEnd = dur + jitter;
     }
 
-    const POP = 400; // pop + settle
+    const POP = Math.round(popEnd) + 60; // last piece lands + settle
     const HOLD = 500; // stick, fully covered
+    const FADE = 460; // dark backing fades out, revealing the page behind
     const ROW_STAGGER = 18; // ms per row, top falls first
     const FALL = 720; // how long each piece takes to fall off
 
+    // After the hold, fade ONLY the dark backing out — the confetti stay
+    // up and static, so the page (now loaded behind) is revealed behind a
+    // full screen of held confetti. The darkness does not travel with the
+    // pieces.
     window.setTimeout(() => {
-      // Backing clears top-to-bottom in sync with the falling rows.
-      backing.animate(
-        [{ clipPath: "inset(0 0 0 0)" }, { clipPath: "inset(100% 0 0 0)" }],
-        {
-          duration: rows * ROW_STAGGER + 360,
-          easing: "cubic-bezier(0.4,0,0.2,1)",
-          fill: "forwards",
-        },
-      );
-      // Each piece falls off, delayed by its row → top rows go first.
+      backing.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: FADE,
+        easing: "cubic-bezier(0.4,0,0.2,1)",
+        fill: "forwards",
+      });
+    }, POP + HOLD);
+
+    // Once the page is showing through, the confetti cascade off it,
+    // top rows first, revealing the page row by row.
+    window.setTimeout(() => {
       for (const { el, row, rot } of pieces) {
         const drift = (Math.random() - 0.5) * 80;
         const spin = rot + (Math.random() - 0.5) * 540;
         el.animate(
           [
-            { transform: `rotate(${rot}deg) scale(1)`, opacity: 1 },
+            { transform: `translate(0,0) rotate(${rot}deg) scale(1)`, opacity: 1 },
             {
               transform: `translate(${drift}px, 115vh) rotate(${spin}deg) scale(1)`,
               opacity: 1,
@@ -346,11 +409,11 @@ function OccasionScreen() {
           },
         );
       }
-    }, POP + HOLD);
+    }, POP + HOLD + FADE);
 
     window.setTimeout(
       () => cover.remove(),
-      POP + HOLD + rows * ROW_STAGGER + FALL + 300,
+      POP + HOLD + FADE + rows * ROW_STAGGER + FALL + 300,
     );
   }
 
