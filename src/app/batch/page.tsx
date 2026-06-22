@@ -27,12 +27,13 @@ import styles from "./batch.module.css";
 
 // ── Options (locked set + hierarchy, see brief §3) ────────────────
 const HERO = { key: "bachelorette", label: "Bachelorette" };
-const STANDARD = [
+// The six secondary occasions, in demand order, laid out two per row
+// (1 hero → 2 → 2 → 2 → 1 "Something else"). One shape language, three
+// weights: gold hero, translucent pair cards, quiet full-width footer.
+const PAIRS = [
   { key: "birthday", label: "Birthday" },
   { key: "bachelor", label: "Bachelor" },
   { key: "group_trip", label: "Group trip" },
-];
-const LIGHTER = [
   { key: "getaway", label: "Getaway" },
   { key: "reunion", label: "Reunion" },
   { key: "good_time", label: "Just a good time" },
@@ -485,7 +486,7 @@ function OccasionScreen() {
         </button>
 
         <div className={styles.cards}>
-          {STANDARD.map((o) => (
+          {PAIRS.map((o) => (
             <button
               key={o.key}
               type="button"
@@ -500,26 +501,17 @@ function OccasionScreen() {
           ))}
         </div>
 
-        <div className={styles.lighterRow}>
-          {LIGHTER.map((o) => (
-            <button
-              key={o.key}
-              type="button"
-              className={styles.chip}
-              onClick={() => select(o.key)}
-            >
-              {o.label}
-            </button>
-          ))}
-          <button
-            type="button"
-            className={styles.chip}
-            data-active={showOther ? "true" : undefined}
-            onClick={() => setShowOther((v) => !v)}
-          >
-            Something else
-          </button>
-        </div>
+        <button
+          type="button"
+          className={styles.somethingRow}
+          data-active={showOther ? "true" : undefined}
+          onClick={() => setShowOther((v) => !v)}
+        >
+          <span className={styles.cardIcon} aria-hidden="true">
+            <Icon k="other" />
+          </span>
+          <span className={styles.cardLabel}>Something else</span>
+        </button>
 
         {showOther && (
           <form
