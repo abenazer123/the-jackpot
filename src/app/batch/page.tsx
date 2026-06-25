@@ -235,7 +235,12 @@ function OccasionScreen() {
     transitioningRef.current = true;
     track("occasion_selected", occasion, freetext);
     const reduced = prefersReducedMotion();
-    const dest = `/chat?occasion=${encodeURIComponent(occasion)}`;
+    // Bachelorette has its own dedicated page; everything else funnels
+    // into the shared chat carrying the occasion.
+    const dest =
+      occasion === "bachelorette"
+        ? "/bachelorette"
+        : `/chat?occasion=${encodeURIComponent(occasion)}`;
     if (occasion === "bachelorette" && !reduced) {
       // Confetti cover: one pop fully covers the screen, sticks ~0.5s,
       // then cascades from the top down to reveal the page behind. Route

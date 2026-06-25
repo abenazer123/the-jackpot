@@ -37,8 +37,17 @@ const OccasionContext = createContext<OccasionContextValue>({
   setVenue: () => {},
 });
 
-export function OccasionProvider({ children }: { children: ReactNode }) {
-  const [occasion, setOccasion] = useState<OccasionId | null>(null);
+export function OccasionProvider({
+  children,
+  initialOccasion = null,
+}: {
+  children: ReactNode;
+  /** Preset the occasion (e.g. the /bachelorette page seeds
+   *  "bachelorette" so occasion-aware sections render tailored content
+   *  without the OccasionSelector). */
+  initialOccasion?: OccasionId | null;
+}) {
+  const [occasion, setOccasion] = useState<OccasionId | null>(initialOccasion);
   const [venue, setVenue] = useState("");
 
   return (

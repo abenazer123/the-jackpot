@@ -20,37 +20,63 @@ import styles from "./InquiryChat.module.css";
 
 type Intent = "share" | "check_dates" | "reserve" | "free_text";
 
+type ChipKey = "check_dates" | "share" | "reserve";
+
 interface InquiryChatProps {
   /** Fired when the guest picks a chip or sends a free-text message. */
   onIntent?: (intent: Intent, payload?: string) => void;
+  /** Pre-seeds the occasion into the chat session (e.g. the dedicated
+   *  /bachelorette page passes "bachelorette" so Olivia skips asking). */
+  occasion?: string;
+  /** Which entry chips to show (in order). Defaults to all three. The
+   *  /bachelorette hero passes just ["check_dates"]. */
+  chips?: ReadonlyArray<ChipKey>;
+  /** Show the "use the booking form instead" off-ramp. Off for the
+   *  bachelorette single-path hero. */
+  showFallback?: boolean;
 }
 
-export function InquiryChat({ onIntent }: InquiryChatProps) {
+export function InquiryChat({
+  onIntent,
+  occasion,
+  chips = ["check_dates", "share", "reserve"],
+  showFallback = true,
+}: InquiryChatProps) {
+  const show = (k: ChipKey) => chips.includes(k);
   const router = useRouter();
   const [draft, setDraft] = useState("");
   const canSend = draft.trim().length > 0;
+
+  // Build the session href, carrying intent and the pre-seeded occasion.
+  const sessionHref = (intent?: "share" | "reserve") => {
+    const qs = new URLSearchParams();
+    if (intent) qs.set("intent", intent);
+    if (occasion) qs.set("occasion", occasion);
+    const s = qs.toString();
+    return s ? `/chat/session?${s}` : "/chat/session";
+  };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!canSend) return;
     onIntent?.("free_text", draft.trim());
     setDraft("");
-    router.push("/chat/session");
+    router.push(sessionHref());
   };
 
   const handleCheckDates = () => {
     onIntent?.("check_dates");
-    router.push("/chat/session");
+    router.push(sessionHref());
   };
 
   const handleShare = () => {
     onIntent?.("share");
-    router.push("/chat/session?intent=share");
+    router.push(sessionHref("share"));
   };
 
   const handleReserve = () => {
     onIntent?.("reserve");
-    router.push("/chat/session?intent=reserve");
+    router.push(sessionHref("reserve"));
   };
 
   return (
@@ -74,56 +100,62 @@ export function InquiryChat({ onIntent }: InquiryChatProps) {
         </p>
 
         <div className={styles.chips} role="list">
-          <button
-            type="button"
-            className={`${styles.chip} ${styles.chipPrimary}`}
-            onClick={handleCheckDates}
-            role="listitem"
-          >
-            <span className={styles.chipText}>
-              <span className={styles.chipTitle}>Check dates &amp; price</span>
-              <span className={styles.chipSub}>
-                Get a real number in 30 seconds
+          {show("check_dates") && (
+            <button
+              type="button"
+              className={`${styles.chip} ${styles.chipPrimary}`}
+              onClick={handleCheckDates}
+              role="listitem"
+            >
+              <span className={styles.chipText}>
+                <span className={styles.chipTitle}>Check dates &amp; price</span>
+                <span className={styles.chipSub}>
+                  Get a real number in 30 seconds
+                </span>
               </span>
-            </span>
-            <span className={styles.chipArrow} aria-hidden="true">
-              &rarr;
-            </span>
-          </button>
+              <span className={styles.chipArrow} aria-hidden="true">
+                &rarr;
+              </span>
+            </button>
+          )}
 
-          <button
-            type="button"
-            className={styles.chip}
-            onClick={handleShare}
-            role="listitem"
-          >
-            <span className={styles.chipText}>
-              <span className={styles.chipTitle}>Send this to my group</span>
-              <span className={styles.chipSub}>
-                No commitment. Just the link plus photos.
+          {show("share") && (
+            <button
+              type="button"
+              className={styles.chip}
+              onClick={handleShare}
+              role="listitem"
+            >
+              <span className={styles.chipText}>
+                <span className={styles.chipTitle}>Send this to my group</span>
+                <span className={styles.chipSub}>
+                  No commitment. Just the link plus photos.
+                </span>
               </span>
-            </span>
-            <span className={styles.chipArrow} aria-hidden="true">
-              &rarr;
-            </span>
-          </button>
+              <span className={styles.chipArrow} aria-hidden="true">
+                &rarr;
+              </span>
+            </button>
+          )}
 
-          <button
-            type="button"
-            className={styles.chip}
-            onClick={handleReserve}
-            role="listitem"
-          >
-            <span className={styles.chipText}>
-              <span className={styles.chipTitle}>Reserve now, nothing due</span>
-              <span className={styles.chipSub}>
-                Hold your dates, no payment today
+          {show("reserve") && (
+            <button
+              type="button"
+              className={styles.chip}
+              onClick={handleReserve}
+              role="listitem"
+            >
+              <span className={styles.chipText}>
+                <span className={styles.chipTitle}>Reserve now, nothing due</span>
+                <span className={styles.chipSub}>
+                  Hold your dates, no payment today
+                </span>
               </span>
-            </span>
-            <span className={styles.chipArrow} aria-hidden="true">
-              &rarr;
-            </span>
-          </button>
+              <span className={styles.chipArrow} aria-hidden="true">
+                &rarr;
+              </span>
+            </button>
+          )}
         </div>
 
         <form className={styles.inputRow} onSubmit={handleSubmit}>
@@ -147,9 +179,11 @@ export function InquiryChat({ onIntent }: InquiryChatProps) {
         </form>
       </div>
 
-      <p className={styles.fallback}>
-        <a href="/book">Or use the booking form instead &rarr;</a>
-      </p>
+      {showFallback && (
+        <p className={styles.fallback}>
+          <a href="/book">Or use the booking form instead &rarr;</a>
+        </p>
+      )}
     </div>
   );
 }

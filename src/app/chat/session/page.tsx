@@ -17,6 +17,7 @@
 import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { bachThemeVars } from "@/components/brand/bachTheme";
 import { InquiryChatThread } from "@/components/brand/InquiryChatThread";
 
 function ChatSession() {
@@ -25,13 +26,24 @@ function ChatSession() {
   const intentParam = params.get("intent");
   const initialIntent =
     intentParam === "share" || intentParam === "reserve" ? intentParam : null;
+  const occasionParam = params.get("occasion");
+  // Where "back" returns to: the dedicated bachelorette page if that's
+  // where the guest came from, otherwise the generic chat entry.
+  const backHref = occasionParam === "bachelorette" ? "/bachelorette" : "/chat";
+  const isBach = occasionParam === "bachelorette";
 
+  // Apply the bachelorette scoped theme so the chat reads rose-gold for
+  // that flow (inline custom props cascade by DOM, not layout, so the
+  // fixed thread still inherits them). Default chat stays gold.
   return (
-    <InquiryChatThread
-      open
-      onClose={() => router.push("/chat")}
-      initialIntent={initialIntent}
-    />
+    <div style={isBach ? bachThemeVars : undefined}>
+      <InquiryChatThread
+        open
+        onClose={() => router.push(backHref)}
+        initialIntent={initialIntent}
+        initialOccasion={occasionParam}
+      />
+    </div>
   );
 }
 

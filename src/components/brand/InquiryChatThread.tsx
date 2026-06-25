@@ -61,6 +61,9 @@ interface InquiryChatThreadProps {
    *  entry chips ("Send this to my group" → "share", "Reserve now"
    *  → "reserve"). */
   initialIntent?: "share" | "reserve" | null;
+  /** Pre-seeds the occasion so the flow can skip asking (e.g. the
+   *  dedicated /bachelorette page seeds "bachelorette"). */
+  initialOccasion?: string | null;
 }
 
 type DateFocus = "arrival" | "departure";
@@ -619,7 +622,7 @@ function OliviaTyping() {
   );
 }
 
-export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatThreadProps) {
+export function InquiryChatThread({ open, onClose, initialIntent, initialOccasion }: InquiryChatThreadProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const priceCardRef = useRef<HTMLDivElement>(null);
   const actionsRowRef = useRef<HTMLDivElement>(null);
@@ -644,7 +647,7 @@ export function InquiryChatThread({ open, onClose, initialIntent }: InquiryChatT
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [groupSize, setGroupSize] = useState("");
-  const [occasion, setOccasion] = useState("");
+  const [occasion, setOccasion] = useState(initialOccasion ?? "");
 
   // Harness layer — every composer send goes through /api/inquiry-agent/turn.
   // The scripted step machine above (dates → checking → available → pricing)
