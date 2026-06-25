@@ -9,8 +9,6 @@
  * spine throughout, routing into the bachelorette-seeded Olivia chat.
  */
 
-import type { Viewport } from "next";
-
 import { bachThemeVars } from "@/components/brand/bachTheme";
 import { OccasionProvider } from "@/components/brand/OccasionProvider";
 import { BacheloretteHero } from "@/components/sections/BacheloretteHero";
@@ -24,17 +22,6 @@ import { BachNights } from "@/components/sections/BachNights";
 import { BachProof } from "@/components/sections/BachProof";
 import { TrustBadges } from "@/components/sections/TrustBadges";
 import { Testimonials } from "@/components/sections/Testimonials";
-
-// Render edge-to-edge under the iPhone status bar / Dynamic Island so the
-// hero video fills the top instead of a white safe-area bar. Scoped to this
-// route; the hero pads its text by env(safe-area-inset-top). Re-declares the
-// inherited fields alongside viewportFit.
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  interactiveWidget: "resizes-content",
-  viewportFit: "cover",
-};
 
 export default function BachelorettePage() {
   return (

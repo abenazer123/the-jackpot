@@ -57,6 +57,10 @@ export const viewport: Viewport = {
   // keyboard correctly instead of being clipped or pushing the page
   // behind them. Replaces the default Next-injected viewport meta.
   interactiveWidget: "resizes-content",
+  // Render edge-to-edge under the iPhone status bar / Dynamic Island
+  // site-wide, so page content (heroes, video) fills the top instead of a
+  // white safe-area bar. Top-anchored UI pads with env(safe-area-inset-*).
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

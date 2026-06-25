@@ -56,7 +56,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  /* extra top padding clears the iPhone status bar / Dynamic Island now
+     that the app renders edge-to-edge (viewport-fit=cover) */
+  padding: calc(14px + env(safe-area-inset-top)) 16px 14px;
   border-bottom: 1px solid var(--jp-border-default);
   background: var(--jp-bg-primary);
   flex-shrink: 0;
