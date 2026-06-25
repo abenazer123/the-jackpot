@@ -73,6 +73,22 @@ export function BacheloretteHero() {
             becomes the full-bleed background behind the text. */}
         <div className={styles.heroMediaScrim} aria-hidden="true" />
       </div>
+
+      {/* Mobile-only "more below" scroll cue. */}
+      <div className={styles.scrollCue} aria-hidden="true">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M6 9 L12 15 L18 9" />
+        </svg>
+      </div>
     </header>
   );
 }
