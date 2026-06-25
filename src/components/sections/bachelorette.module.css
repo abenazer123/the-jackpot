@@ -615,7 +615,10 @@
     position: relative;
     z-index: 2;
     background: transparent;
-    padding: 40px 24px 48px;
+    /* viewport-fit=cover lets the video fill behind the status bar; pad the
+       text down past the Dynamic Island + up from the home indicator */
+    padding: calc(env(safe-area-inset-top) + 18px) 24px
+      calc(env(safe-area-inset-bottom) + 40px);
     min-height: 100vh;
   }
   /* Spread the three groups across the full height instead of clumping
@@ -638,7 +641,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
     justify-content: center;
     z-index: 3;
     color: #faf6ef;
