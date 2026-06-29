@@ -64,15 +64,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         .eq("id", inquiry.id);
     }
 
-    // Live webhook smoke test: an inquiry under Abe's own email charges the
-    // Stripe USD minimum (50 cents) so the live path can be verified with a
-    // real card and refunded. Every real guest charges the full deposit.
-    const isLiveTest =
-      (inquiry.email as string | null)?.toLowerCase() === "abenazer101@gmail.com";
-    const amountCents = isLiveTest ? 50 : DEPOSIT_NOW_USD * 100;
-
     const intent = await stripe.paymentIntents.create({
-      amount: amountCents,
+      amount: DEPOSIT_NOW_USD * 100,
       currency: "usd",
       customer: customerId,
       // Card only, so the saved method can be charged off-session later.
