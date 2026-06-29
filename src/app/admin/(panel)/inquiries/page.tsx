@@ -18,8 +18,11 @@ import { supabaseServer } from "@/lib/supabase-server";
 
 import styles from "../admin.module.css";
 import { refreshAllPrices } from "./actions";
+import { PaymentLinkComposer } from "./PaymentLinkComposer";
 import { refreshAvailabilityCache } from "./refresh";
 import own from "./inquiries.module.css";
+
+const PAYMENT_LINK_SUBJECT = "Your Jackpot weekend is ready to lock in";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +77,9 @@ interface InquiryRow {
   // still gates display on direction)
   quote_refreshed_total_cents: number | null;
   quote_refreshed_at: string | null;
+  // Payment-link email (sent from the inquiry detail composer)
+  payment_link_sent_at: string | null;
+  payment_link_sent_count: number | null;
 }
 
 interface PageProps {
@@ -727,6 +733,38 @@ function InquiryDetail({
         />
         <DetailField label="IP" value={row.ip || "—"} mono />
         <DetailField label="User agent" value={row.user_agent || "—"} mono />
+      </div>
+
+      <div className={own.detailSection}>
+        <span className={own.detailSectionLabel}>Payment link</span>
+        {(() => {
+          const first = (row.name ?? "").trim().split(/\s+/)[0] || "there";
+          const reason = !row.share_token
+            ? "No booking link yet for this inquiry."
+            : !row.email
+              ? "No email on file."
+              : !row.quote_total_cents
+                ? "No quote total yet. Update prices first."
+                : undefined;
+          const sentLabel = row.payment_link_sent_at
+            ? `${formatExact(row.payment_link_sent_at)}${
+                row.payment_link_sent_count && row.payment_link_sent_count > 1
+                  ? ` (x${row.payment_link_sent_count})`
+                  : ""
+              }`
+            : null;
+          return (
+            <PaymentLinkComposer
+              token={row.share_token ?? ""}
+              recipient={row.email}
+              defaultSubject={PAYMENT_LINK_SUBJECT}
+              defaultNote={`Hi ${first}, I have everything set for your weekend and held for you. When your crew is ready, you can secure the dates below. Reply here anytime with questions.`}
+              canSend={!reason}
+              disabledReason={reason}
+              alreadySent={sentLabel}
+            />
+          );
+        })()}
       </div>
 
       {flags.length > 0 ? (

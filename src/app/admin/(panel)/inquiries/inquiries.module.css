@@ -343,3 +343,138 @@
   max-height: 260px;
   overflow-y: auto;
 }
+
+/* Payment-link composer. */
+.plkRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.plkOpen {
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--jp-gold-deep, #c49025);
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  padding: 8px 18px;
+  cursor: pointer;
+}
+
+.plkOpen:disabled {
+  background: var(--jp-bg-secondary, #f3ead4);
+  color: var(--jp-text-tertiary);
+  cursor: not-allowed;
+}
+
+.plkHint {
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  color: var(--jp-text-tertiary);
+}
+
+.plkSent {
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--jp-sage-deep, #6a8a55);
+}
+
+.plkComposer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 560px;
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-sm);
+  padding: 16px 16px 14px;
+}
+
+.plkField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plkLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+}
+
+.plkTo {
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-primary);
+}
+
+.plkInput,
+.plkTextarea {
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-primary);
+  background: var(--jp-bg-secondary, #f3ead4);
+  border: 1px solid var(--jp-border-subtle);
+  border-radius: var(--jp-radius-sm);
+  padding: 9px 11px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.plkTextarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.plkInput:focus,
+.plkTextarea:focus {
+  outline: none;
+  border-color: var(--jp-gold-deep, #c49025);
+}
+
+.plkActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.plkSend {
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--jp-gold-deep, #c49025);
+  border: 0;
+  border-radius: var(--jp-radius-full);
+  padding: 9px 20px;
+  cursor: pointer;
+}
+
+.plkSend:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.plkLink {
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-secondary);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.plkError {
+  font-family: var(--jp-font-body);
+  font-size: 12.5px;
+  color: var(--jp-terra-deep, #b07242);
+}
