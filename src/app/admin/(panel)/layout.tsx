@@ -30,6 +30,7 @@ export default async function AdminLayout({
         <nav className={styles.nav}>
           <Link href="/admin">Overview</Link>
           <Link href="/admin/inquiries">Inquiries</Link>
+          <Link href="/admin/bookings">Bookings</Link>
           <Link href="/admin/marketing">Marketing</Link>
           <Link href="/admin/categories">Categories</Link>
           <Link href="/admin/entries">Entries</Link>

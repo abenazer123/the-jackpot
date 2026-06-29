@@ -1,0 +1,216 @@
+/* Booking-specific overrides on top of admin.module.css utilities. */
+
+/* 6-column grid for header + row. */
+.row {
+  grid-template-columns:
+    84px              /* Signed */
+    104px             /* Status */
+    minmax(180px, 1.3fr) /* Guest */
+    minmax(150px, 1fr) /* Dates */
+    96px              /* Deposit */
+    minmax(120px, 1fr); /* Payment ref */
+}
+
+@media (max-width: 1200px) {
+  .row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.detailsRow {
+  border-bottom: 1px solid var(--jp-border-subtle);
+}
+
+.detailsRow:last-of-type {
+  border-bottom: 0;
+}
+
+.detailsRow > .summary {
+  cursor: pointer;
+  list-style: none;
+  border-bottom: 0;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary:hover {
+  background: var(--jp-gold-10, rgba(212, 169, 48, 0.06));
+}
+
+/* Status pills. */
+.statusTag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--jp-radius-full);
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.statusPaid {
+  background: var(--jp-sage-10, rgba(138, 160, 119, 0.18));
+  color: var(--jp-sage-deep, #6a8a55);
+}
+
+.statusSigned {
+  background: var(--jp-gold-10, rgba(212, 169, 48, 0.18));
+  color: var(--jp-gold-deep);
+}
+
+.statusVoid {
+  background: var(--jp-bg-secondary, #f3ead4);
+  color: var(--jp-text-tertiary);
+}
+
+/* Guest cell — name on top, email below. */
+.guestName {
+  display: block;
+  font-weight: 500;
+  color: var(--jp-text-primary);
+}
+
+.guestEmail {
+  display: block;
+  font-size: 11px;
+  color: var(--jp-text-tertiary);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.depositTag {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  color: var(--jp-text-primary);
+}
+
+.refMono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--jp-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Expanded detail body. */
+.detail {
+  padding: 16px 18px 22px;
+  background: var(--jp-bg-secondary, #f3ead4);
+  border-top: 1px dashed var(--jp-border-subtle);
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px 22px;
+}
+
+.detailField {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.detailLabel {
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+}
+
+.detailValue {
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.detailValueMono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--jp-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.detailLink {
+  color: var(--jp-gold-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.detailSection {
+  margin-top: 16px;
+}
+
+.detailSectionLabel {
+  display: block;
+  font-family: var(--jp-font-body);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--jp-text-tertiary);
+  margin-bottom: 8px;
+}
+
+/* Document buttons (ID + signed PDF) — open the short-lived signed URL. */
+.docRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.docButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--jp-radius-sm);
+  background: var(--jp-bg-primary);
+  border: 1px solid var(--jp-border-subtle);
+  color: var(--jp-gold-deep);
+  text-decoration: none;
+}
+
+.docButton:hover {
+  border-color: var(--jp-gold-deep);
+}
+
+.docMissing {
+  font-family: var(--jp-font-body);
+  font-size: 12px;
+  color: var(--jp-text-tertiary);
+}
+
+/* Acknowledgments — one row per signed checkbox. */
+.ackList {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.ackItem {
+  font-family: var(--jp-font-body);
+  font-size: 13px;
+  color: var(--jp-text-primary);
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  line-height: 1.45;
+}
+
+.ackCheck {
+  color: var(--jp-sage-deep, #6a8a55);
+  font-weight: 700;
+}
