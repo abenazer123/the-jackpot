@@ -13,6 +13,7 @@
 
 import Link from "next/link";
 
+import { siteOrigin } from "@/lib/siteOrigin";
 import { supabaseServer } from "@/lib/supabase-server";
 
 import styles from "../admin.module.css";
@@ -701,6 +702,23 @@ function InquiryDetail({
                 className={own.detailLink}
               >
                 /trip/{row.share_token.slice(0, 8)}…
+              </a>
+            ) : (
+              "—"
+            )
+          }
+        />
+        <DetailField
+          label="Payment link"
+          value={
+            row.share_token ? (
+              <a
+                href={`/confirm/${row.share_token}`}
+                target="_blank"
+                rel="noreferrer"
+                className={own.detailLink}
+              >
+                {siteOrigin()}/confirm/{row.share_token}
               </a>
             ) : (
               "—"
