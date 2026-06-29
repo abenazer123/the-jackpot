@@ -27,6 +27,7 @@ import {
 } from "@/lib/booking/agreement";
 import { buildAgreementPdf } from "@/lib/booking/agreementPdf";
 import { sendBookingCertificate } from "@/lib/email/bookingCertificate";
+import { getStripe } from "@/lib/stripe";
 import { supabaseServer } from "@/lib/supabase-server";
 
 const usd = (cents: number) => `$${Math.round(cents / 100).toLocaleString("en-US")}`;
@@ -198,6 +199,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .update({ agreement_pdf_path: pdfPath })
       .eq("id", row.id);
     if (pdfColErr) console.warn("[booking/sign] pdf path not stored:", pdfColErr.message);
+  }
+
+  // Capture the saved card (payment method) for the later milestone charges
+  // + hold. Best-effort; the webhook also reconciles this.
+  if (depositPaymentRef) {
+    try {
+      const stripe = getStripe();
+      if (stripe) {
+        const pi = await stripe.paymentIntents.retrieve(depositPaymentRef);
+        const pm = typeof pi.payment_method === "string" ? pi.payment_method : null;
+        if (pm) {
+          await supabase
+            .from("booking_agreements")
+            .update({ stripe_payment_method_id: pm })
+            .eq("id", row.id);
+        }
+      }
+    } catch (e) {
+      console.warn("[booking/sign] could not capture payment method", e);
+    }
   }
 
   // The chat only captured a first name; the signature is her full legal

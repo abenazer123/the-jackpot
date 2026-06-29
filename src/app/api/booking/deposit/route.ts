@@ -37,9 +37,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   const { token } = parsed.data;
 
-  const { data: inquiry } = await supabaseServer()
+  const supabase = supabaseServer();
+  const { data: inquiry } = await supabase
     .from("inquiries")
-    .select("id, name, email")
+    .select("id, name, email, stripe_customer_id")
     .eq("share_token", token)
     .maybeSingle();
   if (!inquiry) {
@@ -47,10 +48,28 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   try {
+    // Reuse the guest's Stripe customer, or create one, so the card is
+    // saved and can be charged off-session for the later payments + hold.
+    let customerId = (inquiry.stripe_customer_id as string | null) ?? null;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: (inquiry.email as string | null) ?? undefined,
+        name: (inquiry.name as string | null) ?? undefined,
+        metadata: { inquiry_id: String(inquiry.id), share_token: token },
+      });
+      customerId = customer.id;
+      await supabase
+        .from("inquiries")
+        .update({ stripe_customer_id: customerId })
+        .eq("id", inquiry.id);
+    }
+
     const intent = await stripe.paymentIntents.create({
       amount: DEPOSIT_NOW_USD * 100,
       currency: "usd",
-      automatic_payment_methods: { enabled: true },
+      customer: customerId,
+      // Card only, so the saved method can be charged off-session later.
+      payment_method_types: ["card"],
       setup_future_usage: "off_session",
       description: `The Jackpot deposit for ${(inquiry.name as string) ?? "guest"}`,
       receipt_email: (inquiry.email as string | null) ?? undefined,
