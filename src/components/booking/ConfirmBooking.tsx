@@ -98,8 +98,15 @@ function fmt(cents: number): string {
   })}`;
 }
 
-function fmtRound(cents: number): string {
-  return `$${Math.round(cents / 100).toLocaleString("en-US")}`;
+/** Money for the amount-due displays: whole dollars stay clean ($500), but
+ *  a half payment keeps its cents so the label matches the actual charge
+ *  ($1,885.50), never rounding to a number we are not charging. */
+function fmtDue(cents: number): string {
+  const whole = cents % 100 === 0;
+  return `$${(cents / 100).toLocaleString("en-US", {
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 /** Require a first and last name (at least two words). */
@@ -324,7 +331,7 @@ export function ConfirmBooking({ booking }: { booking: BookingData }) {
                       <span className={styles.planSub}>{opt.sub}</span>
                     </span>
                     <span className={styles.planAmt}>
-                      {fmtRound(amt)}
+                      {fmtDue(amt)}
                       <small>today</small>
                     </span>
                   </button>
@@ -509,7 +516,7 @@ export function ConfirmBooking({ booking }: { booking: BookingData }) {
                 <div className={styles.payHead}>
                   <div className={styles.k}>Due today</div>
                   <div className={styles.payV}>
-                    {fmtRound(depositCents)}{" "}
+                    {fmtDue(depositCents)}{" "}
                     <small>
                       &middot;{" "}
                       {plan === "full" ? "paid in full" : "balance later"}
@@ -525,7 +532,7 @@ export function ConfirmBooking({ booking }: { booking: BookingData }) {
                     >
                       <PaymentForm
                         ready={ready}
-                        readyLabel={`Pay ${fmtRound(depositCents)} and confirm`}
+                        readyLabel={`Pay ${fmtDue(depositCents)} and confirm`}
                         notReadyLabel={notReadyLabel}
                         gateMsg={gateMsg}
                         holdUsd={booking.holdUsd}
