@@ -20,10 +20,11 @@ import {
   ACKNOWLEDGMENTS,
   AGREEMENT_VERSION,
   BUSINESS,
-  DEPOSIT_NOW_USD,
   REQUIRED_ACK_IDS,
   STAY,
   agreementCanonicalText,
+  planAmountCents,
+  planLabel,
 } from "@/lib/booking/agreement";
 import { buildAgreementPdf } from "@/lib/booking/agreementPdf";
 import { sendBookingCertificate } from "@/lib/email/bookingCertificate";
@@ -55,6 +56,7 @@ const Schema = z.object({
   ackIds: z.array(z.string()).min(1),
   idDocumentPath: z.string().min(1).max(300),
   depositPaymentRef: z.string().min(1).max(120).optional(),
+  plan: z.enum(["reserve", "half", "full"]).default("reserve"),
 });
 
 function clientIp(req: NextRequest): string | null {
@@ -75,7 +77,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: "invalid_request" }, { status: 400 });
   }
-  const { token, signatureName, ackIds, idDocumentPath, depositPaymentRef } =
+  const { token, signatureName, ackIds, idDocumentPath, depositPaymentRef, plan } =
     parsed.data;
 
   // Every required acknowledgment must be present.
@@ -111,7 +113,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }));
 
   const signedAtIso = new Date().toISOString();
-  const depositCents = DEPOSIT_NOW_USD * 100;
+  // Amount paid today is derived from the chosen plan + the real total, the
+  // same way the deposit PaymentIntent computed it.
+  const total = (inquiry.quote_total_cents as number | null) ?? 0;
+  const depositCents = planAmountCents(total, plan);
   // The main guest of record is whoever signs, by their full legal name,
   // not the friendly first name the chat captured (e.g. "Kat").
   const guestName = signatureName;
@@ -126,7 +131,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     { k: "Check in", v: `${STAY.checkIn} (${STAY.checkInNote})` },
     { k: "Check out", v: `${STAY.checkOut} (${STAY.checkOutNote})` },
     { k: "Guests", v: `${(inquiry.guests as number) ?? STAY.maxGuests} max` },
-    { k: "Deposit today", v: usd(depositCents) },
+    { k: "Payment plan", v: planLabel(plan) },
+    { k: "Paid today", v: usd(depositCents) },
   ];
   if (inquiry.quote_total_cents) {
     bookingLines.push({ k: "Weekend total", v: usd(inquiry.quote_total_cents as number) });
@@ -179,6 +185,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       ip: clientIp(req),
       user_agent: req.headers.get("user-agent"),
       id_document_path: idDocumentPath,
+      payment_plan: plan,
       deposit_amount_cents: depositCents,
       deposit_payment_ref: depositPaymentRef ?? null,
       status: depositPaymentRef ? "deposit_paid" : "signed",

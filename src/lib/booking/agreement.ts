@@ -46,16 +46,76 @@ export interface ScheduleRow {
 }
 
 /**
- * Build the three step schedule from the real total:
- * $500 now, the balance to reach 50 percent by the first milestone, then
- * the final 50 percent by the second milestone.
+ * How much the guest chooses to pay today:
+ *   reserve - the flat $500 that holds the dates (lowest commitment)
+ *   half    - 50 percent of the total today, final 50 percent at milestone 2
+ *   full    - the whole total today, nothing else due
+ * Same grand total in every case; there is no discount for paying early.
+ */
+export type PaymentPlan = "reserve" | "half" | "full";
+
+export const PAYMENT_PLANS: readonly PaymentPlan[] = ["reserve", "half", "full"];
+
+export function isPaymentPlan(v: unknown): v is PaymentPlan {
+  return v === "reserve" || v === "half" || v === "full";
+}
+
+/** Amount due today for the chosen plan, derived from the real total. */
+export function planAmountCents(totalCents: number, plan: PaymentPlan): number {
+  if (plan === "full") return totalCents;
+  if (plan === "half") return Math.round(totalCents / 2);
+  return DEPOSIT_NOW_USD * 100;
+}
+
+/** Human label for a plan (admin, PDF, certificate). */
+export function planLabel(plan: PaymentPlan): string {
+  if (plan === "full") return "Paid in full";
+  if (plan === "half") return "50 percent today";
+  return "Reserve ($500 today)";
+}
+
+/**
+ * Build the payment schedule from the real total, for the chosen plan.
+ *   reserve: $500 now, balance to 50 percent by milestone 1, final 50 percent
+ *            by milestone 2.
+ *   half:    50 percent now, final 50 percent by milestone 2.
+ *   full:    the whole total now, nothing else due.
  */
 export function paymentSchedule(
   totalCents: number,
   milestone1: string,
   milestone2: string,
+  plan: PaymentPlan = "reserve",
 ): ScheduleRow[] {
   const half = Math.round(totalCents / 2);
+
+  if (plan === "full") {
+    return [
+      {
+        when: "Today",
+        what: "Paid in full. Nothing else is due before your stay.",
+        amountCents: totalCents,
+        now: true,
+      },
+    ];
+  }
+
+  if (plan === "half") {
+    return [
+      {
+        when: "Today",
+        what: "50 percent today. Reserves your dates and counts toward your stay.",
+        amountCents: half,
+        now: true,
+      },
+      {
+        when: `By ${milestone2}`,
+        what: "The final 50 percent, due before arrival.",
+        amountCents: totalCents - half,
+      },
+    ];
+  }
+
   const nowCents = DEPOSIT_NOW_USD * 100;
   return [
     {

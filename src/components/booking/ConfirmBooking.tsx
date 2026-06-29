@@ -26,8 +26,10 @@ import {
   ACKNOWLEDGMENTS,
   AGREEMENT_DISCLAIMER,
   AGREEMENT_SECTIONS,
+  paymentSchedule,
+  planAmountCents,
 } from "@/lib/booking/agreement";
-import type { ScheduleRow } from "@/lib/booking/agreement";
+import type { PaymentPlan } from "@/lib/booking/agreement";
 import styles from "./confirm.module.css";
 
 const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -62,8 +64,32 @@ export interface BookingData {
   bookingRef: string;
   totalCents: number;
   holdUsd: number;
-  schedule: ScheduleRow[];
+  milestone1: string;
+  milestone2: string;
 }
+
+/** The three ways a guest can pay today. Same grand total in every case. */
+const PLAN_OPTIONS: ReadonlyArray<{
+  plan: PaymentPlan;
+  title: string;
+  sub: string;
+}> = [
+  {
+    plan: "reserve",
+    title: "Reserve your dates",
+    sub: "Lowest to commit today. The balance follows the schedule.",
+  },
+  {
+    plan: "half",
+    title: "Pay half now",
+    sub: "50 percent today, the final 50 percent before arrival.",
+  },
+  {
+    plan: "full",
+    title: "Pay in full",
+    sub: "Settle everything now. Nothing else is due.",
+  },
+];
 
 function fmt(cents: number): string {
   return `$${(cents / 100).toLocaleString("en-US", {
@@ -92,13 +118,31 @@ export function ConfirmBooking({ booking }: { booking: BookingData }) {
   const [idFileName, setIdFileName] = useState<string | null>(null);
   const [idUploading, setIdUploading] = useState(false);
   const [idError, setIdError] = useState<string | null>(null);
+  const [plan, setPlan] = useState<PaymentPlan>("reserve");
 
   const ackCount = ACKNOWLEDGMENTS.filter((a) => checks[a.id]).length;
   const allAck = ackCount === ACKNOWLEDGMENTS.length;
   const signed = isFullName(signature);
   const ready = !!idPath && allAck && signed;
 
-  const depositCents = booking.schedule[0]?.amountCents ?? 0;
+  // The 50/100 percent plans need a known total; with no quote only the flat
+  // reserve makes sense.
+  const hasTotal = booking.totalCents > 0;
+  const planOptions = hasTotal
+    ? PLAN_OPTIONS
+    : PLAN_OPTIONS.filter((o) => o.plan === "reserve");
+
+  const schedule = useMemo(
+    () =>
+      paymentSchedule(
+        booking.totalCents,
+        booking.milestone1,
+        booking.milestone2,
+        plan,
+      ),
+    [booking.totalCents, booking.milestone1, booking.milestone2, plan],
+  );
+  const depositCents = planAmountCents(booking.totalCents, plan);
 
   async function handleIdFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -122,15 +166,17 @@ export function ConfirmBooking({ booking }: { booking: BookingData }) {
     }
   }
 
-  // Create the deposit PaymentIntent once so Stripe Elements has a client
-  // secret to confirm against. No-op if Stripe is not configured.
+  // Create the deposit PaymentIntent so Stripe Elements has a client secret
+  // to confirm against. Re-runs when the plan changes so the charge amount
+  // tracks the chosen option. No-op if Stripe is not configured.
   useEffect(() => {
     if (!stripePromise) return;
     let active = true;
+    setClientSecret(null);
     fetch("/api/booking/deposit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: booking.token }),
+      body: JSON.stringify({ token: booking.token, plan }),
     })
       .then((r) => r.json())
       .then((j) => {
@@ -140,7 +186,7 @@ export function ConfirmBooking({ booking }: { booking: BookingData }) {
     return () => {
       active = false;
     };
-  }, [booking.token]);
+  }, [booking.token, plan]);
 
   // Records the signed agreement (one contract package: signature + acks +
   // ID + the deposit payment reference) after a successful charge.
@@ -155,6 +201,7 @@ export function ConfirmBooking({ booking }: { booking: BookingData }) {
           ackIds: ACKNOWLEDGMENTS.filter((a) => checks[a.id]).map((a) => a.id),
           idDocumentPath: idPath,
           depositPaymentRef: paymentRef,
+          plan,
         }),
       });
       const json = await res.json();
@@ -170,7 +217,11 @@ export function ConfirmBooking({ booking }: { booking: BookingData }) {
       ? "Complete checklist to pay"
       : "Sign to continue";
   const gateMsg = ready
-    ? "Your deposit reserves the dates. The balance follows the schedule above."
+    ? plan === "full"
+      ? "This pays your stay in full. Your dates are locked, nothing else is due."
+      : plan === "half"
+        ? "This pays half today. The final 50 percent follows the schedule above."
+        : "Your deposit reserves the dates. The balance follows the schedule above."
     : !idPath
       ? "Add a photo of your ID above to continue."
       : !allAck
@@ -244,14 +295,44 @@ export function ConfirmBooking({ booking }: { booking: BookingData }) {
             </div>
           </section>
 
-          {/* Payment schedule */}
+          {/* Choose how you pay + the resulting schedule */}
           <section className={`${styles.card} ${styles.cardPad}`}>
             <div className={styles.secHead}>
               <span className={styles.secNum}>01</span>
-              <h2>Your payment schedule</h2>
+              <h2>Choose how you pay</h2>
+            </div>
+            <div
+              className={styles.planGrid}
+              role="radiogroup"
+              aria-label="How much to pay today"
+            >
+              {planOptions.map((opt) => {
+                const amt = planAmountCents(booking.totalCents, opt.plan);
+                const selected = plan === opt.plan;
+                return (
+                  <button
+                    type="button"
+                    key={opt.plan}
+                    role="radio"
+                    aria-checked={selected}
+                    className={`${styles.planOption} ${selected ? styles.planSelected : ""}`}
+                    onClick={() => setPlan(opt.plan)}
+                  >
+                    <span className={styles.planDot} aria-hidden="true" />
+                    <span className={styles.planMain}>
+                      <span className={styles.planTitle}>{opt.title}</span>
+                      <span className={styles.planSub}>{opt.sub}</span>
+                    </span>
+                    <span className={styles.planAmt}>
+                      {fmtRound(amt)}
+                      <small>today</small>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
             <div className={styles.sched}>
-              {booking.schedule.map((row, i) => (
+              {schedule.map((row, i) => (
                 <div
                   key={i}
                   className={`${styles.row} ${row.now ? styles.now : ""}`}
@@ -426,14 +507,19 @@ export function ConfirmBooking({ booking }: { booking: BookingData }) {
             {!confirmed ? (
               <>
                 <div className={styles.payHead}>
-                  <div className={styles.k}>Due today to reserve</div>
+                  <div className={styles.k}>Due today</div>
                   <div className={styles.payV}>
-                    {fmtRound(depositCents)} <small>&middot; balance later</small>
+                    {fmtRound(depositCents)}{" "}
+                    <small>
+                      &middot;{" "}
+                      {plan === "full" ? "paid in full" : "balance later"}
+                    </small>
                   </div>
                 </div>
                 <div className={styles.payBody}>
                   {stripePromise && clientSecret ? (
                     <Elements
+                      key={clientSecret}
                       stripe={stripePromise}
                       options={{ clientSecret, appearance: STRIPE_APPEARANCE }}
                     >

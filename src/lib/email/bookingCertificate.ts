@@ -46,11 +46,6 @@ export async function sendBookingCertificate(
     dateStyle: "long",
     timeStyle: "short",
   });
-  const deposit =
-    p.depositAmountCents != null
-      ? `$${Math.round(p.depositAmountCents / 100).toLocaleString("en-US")}`
-      : "pending";
-
   const acks = p.acknowledgments
     .map((a) => `<li style="margin:0 0 6px">${esc(a.label)}</li>`)
     .join("");
@@ -70,7 +65,7 @@ export async function sendBookingCertificate(
       ${bookingRows}
       <tr><td style="padding:6px 0;color:#9a8456">Signed by</td><td style="padding:6px 0;text-align:right">${esc(p.signatureName)}</td></tr>
       <tr><td style="padding:6px 0;color:#9a8456">Signed at</td><td style="padding:6px 0;text-align:right">${esc(when)}</td></tr>
-      <tr><td style="padding:6px 0;color:#9a8456">Deposit</td><td style="padding:6px 0;text-align:right">${deposit}${p.depositPaymentRef ? " (paid)" : ""}</td></tr>
+      <tr><td style="padding:6px 0;color:#9a8456">Payment</td><td style="padding:6px 0;text-align:right">${p.depositPaymentRef ? "Paid" : "Pending"}</td></tr>
       <tr><td style="padding:6px 0;color:#9a8456">Photo ID on file</td><td style="padding:6px 0;text-align:right">${p.idOnFile ? "Yes" : "No"}</td></tr>
       <tr><td style="padding:6px 0;color:#9a8456">Agreement version</td><td style="padding:6px 0;text-align:right">${esc(p.agreementVersion)}</td></tr>
       ${p.ip ? `<tr><td style="padding:6px 0;color:#9a8456">Signed from</td><td style="padding:6px 0;text-align:right">${esc(p.ip)}</td></tr>` : ""}

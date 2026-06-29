@@ -12,6 +12,7 @@
  * never public — we mint a fresh signed URL per page load (30 min TTL).
  */
 
+import { isPaymentPlan, planLabel } from "@/lib/booking/agreement";
 import { siteOrigin } from "@/lib/siteOrigin";
 import { supabaseServer } from "@/lib/supabase-server";
 
@@ -52,6 +53,7 @@ interface BookingRow {
   user_agent: string | null;
   id_document_path: string | null;
   agreement_pdf_path: string | null;
+  payment_plan: string | null;
   deposit_payment_ref: string | null;
   deposit_amount_cents: number | null;
   stripe_payment_method_id: string | null;
@@ -262,7 +264,11 @@ function BookingDetail({
           value={formatMoney(row.inquiry?.quote_total_cents ?? null)}
         />
         <DetailField
-          label="Deposit recorded"
+          label="Payment plan"
+          value={isPaymentPlan(row.payment_plan) ? planLabel(row.payment_plan) : "—"}
+        />
+        <DetailField
+          label="Paid today"
           value={formatMoney(row.deposit_amount_cents)}
         />
         <DetailField label="Agreement version" value={row.agreement_version} />

@@ -13,7 +13,7 @@
 import { notFound } from "next/navigation";
 
 import { ConfirmBooking } from "@/components/booking/ConfirmBooking";
-import { BUSINESS, STAY, paymentSchedule } from "@/lib/booking/agreement";
+import { BUSINESS, STAY } from "@/lib/booking/agreement";
 import { supabaseServer } from "@/lib/supabase-server";
 
 import styles from "@/components/booking/confirm.module.css";
@@ -110,7 +110,8 @@ export default async function ConfirmPage({ params }: ConfirmPageProps) {
     bookingRef: `JP ${String(data.id).slice(0, 4).toUpperCase()}`,
     totalCents,
     holdUsd: STAY.holdUsd,
-    schedule: paymentSchedule(totalCents, milestone1, milestone2),
+    milestone1,
+    milestone2,
   };
 
   return (

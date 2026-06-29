@@ -9,7 +9,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { DEPOSIT_NOW_USD } from "@/lib/booking/agreement";
+import { planAmountCents } from "@/lib/booking/agreement";
 import { getStripe } from "@/lib/stripe";
 import { supabaseServer } from "@/lib/supabase-server";
 
@@ -17,6 +17,7 @@ export const runtime = "nodejs";
 
 const Schema = z.object({
   token: z.string().regex(/^[0-9A-Za-z_-]{22}$/),
+  plan: z.enum(["reserve", "half", "full"]).default("reserve"),
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -35,17 +36,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: "invalid_request" }, { status: 400 });
   }
-  const { token } = parsed.data;
+  const { token, plan } = parsed.data;
 
   const supabase = supabaseServer();
   const { data: inquiry } = await supabase
     .from("inquiries")
-    .select("id, name, email, stripe_customer_id")
+    .select("id, name, email, stripe_customer_id, quote_total_cents")
     .eq("share_token", token)
     .maybeSingle();
   if (!inquiry) {
     return NextResponse.json({ ok: false, error: "booking_not_found" }, { status: 404 });
   }
+
+  // Compute the amount due today server-side from the real total. The 50/100
+  // percent plans require a known total; only the flat $500 reserve does not.
+  const total = (inquiry.quote_total_cents as number | null) ?? 0;
+  if ((plan === "half" || plan === "full") && total <= 0) {
+    return NextResponse.json({ ok: false, error: "no_total" }, { status: 400 });
+  }
+  const amountCents = planAmountCents(total, plan);
 
   try {
     // Reuse the guest's Stripe customer, or create one, so the card is
@@ -65,10 +74,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     const intent = await stripe.paymentIntents.create({
-      amount: DEPOSIT_NOW_USD * 100,
+      amount: amountCents,
       currency: "usd",
       customer: customerId,
-      // Card only, so the saved method can be charged off-session later.
+      // Card only, so the saved method can be charged off-session later
+      // (for the milestone payments and the security hold).
       payment_method_types: ["card"],
       setup_future_usage: "off_session",
       description: `The Jackpot deposit for ${(inquiry.name as string) ?? "guest"}`,
@@ -77,6 +87,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         share_token: token,
         inquiry_id: String(inquiry.id),
         purpose: "deposit",
+        payment_plan: plan,
       },
     });
     return NextResponse.json({ ok: true, clientSecret: intent.client_secret });
