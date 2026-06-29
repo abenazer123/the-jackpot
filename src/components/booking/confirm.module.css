@@ -377,6 +377,26 @@
   margin-top: 3px;
 }
 
+/* Header that introduces the schedule as the timeline for the chosen plan,
+   so the timeline nodes are not mistaken for more options to pick. */
+.timelineHead {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(122, 96, 48, 0.14);
+}
+.timelineHead h3 {
+  margin: 0;
+  font-family: var(--jp-font-display);
+  font-size: 19px;
+  font-weight: 600;
+  color: #5a4420;
+}
+.timelineHead p {
+  margin: 4px 0 0;
+  color: #9a8456;
+  font-size: 13px;
+}
+
 .sched {
   display: flex;
   flex-direction: column;

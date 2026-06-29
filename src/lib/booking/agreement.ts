@@ -13,7 +13,7 @@
  */
 
 /** Bump when the agreement copy/terms change, stored with each signature. */
-export const AGREEMENT_VERSION = "2026-06-28";
+export const AGREEMENT_VERSION = "2026-06-29";
 
 /** Business details. Phone still to fill. */
 export const BUSINESS = {
@@ -120,7 +120,7 @@ export function paymentSchedule(
   return [
     {
       when: "Today",
-      what: "Reserves your dates. Non refundable, and applied toward your first payment.",
+      what: "Reserves your dates and applies toward your first payment.",
       amountCents: nowCents,
       now: true,
     },
@@ -147,7 +147,7 @@ export const ACKNOWLEDGMENTS: ReadonlyArray<{ id: string; lead: string; rest: st
   {
     id: "payment",
     lead: "Payment and cancellation:",
-    rest: "I understand the schedule above and that payments become non refundable on the dates shown.",
+    rest: "I understand the payment schedule and the cancellation terms: a full refund 60 or more days before arrival, a 50 percent refund 30 to 59 days before, and no refund within 30 days of arrival.",
   },
   {
     id: "hold",
@@ -186,6 +186,12 @@ export const AGREEMENT_SECTIONS: ReadonlyArray<{ h: string; body: string[] }> = 
     ],
   },
   {
+    h: "Your stay (not a tenancy)",
+    body: [
+      "This is a short term, transient stay only. You are a guest with permission to stay for these dates. You do not gain any tenancy or residency rights, and no landlord tenant relationship is created. You agree to leave by check out.",
+    ],
+  },
+  {
     h: "Maximum occupancy",
     body: [
       "Up to 14 overnight guests, all listed on the guest roster before check in. Exceeding the cap or adding unlisted overnight guests is a breach and grounds for immediate termination without refund.",
@@ -194,8 +200,8 @@ export const AGREEMENT_SECTIONS: ReadonlyArray<{ h: string; body: string[] }> = 
   {
     h: "Payment and cancellation",
     body: [
-      "Your $500 deposit today is non refundable and applied to your first payment. The balance follows the schedule on this page: the remainder to 50 percent by the first date shown, then the final 50 percent by the second.",
-      "Cancel before the first milestone and you lose only the $500. Cancel between the two milestones and the 50 percent paid is forfeited. On or after the final date the full amount is non refundable.",
+      "You choose how to pay today: a $500 reserve, 50 percent, or the full amount, with any balance due on the dates shown on this page. The same total applies in every case, and what you pay today is applied to your stay.",
+      "Cancellation is based on how far ahead you cancel. Cancel 60 or more days before arrival for a full refund of everything paid. Cancel 30 to 59 days before arrival for a 50 percent refund of the total. Cancel fewer than 30 days before arrival and no refund is given. Approved refunds return to your original card within 5 to 10 business days.",
     ],
   },
   {
@@ -218,6 +224,12 @@ export const AGREEMENT_SECTIONS: ReadonlyArray<{ h: string; body: string[] }> = 
     ],
   },
   {
+    h: "Prohibited uses",
+    body: [
+      "No illegal activity or controlled substances. No firearms. No subletting or re listing the booking. No commercial use, filming, or photography for hire without consent. No tampering with smoke or carbon monoxide detectors, cameras, or locks. No glass in the hot tub, fire pit, or grill areas.",
+    ],
+  },
+  {
     h: "Fees",
     body: FEE_SCHEDULE as string[],
   },
@@ -228,9 +240,33 @@ export const AGREEMENT_SECTIONS: ReadonlyArray<{ h: string; body: string[] }> = 
     ],
   },
   {
+    h: "Cameras and privacy",
+    body: [
+      "The home has exterior security cameras only, at entry points and the driveway or alley, for security and guest count verification. There are no cameras inside the home. Please do not disable or cover them.",
+    ],
+  },
+  {
+    h: "Insurance",
+    body: [
+      "The host's insurance does not cover your or your group's personal belongings, and the host is not responsible for lost, stolen, or damaged items. You are encouraged to carry your own coverage.",
+    ],
+  },
+  {
+    h: "Events beyond our control",
+    body: [
+      "Neither side is liable for a failure to perform caused by events beyond reasonable control, such as natural disaster, severe weather, utility failure, or government action. In that case we will work in good faith toward a reschedule or a fair refund.",
+    ],
+  },
+  {
+    h: "Electronic signature",
+    body: [
+      "You agree to sign electronically. Your typed full legal name together with the acknowledgment boxes on this page are your electronic signature, legally binding to the same extent as a handwritten one under the federal ESIGN Act and the Illinois UETA. You consent to receive this agreement, notices, and receipts electronically.",
+    ],
+  },
+  {
     h: "Other terms",
     body: [
-      "Governed by Illinois law (Cook County). The guest indemnifies the host except for the host's gross negligence, and host liability is capped at amounts paid. Parking, garage access, and amenity instructions are in the House Rules and Amenity Guide, which is part of this agreement.",
+      "Governed by Illinois law (Cook County). The guest indemnifies the host except for the host's gross negligence, and host liability is capped at amounts paid. This is the entire agreement and supersedes any side promises. If any part is unenforceable, the rest still applies. Parking, garage access, and amenity instructions are in the House Rules and Amenity Guide, which is part of this agreement. If the Guide and this agreement ever conflict, this agreement controls.",
     ],
   },
 ];

@@ -338,6 +338,18 @@ export function ConfirmBooking({ booking }: { booking: BookingData }) {
                 );
               })}
             </div>
+
+            <div className={styles.timelineHead}>
+              <h3>Your payment timeline</h3>
+              <p>
+                {plan === "full"
+                  ? "You are paying in full today, so nothing else is scheduled."
+                  : plan === "half"
+                    ? "Based on paying half today. Here is what is due, and when."
+                    : "Based on reserving today. Here is what is due, and when."}
+              </p>
+            </div>
+
             <div className={styles.sched}>
               {schedule.map((row, i) => (
                 <div
